@@ -8,14 +8,15 @@ labs) and **business** customers (knowledge workers, Teams-heavy). Both must be 
 Current state and next steps: see `status.md` / `status.json` (keep both in sync after each work session).
 
 ## Files
-- `Win11/VDI-ImageMaint.ps1` – main tool (v1.7.3, ~2200 lines, monolith; module split planned)
-- `Win11/Set-FSLogixConfig.ps1` – FSLogix registry, redirections.xml, groups, AV exclusions (v1.0)
-- `tools/Test-SysprepReadiness.ps1` – read-only pre-Generalize checks (EN/PL string table = the i18n pattern to follow)
-- `install/` – mirror of `C:\install` (READMEs only, binaries git-ignored); `docs/` – EN docs, `docs/pl/` – PL docs
+- `install/` = the complete `C:\install` (copy it to the VM):
+  - `install/VDI-ImageMaint.ps1` – main tool (v1.9.0, ~3000 lines, monolith; module split planned)
+  - `install/Scripts/Set-FSLogixConfig.ps1` – FSLogix registry, redirections.xml, groups, AV exclusions (v1.0.1)
+  - `install/Scripts/Test-SysprepReadiness.ps1` – read-only pre-Generalize checks (EN/PL string table = the i18n pattern to follow)
+  - `install/packages.json` (manifest, customer University), `install/winget-catalog.json`, `install/OSOT/Optimize.json`, `install/Office/*.xml`
+- Binaries are git-ignored; `docs/` – EN docs, `docs/pl/` – PL docs
 - `docs/image-lifecycle.md` – Build (with Generalize, once per feature release) vs Day-2 (no Generalize) – the design basis for OSOT work
 - On the VM everything lives in `C:\install` (script, `packages.json`, `OSOT\`, `Office\`, `Patches\`,
   `FSLogix\`, `Horizon\`, `Apps\`, `Scripts\`); logs/state in `C:\ProgramData\VDI-ImageMaint\`.
-- `packages.json` and `OSOT\Optimize.json` are NOT in this repo yet – ask the user for them.
 
 ## Language (i18n)
 - **English is the primary language** (code, comments, default messages, docs). **Polish is the

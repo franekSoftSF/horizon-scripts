@@ -35,9 +35,9 @@ Dlaczego w Day-2 nie powtarzamy Generalize:
 | 7 | Windows Update, aż nic nie oczekuje, potem restart | `-Mode Update` | Sysprep odmawia przy oczekującym restarcie: `0x36b7 … updates that require a reboot` |
 | 8 | Aplikacje: M365 (ODT), nowy Teams **zaprowizjonowany** (`teamsbootstrapper -p`), FSLogix, aplikacje klienta | `-Mode Packages` | MSIX **zaprowizjonowane** przechodzą przez Sysprep. MSIX zarejestrowane **tylko dla bieżącego konta** nie przechodzą |
 | 9 | **OSOT Optimize** (JSON profilu + opcje wspólne) → restart | `-Mode Optimize` | Usuwa zbędne zaprowizjonowane aplikacje Store. Przy `-storeapp remove-all` zawsze dodawaj `--exclude MSTeams` |
-| 10 | **Kontrola gotowości – wszystko musi być PASS** | `tools\Test-SysprepReadiness.ps1` | Wyłapuje znane blokery *przed* Sysprep |
+| 10 | **Kontrola gotowości – wszystko musi być PASS** | `Scripts\Test-SysprepReadiness.ps1` (uruchamiany automatycznie w `-Mode Generalize`) | Wyłapuje znane blokery *przed* Sysprep |
 | 11 | **Snapshot „pre-generalize”** | vSphere | Nieudany Sysprep często zostawia maszynę, która nie startuje. Ten snapshot to punkt powrotu |
-| 12 | **OSOT Generalize** (`-g <unattend.xml>`), restart → OOBE z pliku odpowiedzi | `-Mode Generalize` (planowany) | OSOT nie łączy Generalize i Finalize w jednym uruchomieniu, między nimi musi być restart |
+| 12 | **OSOT Generalize** (`-g <unattend.xml>`), restart → OOBE z pliku odpowiedzi | `-Mode Generalize` | OSOT nie łączy Generalize i Finalize w jednym uruchomieniu, między nimi musi być restart |
 | 13 | Po pierwszym logowaniu odczekaj 1–2 min (prowizjonowanie AppX), potem usuń Copilot i BingSearch zainstalowane dla bieżącego konta | `Get-AppxPackage -AllUsers Microsoft.Copilot \| Remove-AppxPackage -AllUsers` (to samo dla `Microsoft.BingSearch`) | Nowe kompilacje instalują je dla bieżącego konta w trakcie OOBE, co psuje później pule z personalizacją przez Sysprep |
 | 14 | Horizon Agent (**Instant Clone** + **Media Optimization for Microsoft Teams**), DEM, App Volumes Agent → restart | `packages.json` | Agenty instalujesz **po** Generalize |
 | 15 | **OSOT Finalize** (zestaw dla pierwszej budowy, patrz §4) | `-Mode Finalize` | – |

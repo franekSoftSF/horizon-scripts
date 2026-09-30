@@ -7,6 +7,10 @@
 
 .DESCRIPTION
     Tryby pracy (-Mode):
+      Configure  - kreator krok po kroku: profil (Uczelnia/Firma), Microsoft 365 (licencja, kanał, język,
+                   aplikacje) -> Office\Configuration_x64.xml, FSLogix, App Volumes, ustawienia regionalne budowy,
+                   OSOT (powiadomienia Teams, OneDrive) -> Optimize.json, aplikacje winget (okno wyboru)
+                   -> packages.json (kopie zapasowe .bak_<data>)
       Status     - raport: usługi, zadania harmonogramu, polityki, oczekujący restart, stan "pieczęci"
       WingetList - podgląd (dry-run): co winget chce zaktualizować i co zostanie pominięte
       Init       - tworzy strukturę C:\install (Patches, Office, FSLogix, Horizon, OSOT, Apps, Scripts),
@@ -90,8 +94,9 @@
     # 2b. Seal z innym szablonem OSOT i pełną finalizacją (nadpisuje sekcję "Osot" manifestu)
     .\VDI-ImageMaint.ps1 -Mode Seal -AsSystem -OsotTemplate 'Omnissa Templates\Windows 10, 11 and Server 2022, 2025' -OsotFinalize all -Shutdown
 
-    # Pierwsze uruchomienie: struktura katalogów + manifest dopasowany do obrazu
+    # Pierwsze uruchomienie: struktura katalogów, kreator konfiguracji, manifest dopasowany do obrazu
     .\VDI-ImageMaint.ps1 -Mode Init
+    .\VDI-ImageMaint.ps1 -Mode Configure           # profil, Office, FSLogix, OSOT, aplikacje winget (okno wyboru)
     .\VDI-ImageMaint.ps1 -Mode Discover            # propozycja -> packages.discovered.json
     .\VDI-ImageMaint.ps1 -Mode Discover -Apply     # zapis do packages.json
 
@@ -104,14 +109,14 @@
     #   -> Sysprep -> OOBE -> AutoLogon -> PostGeneralize (agenty, restarty) -> Seal -> wyłączenie VM
 
 .NOTES
-    Wersja 1.8.0 (Generalize/PostGeneralize, poprawki B1-B7). Logi: %ProgramData%\VDI-ImageMaint\Logs
+    Wersja 1.9.0 (Configure, winget z manifestu, Generalize/PostGeneralize, poprawki B1-B7). Logi: %ProgramData%\VDI-ImageMaint\Logs
     -AsSystem zalecane dla Seal/Unlock: część usług i zadań (WaaSMedicSvc, UpdateOrchestrator)
     jest chroniona i administrator nie może ich zmienić.
 #>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [ValidateSet('Init', 'Discover', 'Status', 'Inventory', 'WingetList', 'PackageList', 'Packages', 'Optimize', 'Finalize', 'Unlock', 'Update', 'Seal', 'Generalize', 'PostGeneralize')]
+    [ValidateSet('Init', 'Configure', 'Discover', 'Status', 'Inventory', 'WingetList', 'PackageList', 'Packages', 'Optimize', 'Finalize', 'Unlock', 'Update', 'Seal', 'Generalize', 'PostGeneralize')]
     [string]$Mode,
 
     # --- Katalog z paczkami ---
@@ -193,7 +198,11 @@ param(
     # Hasło wbudowanego Administratora dla OOBE/AutoLogon (bez parametru - pytanie interaktywne)
     [securestring]$AdminPassword,
     # Usuń WSZYSTKIE pakiety AppX zainstalowane dla konta, a niezaprowizjonowane (poza MSTeams)
-    [switch]$RemoveUnprovisionedAppx
+    [switch]$RemoveUnprovisionedAppx,
+
+    # --- Configure ---
+    # Wybór z listy w konsoli zamiast okna Out-GridView (np. Server Core, sesja zdalna)
+    [switch]$NoGui
 )
 
 Set-StrictMode -Version 2.0
@@ -219,6 +228,8 @@ $ServiceDefs = @(
     @{ Name = 'GoogleUpdaterInternalService*'; Default = 2 }
     @{ Name = 'gupdate';                       Default = 2 }
     @{ Name = 'gupdatem';                      Default = 3 }
+    # Adobe Acrobat / Reader
+    @{ Name = 'AdobeARMservice';               Default = 2 }
 )
 
 # Polityki (HKLM) ustawiane przy Seal
@@ -248,6 +259,9 @@ $PolicyDefs = @(
     @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\VSCode';                              Name = 'UpdateMode';                   Value = 'none'; Type = 'String' }
     # Visual Studio 2022
     @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\VisualStudio\Setup';                  Name = 'BackgroundDownloadDisabled';   Value = 1 }
+    # Adobe Acrobat Reader (klasyczny 32-bit i ujednolicony 64-bit, który korzysta ze ścieżki Acrobat)
+    @{ Path = 'HKLM:\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown';       Name = 'bUpdater';                     Value = 0 }
+    @{ Path = 'HKLM:\SOFTWARE\Policies\Adobe\Adobe Acrobat\DC\FeatureLockDown';        Name = 'bUpdater';                     Value = 0 }
 )
 
 # Zadania harmonogramu (pełna ścieżka, wildcard)
@@ -266,6 +280,7 @@ $TaskPatterns = @(
     '\Mozilla\Firefox Background Update*'
     '\OneDrive*Update*'
     '*K-Lite*'
+    '\Adobe Acrobat Update Task*'
 )
 
 # Pliki aktualizatorów zmieniane na *.disabled
@@ -308,6 +323,10 @@ $UpdaterCatalog = @(
         New-Status -How 'HKLM\SOFTWARE\Microsoft\Teams disableAutoUpdate=1' -Checks @((Test-Policy 'HKLM:\SOFTWARE\Microsoft\Teams' 'disableAutoUpdate' 1)) } }
     @{ Match = 'OneDrive'; Check = {
         New-Status -How 'zadania OneDrive Update' -Checks @((Test-TasksDisabled '\OneDrive*Update*')) } }
+    @{ Match = 'Adobe Acrobat'; Check = {
+        New-Status -How 'FeatureLockDown bUpdater=0 + usługa AdobeARMservice + zadanie Adobe Acrobat Update' -Checks @(
+            (Test-Policy 'HKLM:\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown' 'bUpdater' 0),
+            (Test-SvcDisabled 'AdobeARMservice'), (Test-TasksDisabled '\Adobe Acrobat Update Task*')) } }
     @{ Match = 'K-Lite'; Check = {
         New-Status -How 'zadania K-Lite (sprawdzanie aktualizacji w Codec Tweak Tool wyłącz ręcznie)' -Checks @((Test-TasksDisabled '*K-Lite*')) } }
     @{ Match = 'Omnissa|VMware|FSLogix|Horizon|App Volumes|Dynamic Environment'; Check = {
@@ -2035,12 +2054,49 @@ function Update-WingetPackage {
     return $rc
 }
 
+function Get-ManifestWingetIds {
+    # Sekcja "Winget": { "Install": [ ... ] } - aplikacje wybrane w -Mode Configure
+    $mp = Get-ManifestPath
+    if (-not (Test-Path $mp)) { return @() }
+    try { $m = Get-Content -Path $mp -Raw -Encoding UTF8 | ConvertFrom-Json } catch { return @() }
+    return @(@(Get-PV (Get-PV $m 'Winget') 'Install' @()) | ForEach-Object { [string]$_ } | Where-Object { $_ })
+}
+
+function Install-WingetApps {
+    # Instalacja (dla całej maszyny) aplikacji z Winget.Install, których jeszcze nie ma w obrazie
+    param([switch]$DryRun)
+    $ids = @(Get-ManifestWingetIds)
+    if ($ids.Count -eq 0) { return }
+    Write-Log $(if ($DryRun) { 'Aplikacje winget z manifestu (plan)' } else { 'Aplikacje winget z manifestu - instalacja brakujących' }) STEP
+    if ($isSystem) { Write-Log 'winget nie działa poprawnie jako SYSTEM - pomijam' WARN; return }
+    if (-not (Initialize-Winget)) { return }
+    foreach ($id in $ids) {
+        [void](Invoke-Winget -Arguments @('list', '--id', $id, '--exact', '--accept-source-agreements', '--disable-interactivity'))
+        if ($script:WingetExit -eq 0) { Write-Log "${id}: zainstalowany"; continue }
+        if ($DryRun) { Write-Log "${id}: do instalacji" WARN; continue }
+        $out = Invoke-Winget -Arguments @('install', '--id', $id, '--exact', '--silent', '--scope', 'machine',
+            '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity')
+        switch ($script:WingetExit) {
+            0          { Write-Log "${id}: zainstalowano" OK }
+            0x8A150061 { Write-Log "${id}: już zainstalowany" }
+            0x8A150010 { Write-Log "${id}: brak instalatora dla całej maszyny (--scope machine) - pomijam; instalacja per użytkownik nie ma sensu na VDI" WARN }
+            default {
+                Write-Log ("{0}: instalacja nieudana, kod {1} (0x{1:X8})" -f $id, $script:WingetExit) WARN
+                $out | Where-Object { "$_".Trim() } | Select-Object -Last 4 | ForEach-Object { Write-Log "    $_" }
+            }
+        }
+    }
+}
+
 function Update-WingetApps {
-    Write-Log $(if ($WingetAll) { 'Aplikacje przez winget (wszystkie wykryte, z wykluczeniami)' } else { 'Aplikacje przez winget (lista -WingetIds)' }) STEP
+    Write-Log $(if ($WingetAll) { 'Aplikacje przez winget (wszystkie wykryte, z wykluczeniami)' } else { 'Aplikacje przez winget (lista -WingetIds + Winget.Install z manifestu)' }) STEP
     if (-not (Initialize-Winget)) { return }
 
     if (-not $WingetAll) {
-        foreach ($id in $WingetIds) {
+        # Bez jawnego -WingetIds: lista domyślna + aplikacje wybrane w -Mode Configure
+        $list = @($WingetIds)
+        if (-not $script:BoundParams.ContainsKey('WingetIds')) { $list = @($list + @(Get-ManifestWingetIds) | Select-Object -Unique) }
+        foreach ($id in $list) {
             if ($WingetExcludeIds -contains $id -or $WingetStoreIds -contains $id) { Write-Log "${id}: pominięty (WingetExcludeIds)"; continue }
             [void](Update-WingetPackage -Id $id -Label $id)
         }
@@ -2120,6 +2176,7 @@ function Invoke-Update {
         Invoke-PackagePlatform
         if ($script:PackageRunResult -eq 'reboot') { return }
     }
+    if (-not $SkipWinget) { Install-WingetApps }
     Update-Defender
     if (-not $SkipOffice)        { Update-Office }
     if (-not $SkipVisualStudio)  { Update-VisualStudio }
@@ -2282,6 +2339,354 @@ function Show-Status {
 }
 
 # =====================================================================
+#  CONFIGURE - kreator konfiguracji krok po kroku
+# =====================================================================
+function Read-Choice {
+    param([string]$Title, [string[]]$Options, [int]$Default = 0)
+    Write-Host ''
+    Write-Host $Title -ForegroundColor Cyan
+    for ($i = 0; $i -lt $Options.Count; $i++) {
+        Write-Host ('  [{0}] {1}{2}' -f ($i + 1), $Options[$i], $(if ($i -eq $Default) { '   <- domyślnie' } else { '' }))
+    }
+    while ($true) {
+        $a = Read-Host "Wybór 1-$($Options.Count) [Enter = $($Default + 1)]"
+        if (-not $a) { return $Default }
+        $n = 0
+        if ([int]::TryParse($a, [ref]$n) -and $n -ge 1 -and $n -le $Options.Count) { return ($n - 1) }
+    }
+}
+
+function Read-Value {
+    param([string]$Prompt, [string]$Default = '')
+    $a = Read-Host ('{0} [{1}]' -f $Prompt, $Default)
+    if ([string]::IsNullOrWhiteSpace($a)) { return $Default }
+    return $a.Trim()
+}
+
+function Read-YesNo {
+    param([string]$Prompt, [bool]$Default = $true)
+    while ($true) {
+        $a = Read-Host ('{0} [{1}]' -f $Prompt, $(if ($Default) { 'T/n' } else { 't/N' }))
+        if (-not $a) { return $Default }
+        if ($a -match '^(t|tak|y|yes)$') { return $true }
+        if ($a -match '^(n|nie|no)$') { return $false }
+    }
+}
+
+function Select-Items {
+    # Wybór wielu pozycji: okno Out-GridView albo (-NoGui / brak GUI) lista numerowana w konsoli.
+    # Zwraca wartości pola $Key wybranych pozycji.
+    param([object[]]$Items, [string]$Title, [string]$Key)
+    $gui = (-not $NoGui) -and [Environment]::UserInteractive -and (Get-Command Out-GridView -ErrorAction SilentlyContinue)
+    if ($gui) {
+        try { return @($Items | Out-GridView -Title $Title -PassThru | ForEach-Object { [string]$_.$Key }) }
+        catch { Write-Log "Out-GridView niedostępny ($($_.Exception.Message)) - wybór w konsoli" WARN }
+    }
+    Write-Host ''
+    Write-Host $Title -ForegroundColor Cyan
+    for ($i = 0; $i -lt $Items.Count; $i++) {
+        $line = ($Items[$i].PSObject.Properties | ForEach-Object { [string]$_.Value }) -join ' | '
+        Write-Host ('  [{0,2}] {1}' -f ($i + 1), $line)
+    }
+    $a = Read-Host 'Numery oddzielone przecinkami, zakresy 1-5, * = wszystkie, Enter = żadna'
+    if (-not $a) { return @() }
+    if ($a.Trim() -eq '*') { return @($Items | ForEach-Object { [string]$_.$Key }) }
+    $idx = @()
+    foreach ($part in ($a -split '[,; ]+' | Where-Object { $_ })) {
+        if ($part -match '^(\d+)-(\d+)$') { $idx += ([int]$Matches[1])..([int]$Matches[2]) }
+        elseif ($part -match '^\d+$') { $idx += [int]$part }
+    }
+    return @($idx | Where-Object { $_ -ge 1 -and $_ -le $Items.Count } | Select-Object -Unique | ForEach-Object { [string]$Items[$_ - 1].$Key })
+}
+
+function Set-PV {
+    # Ustawia/dodaje właściwość obiektu z JSON
+    param($Obj, [string]$Name, $Value)
+    if ($Obj.PSObject.Properties[$Name]) { $Obj.$Name = $Value }
+    else { $Obj | Add-Member -NotePropertyName $Name -NotePropertyValue $Value }
+}
+
+function Format-Json {
+    # PS 5.1 ConvertTo-Json: nierówne wcięcia i \u003c itp. - czytelny format do ręcznej edycji
+    param([string]$Json)
+    $sb = New-Object System.Text.StringBuilder
+    $indent = 0
+    foreach ($line in ($Json -split "`r?`n")) {
+        $t = $line.Trim()
+        if (-not $t) { continue }
+        if ($t -match '^[\}\]]') { $indent-- }
+        $t = $t -replace '^("(?:[^"\\]|\\.)*"):\s+', '$1: '
+        [void]$sb.Append(('  ' * [Math]::Max($indent, 0)) + $t + "`r`n")
+        if ($t -match '[\{\[]$') { $indent++ }
+    }
+    $out = $sb.ToString()
+    foreach ($p in @(@('\u003c', '<'), @('\u003e', '>'), @('\u0026', '&'), @('\u0027', "'"))) {
+        $out = $out -replace ('(?<!\\)' + [regex]::Escape($p[0])), $p[1]
+    }
+    return $out
+}
+
+function Save-TextWithBackup {
+    param([string]$Path, [string]$Text)
+    if (Test-Path $Path) {
+        $bak = "$Path.bak_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+        Copy-Item -Path $Path -Destination $bak -Force
+        Write-Log "Kopia: $bak"
+    }
+    [IO.File]::WriteAllText($Path, $Text, (New-Object System.Text.UTF8Encoding($false)))
+    Write-Log "Zapisano: $Path" OK
+}
+
+function Find-ManifestPackage {
+    param($ManifestObj, [string]$Id)
+    return (@(Get-PV $ManifestObj 'Packages' @()) | Where-Object { [string](Get-PV $_ 'Id' '') -eq $Id } | Select-Object -First 1)
+}
+
+function New-OdtConfigXml {
+    # Konfiguracja ODT dla współdzielonego VDI: SCA, bez aktualizacji w tle, instalacja bez okien
+    param(
+        [string]$Product, [string]$Channel, [string]$Language,
+        [ValidateSet('None', 'Proofing', 'Full')][string]$ExtraMode = 'None', [string]$ExtraLanguage = '',
+        [string[]]$ExcludeApps = @(), [string]$AppSettingsXml = ''
+    )
+    $e = { param($s) [Security.SecurityElement]::Escape([string]$s) }
+    $sb = New-Object System.Text.StringBuilder
+    [void]$sb.AppendLine('<Configuration>')
+    [void]$sb.AppendLine("  <!-- VDI-ImageMaint -Mode Configure, $(Get-Date -Format 'yyyy-MM-dd HH:mm'). Bez SourcePath: /download pobiera obok setup.exe, /configure instaluje stamtąd. -->")
+    [void]$sb.AppendLine(('  <Add OfficeClientEdition="64" Channel="{0}">' -f (& $e $Channel)))
+    [void]$sb.AppendLine(('    <Product ID="{0}">' -f (& $e $Product)))
+    [void]$sb.AppendLine(('      <Language ID="{0}" />' -f (& $e $Language)))
+    if ($ExtraMode -eq 'Full' -and $ExtraLanguage) { [void]$sb.AppendLine(('      <Language ID="{0}" />' -f (& $e $ExtraLanguage))) }
+    foreach ($x in ($ExcludeApps | Select-Object -Unique)) { [void]$sb.AppendLine(('      <ExcludeApp ID="{0}" />' -f (& $e $x))) }
+    [void]$sb.AppendLine('    </Product>')
+    if ($ExtraMode -eq 'Proofing' -and $ExtraLanguage) {
+        [void]$sb.AppendLine('    <Product ID="ProofingTools">')
+        [void]$sb.AppendLine(('      <Language ID="{0}" />' -f (& $e $ExtraLanguage)))
+        [void]$sb.AppendLine('    </Product>')
+    }
+    [void]$sb.AppendLine('  </Add>')
+    [void]$sb.AppendLine('  <Property Name="SharedComputerLicensing" Value="1" />')
+    [void]$sb.AppendLine('  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />')
+    [void]$sb.AppendLine('  <Property Name="DeviceBasedLicensing" Value="0" />')
+    [void]$sb.AppendLine('  <Property Name="PinIconsToTaskbar" Value="FALSE" />')
+    [void]$sb.AppendLine('  <Updates Enabled="FALSE" />')
+    [void]$sb.AppendLine('  <RemoveMSI />')
+    if ($AppSettingsXml) { [void]$sb.AppendLine('  ' + $AppSettingsXml.Trim()) }
+    [void]$sb.AppendLine('  <Display Level="None" AcceptEULA="TRUE" />')
+    [void]$sb.AppendLine('</Configuration>')
+    return $sb.ToString()
+}
+
+function Invoke-ConfigureOffice {
+    param($ManifestObj, [string]$ImageProfile)
+    Write-Log 'Krok 2/7: Microsoft 365 Apps (Office Deployment Tool)' STEP
+    $pkg = Find-ManifestPackage $ManifestObj 'Office365'
+    if (-not $pkg) { Write-Log 'Brak wpisu Office365 w manifeście - pomijam' WARN; return }
+    $cfgName = [string](Get-PV $pkg 'Config' 'Configuration_x64.xml')
+    if (-not $cfgName) { $cfgName = 'Configuration_x64.xml' }
+    $officeDir = Join-Path $InstallDir 'Office'
+    $cfgPath = $(if ([IO.Path]::IsPathRooted($cfgName)) { $cfgName } else { Join-Path $officeDir (Split-Path $cfgName -Leaf) })
+
+    # Z istniejącego pliku przenosimy AppSettings (np. domyślne formaty zapisu) i podpowiadamy wybory
+    $old = $null; $appSettings = ''
+    if (Test-Path $cfgPath) {
+        try { [xml]$old = Get-Content -Path $cfgPath -Raw } catch { Write-Log "Istniejący ${cfgPath}: błąd XML - zostanie zastąpiony" WARN }
+        if ($old -and $old.SelectSingleNode('/Configuration/AppSettings')) { $appSettings = $old.SelectSingleNode('/Configuration/AppSettings').OuterXml }
+    }
+
+    $products = @('O365ProPlusRetail', 'O365BusinessRetail')
+    $pi = Read-Choice 'Licencja Microsoft 365 (Shared Computer Activation działa tylko z tymi planami):' @(
+        'Microsoft 365 Apps for enterprise / education (O365ProPlusRetail) - E3/E5, A3/A5',
+        'Microsoft 365 Apps for business (O365BusinessRetail) - WYŁĄCZNIE Business Premium') $(if ($ImageProfile -eq 'Business') { 1 } else { 0 })
+    $channels = @('MonthlyEnterprise', 'Current', 'SemiAnnual')
+    $ci = Read-Choice 'Kanał aktualizacji (obraz aktualizujesz sam w cyklu Update):' @(
+        'MonthlyEnterprise - raz w miesiącu, przewidywalny (zalecany dla VDI)',
+        'Current - najnowsze funkcje, częstsze zmiany',
+        'SemiAnnual - dwa razy w roku, najstabilniejszy')
+    $lang = (Read-Value 'Język główny Office (np. pl-pl, en-us)' ((Get-Culture).Name.ToLower())).ToLower()
+    $xi = Read-Choice 'Drugi język:' @('brak (jeden język - najmniejszy obraz, najszybsza aktualizacja)',
+        'tylko narzędzia sprawdzające (ProofingTools) - pisownia w drugim języku',
+        'pełny pakiet językowy (interfejs + pisownia)')
+    $extraMode = @('None', 'Proofing', 'Full')[$xi]
+    $extraLang = ''
+    if ($extraMode -ne 'None') { $extraLang = (Read-Value 'Drugi język' $(if ($lang -eq 'en-us') { 'pl-pl' } else { 'en-us' })).ToLower() }
+
+    # Zawsze wykluczone: OneDrive (instalacja per-machine osobno), Teams (nowy Teams - MSIX), Skype/Lync, Groove, Bing
+    $always = @('Groove', 'Lync', 'OneDrive', 'Teams', 'Bing')
+    $optional = @(
+        [pscustomobject]@{ App = 'Access';    Opis = 'Microsoft Access' }
+        [pscustomobject]@{ App = 'OneNote';   Opis = 'OneNote (wersja desktopowa)' }
+        [pscustomobject]@{ App = 'Publisher'; Opis = 'Publisher - Microsoft wycofuje go w październiku 2026, zalecane wykluczenie' }
+        [pscustomobject]@{ App = 'Outlook';   Opis = 'Outlook (klasyczny)' }
+    )
+    $prevEx = @()
+    if ($old) { $prevEx = @($old.SelectNodes('//ExcludeApp') | ForEach-Object { $_.GetAttribute('ID') }) }
+    Write-Host ("Obecnie wykluczone: {0}" -f $(if ($prevEx.Count) { $prevEx -join ', ' } else { '-' }))
+    $ex = @(Select-Items -Items $optional -Title 'Zaznacz aplikacje do WYKLUCZENIA z obrazu (Ctrl = wiele)' -Key 'App')
+    $xml = New-OdtConfigXml -Product $products[$pi] -Channel $channels[$ci] -Language $lang -ExtraMode $extraMode -ExtraLanguage $extraLang `
+        -ExcludeApps (@($always) + @($ex)) -AppSettingsXml $appSettings
+    [void][xml]$xml   # walidacja
+    if (-not (Test-Path $officeDir)) { New-Item -ItemType Directory -Path $officeDir -Force | Out-Null }
+    Save-TextWithBackup -Path $cfgPath -Text $xml
+    # Uninstall.xml niezależny od języków (Test-OdtInstallXml i tak go pomija jako konfigurację instalacji)
+    Save-TextWithBackup -Path (Join-Path $officeDir 'Uninstall.xml') -Text ("<Configuration>`r`n  <Remove All=`"TRUE`" />`r`n  <Display Level=`"None`" AcceptEULA=`"TRUE`" />`r`n</Configuration>`r`n")
+    Set-PV $pkg 'Config' (Split-Path $cfgPath -Leaf)
+}
+
+function Invoke-ConfigureFSLogix {
+    param($ManifestObj, $Vars)
+    Write-Log 'Krok 3/7: FSLogix (kontenery profili)' STEP
+    $cur = [string](Get-PV $Vars 'FSLogixShare' '')
+    if ($cur -match '\\serwer\\') { $cur = '' }   # wartość przykładowa
+    $share = Read-Value 'Udział na kontenery profili (UNC, np. \\fs01\Profiles$; Enter = pomiń)' $cur
+    if (-not $share) { Write-Log 'FSLogix: bez udziału - konfiguracja pozostaje wyłączona'; return }
+    if ($share -notmatch '^\\\\[^\\]+\\[^\\]+') { Write-Log "To nie jest ścieżka UNC: $share - pomijam" WARN; return }
+    Set-PV $Vars 'FSLogixShare' $share
+    $size = [int](Read-Value 'Maksymalny rozmiar VHDX w MB' '30000')
+    $inc = @((Read-Value 'Grupy z kontenerem, oddzielone przecinkami (Enter = wszyscy)' '') -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    $exc = @((Read-Value 'Konta/grupy BEZ kontenera, np. DOMENA\VDI-Admins (Enter = brak)' '') -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    $q = { param($list) ($list | ForEach-Object { "'" + ($_ -replace "'", "''") + "'" }) -join ',' }
+    $pkg = Find-ManifestPackage $ManifestObj 'FSLogixConfig'
+    if (-not $pkg) { Write-Log 'Brak wpisu FSLogixConfig w manifeście - pomijam' WARN; return }
+    $det = Get-PV $pkg 'Detect'
+    $ver = 0; [void][int]::TryParse([string](Get-PV $det 'Value' '0'), [ref]$ver)
+    $argsNoVer = "-VHDLocations '{FSLogixShare}' -SizeInMBs $size"
+    if ($inc.Count) { $argsNoVer += ' -ProfileIncludeGroups ' + (& $q $inc) }
+    if ($exc.Count) { $argsNoVer += ' -ProfileExcludeMembers ' + (& $q $exc) }
+    $oldArgs = [string](Get-PV $pkg 'Arguments' '')
+    # Zmiana parametrów = nowa wersja konfiguracji (detekcja Registry uruchomi skrypt ponownie)
+    if (($oldArgs -replace '\s*-ConfigVersion\s+\d+', '') -ne $argsNoVer) { $ver++ }
+    if ($ver -lt 1) { $ver = 1 }
+    Set-PV $pkg 'Arguments' "$argsNoVer -ConfigVersion $ver"
+    if ($det) { Set-PV $det 'Value' ([string]$ver) }
+    Set-PV $pkg 'Enabled' $true
+    Write-Log "FSLogixConfig: $argsNoVer -ConfigVersion $ver (włączony)" OK
+}
+
+function Invoke-ConfigureOsot {
+    param($ManifestObj, [string]$ImageProfile)
+    Write-Log 'Krok 6/7: OSOT - Teams i OneDrive' STEP
+    $o = Get-PV $ManifestObj 'Osot'
+    if (-not $o) { Write-Log 'Brak sekcji Osot w manifeście - pomijam' WARN; return }
+    $keepNotif = Read-YesNo 'Zachować powiadomienia aplikacji (Teams: czat, połączenia przychodzące)?' $true
+    $keepOneDrive = Read-YesNo 'Zachować OneDrive (np. Known Folder Move)?' ($ImageProfile -eq 'Business')
+
+    $co = @(Get-PV $o 'CommonOptions' @())
+    $new = @()
+    for ($i = 0; $i -lt $co.Count; $i++) {
+        if ($co[$i] -eq '-notification' -and $i + 1 -lt $co.Count) { $i++; continue }   # usuwamy parę -notification X
+        $new += $co[$i]
+    }
+    if (-not $keepNotif) { $new += @('-notification', 'disable') }
+    Set-PV $o 'CommonOptions' $new
+    Write-Log "Osot.CommonOptions: $($new -join ' ')" OK
+
+    $sf = [string](Get-PV $o 'SettingsFile' '')
+    if (-not $sf) { return }
+    $sfPath = $(if ([IO.Path]::IsPathRooted($sf)) { $sf } else { Join-Path $InstallDir $sf })
+    if (-not (Test-Path $sfPath)) { Write-Log "Brak pliku wyborów OSOT $sfPath - pomijam" WARN; return }
+    $j = Get-Content -Path $sfPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $changed = 0
+    foreach ($it in @(Get-PV $j 'TemplateItemList' @())) {
+        $step = [string](Get-PV $it 'Step' '')
+        if ($step -match '^Turn off notifications from apps and other senders') {
+            $want = -not $keepNotif
+            if ([bool]$it.IsSelected -ne $want) { $it.IsSelected = $want; $changed++ }
+        }
+        if ([string](Get-PV $it 'Entity' '') -eq 'OneDrive' -and $step -match '^Remove OneDrive') {
+            if ($keepOneDrive -and [bool]$it.IsSelected) { $it.IsSelected = $false; $changed++ }
+        }
+    }
+    $n = Get-PV (Get-PV $j 'CommonOptions') 'Notification'
+    if ($n -and $null -ne (Get-PV $n 'Disable') -and [bool]$n.Disable -ne (-not $keepNotif)) { $n.Disable = (-not $keepNotif); $changed++ }
+    if ($changed) {
+        Save-TextWithBackup -Path $sfPath -Text ($j | ConvertTo-Json -Depth 20 -Compress)
+        Write-Log "Optimize.json: zmieniono $changed pozycji (powiadomienia: $(if ($keepNotif) { 'włączone' } else { 'wyłączone' }), OneDrive: $(if ($keepOneDrive) { 'zachowany' } else { 'bez zmian' }))" OK
+    } else { Write-Log 'Optimize.json: bez zmian' }
+    Write-Log 'Do sprawdzenia na klonie: czy "Let Windows apps run in the background" (Optimize.json) nie blokuje Teams w tle' WARN
+}
+
+function Invoke-ConfigureWinget {
+    param($ManifestObj, [string]$ImageProfile)
+    Write-Log 'Krok 7/7: aplikacje winget' STEP
+    $catPath = Join-Path $InstallDir 'winget-catalog.json'
+    if (-not (Test-Path $catPath)) { Write-Log "Brak katalogu $catPath - pomijam wybór aplikacji" WARN; return }
+    $cat = @(Get-PV (Get-Content -Path $catPath -Raw -Encoding UTF8 | ConvertFrom-Json) 'Packages' @())
+    $w = Get-PV $ManifestObj 'Winget'
+    if (-not $w) { $w = [pscustomobject]@{ Install = @() }; Set-PV $ManifestObj 'Winget' $w }
+    $cur = @(Get-PV $w 'Install' @())
+    $rows = @($cat | ForEach-Object {
+        [pscustomobject]@{
+            Nazwa             = [string]$_.Name
+            Id                = [string]$_.Id
+            Kategoria         = [string]$_.Category
+            'Dla profilu'     = $(if (@($_.Profiles) -contains $ImageProfile) { 'tak' } else { '-' })
+            Polecane          = $(if ([bool](Get-PV $_ 'Default' $false) -and @($_.Profiles) -contains $ImageProfile) { 'tak' } else { '-' })
+            Obecnie           = $(if ($cur -contains $_.Id) { 'tak' } else { '-' })
+            'Blokada aktualizacji' = [string]$_.UpdateBlock
+        }
+    })
+    Write-Host ("Obecnie w manifeście: {0}" -f $(if ($cur.Count) { $cur -join ', ' } else { '-' }))
+    while ($true) {
+        $sel = @(Select-Items -Items $rows -Title 'Zaznacz aplikacje do instalacji w obrazie (Ctrl/Shift = wiele), potem OK' -Key 'Id')
+        if ($sel.Count -eq 0) {
+            $d = @($rows | Where-Object { $_.Polecane -eq 'tak' } | ForEach-Object { $_.Id })
+            $c = Read-Choice 'Nic nie zaznaczono.' @('zostaw obecną listę', "użyj polecanych dla profilu ($($d.Count))", 'wybierz ponownie', 'bez aplikacji winget')
+            if ($c -eq 0) { $sel = $cur } elseif ($c -eq 1) { $sel = $d } elseif ($c -eq 2) { continue } else { $sel = @() }
+        }
+        Write-Host ("Wybrano ({0}): {1}" -f $sel.Count, ($sel -join ', '))
+        if (Read-YesNo 'Zatwierdzić?' $true) { break }
+    }
+    Set-PV $w 'Install' @($sel)
+    Write-Log "Winget.Install: $($sel.Count) aplikacji" OK
+}
+
+function Invoke-Configure {
+    Write-Log 'CONFIGURE - kreator konfiguracji obrazu' STEP
+    if ($isSystem) { throw 'Configure uruchamiaj interaktywnie z konta administratora.' }
+    $mp = Get-ManifestPath
+    $m = Get-PackageManifest
+    if (-not $m) { return }
+    Write-Log "Manifest: $mp"
+
+    Write-Log 'Krok 1/7: profil' STEP
+    $curProfile = [string](Get-PV $m 'Profile' 'University')
+    $profiles = @('University', 'Business')
+    $pi = Read-Choice 'Profil obrazu:' @('Uczelnia (University) - laboratoria, studenci i pracownicy', 'Firma (Business) - pracownicy biurowi, intensywne Teams') ([Math]::Max(0, [array]::IndexOf($profiles, $curProfile)))
+    $prof = $profiles[$pi]
+    Set-PV $m 'Profile' $prof
+
+    Invoke-ConfigureOffice -ManifestObj $m -ImageProfile $prof
+
+    $vars = Get-PV $m 'Variables'
+    if (-not $vars) { $vars = [pscustomobject]@{}; Set-PV $m 'Variables' $vars }
+    Invoke-ConfigureFSLogix -ManifestObj $m -Vars $vars
+
+    Write-Log 'Krok 4/7: App Volumes' STEP
+    $avm = Read-Value 'Adres App Volumes Manager (FQDN; Enter = bez zmian)' ([string](Get-PV $vars 'AppVolumesManager' ''))
+    if ($avm) { Set-PV $vars 'AppVolumesManager' $avm }
+    Set-PV $vars 'AppVolumesPort' (Read-Value 'Port App Volumes Manager' ([string](Get-PV $vars 'AppVolumesPort' '443')))
+
+    Write-Log 'Krok 5/7: ustawienia regionalne budowy obrazu (OOBE po Generalize)' STEP
+    $b = Get-PV $m 'Build'
+    if (-not $b) { $b = [pscustomobject]@{}; Set-PV $m 'Build' $b }
+    $cul = (Get-Culture).Name
+    Set-PV $b 'TimeZone'     (Read-Value 'Strefa czasowa (Get-TimeZone -ListAvailable)' ([string](Get-PV $b 'TimeZone' (Get-TimeZone).Id)))
+    Set-PV $b 'SystemLocale' (Read-Value 'Ustawienia regionalne systemu' ([string](Get-PV $b 'SystemLocale' $cul)))
+    Set-PV $b 'UserLocale'   (Read-Value 'Format daty/liczb użytkownika' ([string](Get-PV $b 'UserLocale' $cul)))
+    Set-PV $b 'InputLocale'  (Read-Value 'Klawiatura' ([string](Get-PV $b 'InputLocale' $cul)))
+    Write-Host ("Język interfejsu po OOBE = zainstalowany język Windows ({0})" -f [Globalization.CultureInfo]::InstalledUICulture.Name)
+
+    Invoke-ConfigureOsot -ManifestObj $m -ImageProfile $prof
+    Invoke-ConfigureWinget -ManifestObj $m -ImageProfile $prof
+
+    Write-Log 'Zapis manifestu' STEP
+    Save-TextWithBackup -Path $mp -Text (Format-Json ($m | ConvertTo-Json -Depth 20))
+    [void](Get-Content -Path $mp -Raw -Encoding UTF8 | ConvertFrom-Json)   # walidacja
+    Write-Log 'Konfiguracja zapisana. Dalej: -Mode PackageList (plan), potem -Mode Update lub budowa: Optimize -> Generalize' OK
+}
+
+# =====================================================================
 #  GENERALIZE (budowa obrazu) - Sysprep i automatyczna kontynuacja po OOBE
 # =====================================================================
 # Kolejność Omnissa: Optimize -> Generalize -> agenty Horizon/DEM/App Volumes -> Finalize.
@@ -2423,10 +2828,10 @@ function Invoke-SysprepRemediation {
 }
 
 function Invoke-ReadinessCheck {
-    # tools\Test-SysprepReadiness.ps1 (obok skryptu, w C:\install lub w ..\tools repozytorium)
+    # Test-SysprepReadiness.ps1: C:\install\Scripts (obok skryptu) lub dowolny podfolder C:\install
     $cands = @(
         (Join-Path (Split-Path $PSCommandPath) 'Test-SysprepReadiness.ps1'),
-        (Join-Path (Split-Path (Split-Path $PSCommandPath)) 'tools\Test-SysprepReadiness.ps1')
+        (Join-Path (Split-Path $PSCommandPath) 'Scripts\Test-SysprepReadiness.ps1')
     )
     $checker = $cands | Where-Object { Test-Path $_ } | Select-Object -First 1
     if (-not $checker -and (Test-Path $InstallDir)) {
@@ -2733,7 +3138,7 @@ if (-not $isSystem -and (Get-ScheduledTask -TaskName $ResumeTaskName -ErrorActio
 $exitCode = 0
 
 if ($AsSystem -and -not $isSystem) {
-    if ($Mode -in 'Update', 'WingetList', 'Packages', 'PackageList', 'Optimize', 'Finalize', 'Init', 'Discover', 'Generalize', 'PostGeneralize') {
+    if ($Mode -in 'Update', 'WingetList', 'Packages', 'PackageList', 'Optimize', 'Finalize', 'Init', 'Discover', 'Generalize', 'PostGeneralize', 'Configure') {
         throw "Tryb $Mode uruchamiaj jako administrator (OSOT i winget nie działają poprawnie w kontekście SYSTEM)."
     }
     try {
@@ -2755,12 +3160,13 @@ if ($AsSystem -and -not $isSystem) {
         switch ($Mode) {
             'Status'     { Show-Status }
             'WingetList' { Show-WingetList }
-            'PackageList' { Invoke-PackagePlatform -DryRun; Write-Log 'OSOT' STEP; Show-OsotConfig }
+            'PackageList' { Invoke-PackagePlatform -DryRun; Install-WingetApps -DryRun; Write-Log 'OSOT' STEP; Show-OsotConfig }
+            'Configure'  { Invoke-Configure }
             'Init'       { Invoke-Init }
             'Discover'   { Invoke-Discover }
             'Optimize'   { Show-OsotConfig; Save-SealBaseline; Invoke-OsotSealPre }
             'Finalize'   { Invoke-OsotFinalize }
-            'Packages'   { Invoke-PackagePlatform }
+            'Packages'   { Invoke-PackagePlatform; if ($script:PackageRunResult -ne 'reboot' -and -not $SkipWinget) { Install-WingetApps } }
             'Inventory'  { Invoke-Inventory }
             'Unlock' {
                 $issues = Invoke-Unlock

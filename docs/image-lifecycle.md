@@ -35,9 +35,9 @@ source of Sysprep and OOBE problems. It also carries the old OS's leftovers into
 | 7 | Windows Update until nothing is pending, then reboot | `-Mode Update` | Sysprep refuses a pending reboot: `0x36b7 … updates that require a reboot` |
 | 8 | Applications: M365 (ODT), new Teams **provisioned** (`teamsbootstrapper -p`), FSLogix, customer apps | `-Mode Packages` | **Provisioned** MSIX survive Sysprep. MSIX registered **only for the current user** do not |
 | 9 | **OSOT Optimize** (profile JSON + common options) → reboot | `-Mode Optimize` | Removes provisioned Store apps you do not want. Always pass `--exclude MSTeams` with `-storeapp remove-all` |
-| 10 | **Readiness check – must be all PASS** | `tools\Test-SysprepReadiness.ps1` | Catches every known blocker *before* Sysprep |
+| 10 | **Readiness check – must be all PASS** | `Scripts\Test-SysprepReadiness.ps1` (runs automatically in `-Mode Generalize`) | Catches every known blocker *before* Sysprep |
 | 11 | **Snapshot "pre-generalize"** | vSphere | A failed Sysprep often leaves the VM unbootable. This snapshot is your rollback |
-| 12 | **OSOT Generalize** (`-g <unattend.xml>`), reboot → OOBE via answer file | `-Mode Generalize` (planned) | OSOT cannot combine Generalize and Finalize in one run. A reboot is required between them |
+| 12 | **OSOT Generalize** (`-g <unattend.xml>`), reboot → OOBE via answer file | `-Mode Generalize` | OSOT cannot combine Generalize and Finalize in one run. A reboot is required between them |
 | 13 | After the first logon wait 1–2 min (AppX provisioning), then remove per-user Copilot / BingSearch | `Get-AppxPackage -AllUsers Microsoft.Copilot \| Remove-AppxPackage -AllUsers` (same for `Microsoft.BingSearch`) | Recent builds install them for the current user during OOBE. That breaks Sysprep-based pool customization later |
 | 14 | Horizon Agent (**Instant Clone** + **Media Optimization for Microsoft Teams**), DEM, App Volumes Agent → reboot | `packages.json` | Agents go **after** Generalize |
 | 15 | **OSOT Finalize** (initial build set, see §4) | `-Mode Finalize` | – |
