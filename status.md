@@ -7,9 +7,23 @@ _Aktualizacja: 2026-09-30_ · wersja kodu: VDI-ImageMaint.ps1 **1.7.3**, Set-FSL
 - [x] Parser: **0 błędów** w PS 5.1 i pwsh 7.6; kodowanie OK (UTF-8 BOM, CRLF)
 - [x] PSScriptAnalyzer 1.25: 132 uwagi, prawie wyłącznie kosmetyczne (szczegóły niżej)
 - [x] Potwierdzone na próbach: B1, B2, B3 (skrypty testowe w scratchpadzie)
-- [ ] Brak w repo: `packages.json`, `OSOT\Optimize.json`, `Office\Configuration_x64.xml` – potrzebne do punktu 3 i do sprawdzenia B2
-- [ ] Repozytorium git – jeszcze nie utworzone
-- [ ] Nic nie zostało jeszcze zmienione w kodzie
+- [x] Repozytorium git (`main`), commit bazowy 1.7.3 bez zmian w kodzie, `.gitattributes` (CRLF), `.gitignore` (bez binariów), `.editorconfig`
+- [x] Struktura `install/` = `C:\install` (Patches, Office, FSLogix, Horizon, OSOT, Teams, Apps, Scripts) z opisami README EN/PL
+- [x] `docs/downloads.md` + `docs/pl/downloads.md` – skąd pobrać każdy instalator
+- [x] `docs/image-lifecycle.md` + PL – Budowa (z Generalize) i Day-2, OSOT pod szybki start, profile Uczelnia/Firma, Teams
+- [x] `tools/Test-SysprepReadiness.ps1` v0.1 – 20 kontroli przed Generalize (EN/PL, tylko odczyt).
+      Parser PS 5.1 OK, PSSA OK; uruchomiony próbnie bez admina na Win11 25H2. **C09/C10 (AppX) do sprawdzenia na VM jako admin**
+- [ ] Brak w repo: `packages.json`, `OSOT\Optimize.json`, `Office\Configuration_x64.xml` – potrzebne do B2, walidacji manifestu
+      i do sprawdzenia, czy `-storeapp` w Optimize.json nie usuwa MSTeams
+- [ ] Poprawki B1–B7 w kodzie – jeszcze niezrobione
+
+## Ustalenia OSOT / Generalize (źródła: Omnissa docs, TechZone, KB 77253)
+- Generalize **wymaga trybu audytu**, nie da się go połączyć z Finalize w jednym uruchomieniu, a po nim trzeba zrestartować
+- Kolejność Omnissa: Optimize → **Generalize** → agenty Horizon/DEM/AV → Finalize; w Day-2 **bez** Generalize (Optimize + Finalize ponownie)
+- Najczęstsze przyczyny błędów Sysprep w 24H2/25H2: szyfrowanie urządzenia / BitLocker, AppX zainstalowane dla konta,
+  ale niezaprowizjonowane (0x80073cf2), aktualizacje Store dla konta, oczekujący restart (0x36b7), Copilot i BingSearch po OOBE
+- OSOT: **min. 2603 dla 25H2**, **2606+** sam wyłącza szyfrowanie urządzenia i BitLocker
+- Do sprawdzenia: `-notification disable` a powiadomienia Teams (profil Firma); Finalize 6 (czyszczenie profilu domyślnego)
 
 ## Problemy wg ważności
 
@@ -47,9 +61,12 @@ _Aktualizacja: 2026-09-30_ · wersja kodu: VDI-ImageMaint.ps1 **1.7.3**, Set-FSL
 - `[xml]$check` nieużywane (Set-FSLogixConfig:231); `Set-Reg` używa `$PSCmdlet` ze skryptu (działa, ale jest kruche)
 - Obiekty COM (WindowsInstaller) nie są zwalniane; `Test-PendingReboot` pomija część źródeł
 
-## Plan (proponowany, czeka na akceptację)
-1. **Git + punkt odniesienia**: `git init`, `.gitattributes` (CRLF), `.editorconfig`, commit 1.7.3 bez zmian, CHANGELOG
+## Plan (zatwierdzony 2026-09-30)
+1. ~~Git + punkt odniesienia~~ ✔ (CHANGELOG razem z 1.7.4)
 2. **Poprawki B1–B7, S3, S5** w obecnym pliku – mały diff do sprawdzenia na VM → 1.7.4
+2a. **OSOT + Generalize w VDI-ImageMaint**: `-Mode Generalize` (kontrola gotowości → przypomnienie o snapshocie → OSOT `-g` →
+    wznowienie po OOBE → usunięcie Copilot/BingSearch), osobne zestawy Finalize dla Budowy i Day-2, sekcja `Osot.Profiles`
+    (Uczelnia/Firma) w manifeście z zachowaniem zgodności wstecz, zawsze `--exclude MSTeams`
 3. **Moduł + i18n** (jeden krok, żeby nie tłumaczyć dwa razy):
    `src/VDI-ImageMaint/{psd1,psm1,Private,Public,en-US,pl-PL}`, cienki `VDI-ImageMaint.ps1` z tym samym `param()`,
    komunikaty w `Import-LocalizedData` (EN domyślnie, PL przez `-Language pl` lub kulturę UI).
@@ -58,6 +75,7 @@ _Aktualizacja: 2026-09-30_ · wersja kodu: VDI-ImageMaint.ps1 **1.7.3**, Set-FSL
    do czystej `ConvertFrom-WingetTable`), Get-PackagePlan i Resolve-OdtConfig na TestDrive; oba języki = te same klucze
 5. **Profile Uczelnia / Firma** (roadmapa pkt 8) + weryfikacja optymalizacji Teams (roadmapa pkt 4 i 7)
 6. Build: jeden plik do wdrożenia w C:\install (opcjonalnie) + PSScriptAnalyzerSettings.psd1
+7. **Linux (Debian/Ubuntu)** – po zakończeniu narzędzia Windows: optymalizacja obrazu Horizon Linux Agent (osobny etap)
 
 ## Otwarte pytania
 - Czy przesłać `packages.json`, `Optimize.json` i `Configuration_x64.xml` do repo?

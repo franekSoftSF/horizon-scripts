@@ -4,12 +4,28 @@
     "VDI-ImageMaint.ps1": "1.7.3",
     "Set-FSLogixConfig.ps1": "1.0"
   },
-  "languages": { "primary": "en-US", "secondary": "pl-PL", "i18nImplemented": false },
-  "targets": ["university", "business"],
+  "languages": {
+    "primary": "en-US",
+    "secondary": "pl-PL",
+    "i18nImplemented": false
+  },
+  "targets": [
+    "university",
+    "business"
+  ],
   "checks": {
-    "parserPS51": { "status": "pass", "errors": 0 },
-    "parserPS7": { "status": "pass", "errors": 0 },
-    "encoding": { "status": "pass", "detail": "UTF-8 BOM, CRLF" },
+    "parserPS51": {
+      "status": "pass",
+      "errors": 0
+    },
+    "parserPS7": {
+      "status": "pass",
+      "errors": 0
+    },
+    "encoding": {
+      "status": "pass",
+      "detail": "UTF-8 BOM, CRLF"
+    },
     "psScriptAnalyzer": {
       "version": "1.25.0",
       "total": 132,
@@ -24,35 +40,225 @@
         "PSUseDeclaredVarsMoreThanAssignments": 1
       }
     },
-    "pester": { "status": "none", "detail": "no tests yet" }
+    "pester": {
+      "status": "none",
+      "detail": "no tests yet"
+    }
   },
   "issues": [
-    { "id": "B1", "severity": "high", "file": "Win11/VDI-ImageMaint.ps1", "line": 367, "confirmed": true, "status": "open", "title": "Get-InstalledApps drops apps with SystemComponent=0 (string '0' is truthy)" },
-    { "id": "B2", "severity": "high", "file": "Win11/VDI-ImageMaint.ps1", "line": 1486, "confirmed": true, "status": "open", "title": "ps1 packages via powershell -File keep single quotes and cannot pass arrays" },
-    { "id": "B3", "severity": "high", "file": "Win11/Set-FSLogixConfig.ps1", "line": 363, "confirmed": true, "status": "open", "title": "-WhatIf skips Start-Transcript; Stop-Transcript in finally throws, exit 1" },
-    { "id": "B4", "severity": "high", "file": "Win11/VDI-ImageMaint.ps1", "line": 715, "confirmed": false, "status": "open", "title": "Seal captures service state after OSOT already disabled updates; standalone Unlock does not re-enable WU" },
-    { "id": "B5", "severity": "high", "file": "Win11/VDI-ImageMaint.ps1", "line": 2166, "confirmed": true, "status": "open", "title": "Invoke-AsSystem forwards only Mode/Cleanup/Force" },
-    { "id": "B6", "severity": "high", "file": "Win11/VDI-ImageMaint.ps1", "line": 2204, "confirmed": true, "status": "open", "title": "AsSystem: OSOT Optimize runs before pending-reboot check" },
-    { "id": "B7", "severity": "high", "file": "Win11/VDI-ImageMaint.ps1", "line": 1991, "confirmed": false, "status": "open", "title": "Update runs Unlock as admin; protected services may stay disabled" },
-    { "id": "S1", "severity": "medium", "file": "C:\\install", "confirmed": false, "status": "open", "title": "No ACL check on C:\\install (PreScript, OSOT discovery, SYSTEM task) - privilege escalation risk" },
-    { "id": "S2", "severity": "medium", "file": "Win11/VDI-ImageMaint.ps1", "line": 1887, "status": "open", "title": "Downloaded teamsbootstrapper.exe not signature-checked" },
-    { "id": "S3", "severity": "medium", "file": "Win11/VDI-ImageMaint.ps1", "line": 2235, "status": "open", "title": "Stop-Transcript in finally without try" },
-    { "id": "S4", "severity": "medium", "file": "Win11/VDI-ImageMaint.ps1", "line": 1966, "confirmed": false, "status": "open", "title": "WU search may include optional preview updates; Download() result unchecked" },
-    { "id": "S5", "severity": "medium", "file": "Win11/VDI-ImageMaint.ps1", "line": 1419, "status": "open", "title": "Detect Registry/File without Path throws on empty -LiteralPath" },
-    { "id": "S6", "severity": "medium", "file": "Win11/VDI-ImageMaint.ps1", "line": 1364, "status": "open", "title": "[bool]\"false\" is True - string values in manifest misread" },
-    { "id": "S7", "severity": "medium", "file": "Win11/VDI-ImageMaint.ps1", "line": 1588, "status": "open", "title": "Get-NormalizedName strips years (VC++ 2013 vs 2015 collide)" },
-    { "id": "S8", "severity": "medium", "file": "Win11/VDI-ImageMaint.ps1", "line": 1484, "confirmed": false, "status": "open", "title": "MSU checkpoint cumulative updates (24H2+) installed one by one by name" },
-    { "id": "S9", "severity": "medium", "file": "Win11/Set-FSLogixConfig.ps1", "line": 255, "status": "open", "title": "Everyone silently kept in Include List when Get-LocalGroupMember fails" },
-    { "id": "S10", "severity": "medium", "file": "Win11/VDI-ImageMaint.ps1", "line": 1264, "status": "open", "title": "Dry-run extracts ZIPs; stale extraction not refreshed" },
-    { "id": "S11", "severity": "medium", "file": "Win11/VDI-ImageMaint.ps1", "line": 982, "status": "open", "title": "Help text and built-in default manifest out of sync with real config" }
+    {
+      "id": "B1",
+      "severity": "high",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 367,
+      "confirmed": true,
+      "status": "open",
+      "title": "Get-InstalledApps drops apps with SystemComponent=0 (string '0' is truthy)"
+    },
+    {
+      "id": "B2",
+      "severity": "high",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 1486,
+      "confirmed": true,
+      "status": "open",
+      "title": "ps1 packages via powershell -File keep single quotes and cannot pass arrays"
+    },
+    {
+      "id": "B3",
+      "severity": "high",
+      "file": "Win11/Set-FSLogixConfig.ps1",
+      "line": 363,
+      "confirmed": true,
+      "status": "open",
+      "title": "-WhatIf skips Start-Transcript; Stop-Transcript in finally throws, exit 1"
+    },
+    {
+      "id": "B4",
+      "severity": "high",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 715,
+      "confirmed": false,
+      "status": "open",
+      "title": "Seal captures service state after OSOT already disabled updates; standalone Unlock does not re-enable WU"
+    },
+    {
+      "id": "B5",
+      "severity": "high",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 2166,
+      "confirmed": true,
+      "status": "open",
+      "title": "Invoke-AsSystem forwards only Mode/Cleanup/Force"
+    },
+    {
+      "id": "B6",
+      "severity": "high",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 2204,
+      "confirmed": true,
+      "status": "open",
+      "title": "AsSystem: OSOT Optimize runs before pending-reboot check"
+    },
+    {
+      "id": "B7",
+      "severity": "high",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 1991,
+      "confirmed": false,
+      "status": "open",
+      "title": "Update runs Unlock as admin; protected services may stay disabled"
+    },
+    {
+      "id": "S1",
+      "severity": "medium",
+      "file": "C:\\install",
+      "confirmed": false,
+      "status": "open",
+      "title": "No ACL check on C:\\install (PreScript, OSOT discovery, SYSTEM task) - privilege escalation risk"
+    },
+    {
+      "id": "S2",
+      "severity": "medium",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 1887,
+      "status": "open",
+      "title": "Downloaded teamsbootstrapper.exe not signature-checked"
+    },
+    {
+      "id": "S3",
+      "severity": "medium",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 2235,
+      "status": "open",
+      "title": "Stop-Transcript in finally without try"
+    },
+    {
+      "id": "S4",
+      "severity": "medium",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 1966,
+      "confirmed": false,
+      "status": "open",
+      "title": "WU search may include optional preview updates; Download() result unchecked"
+    },
+    {
+      "id": "S5",
+      "severity": "medium",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 1419,
+      "status": "open",
+      "title": "Detect Registry/File without Path throws on empty -LiteralPath"
+    },
+    {
+      "id": "S6",
+      "severity": "medium",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 1364,
+      "status": "open",
+      "title": "[bool]\"false\" is True - string values in manifest misread"
+    },
+    {
+      "id": "S7",
+      "severity": "medium",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 1588,
+      "status": "open",
+      "title": "Get-NormalizedName strips years (VC++ 2013 vs 2015 collide)"
+    },
+    {
+      "id": "S8",
+      "severity": "medium",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 1484,
+      "confirmed": false,
+      "status": "open",
+      "title": "MSU checkpoint cumulative updates (24H2+) installed one by one by name"
+    },
+    {
+      "id": "S9",
+      "severity": "medium",
+      "file": "Win11/Set-FSLogixConfig.ps1",
+      "line": 255,
+      "status": "open",
+      "title": "Everyone silently kept in Include List when Get-LocalGroupMember fails"
+    },
+    {
+      "id": "S10",
+      "severity": "medium",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 1264,
+      "status": "open",
+      "title": "Dry-run extracts ZIPs; stale extraction not refreshed"
+    },
+    {
+      "id": "S11",
+      "severity": "medium",
+      "file": "Win11/VDI-ImageMaint.ps1",
+      "line": 982,
+      "status": "open",
+      "title": "Help text and built-in default manifest out of sync with real config"
+    }
   ],
   "plan": [
-    { "step": 1, "title": "git init, .gitattributes, baseline commit 1.7.3, CHANGELOG", "status": "proposed" },
-    { "step": 2, "title": "Fix B1-B7, S3, S5 in current file -> 1.7.4", "status": "proposed" },
-    { "step": 3, "title": "Module split + i18n (en-US primary, pl-PL secondary, Import-LocalizedData)", "status": "proposed" },
-    { "step": 4, "title": "Pester tests for pure functions + string-table key parity", "status": "proposed" },
-    { "step": 5, "title": "University / Business profiles + Teams media optimization checks", "status": "proposed" },
-    { "step": 6, "title": "Build (optional single-file deploy) + PSScriptAnalyzerSettings.psd1", "status": "proposed" }
+    {
+      "step": 1,
+      "title": "git init, .gitattributes, baseline commit 1.7.3, CHANGELOG",
+      "status": "done"
+    },
+    {
+      "step": 2,
+      "title": "Fix B1-B7, S3, S5 in current file -> 1.7.4",
+      "status": "next"
+    },
+    {
+      "step": "2a",
+      "title": "-Mode Generalize (readiness check, snapshot reminder, OSOT -g, post-OOBE cleanup), Build vs Day-2 Finalize sets, Osot.Profiles university/business, always --exclude MSTeams",
+      "status": "next"
+    },
+    {
+      "step": 3,
+      "title": "Module split + i18n (en-US primary, pl-PL secondary, Import-LocalizedData)",
+      "status": "proposed"
+    },
+    {
+      "step": 4,
+      "title": "Pester tests for pure functions + string-table key parity",
+      "status": "proposed"
+    },
+    {
+      "step": 5,
+      "title": "University / Business profiles + Teams media optimization checks",
+      "status": "proposed"
+    },
+    {
+      "step": 6,
+      "title": "Build (optional single-file deploy) + PSScriptAnalyzerSettings.psd1",
+      "status": "proposed"
+    },
+    {
+      "step": 7,
+      "title": "Linux (Debian/Ubuntu) image optimization for Horizon Linux Agent - after the Windows tool",
+      "status": "planned"
+    }
   ],
-  "missingInputs": ["packages.json", "OSOT/Optimize.json", "Office/Configuration_x64.xml"]
+  "missingInputs": [
+    "packages.json",
+    "OSOT/Optimize.json",
+    "Office/Configuration_x64.xml"
+  ],
+  "done": [
+    "git repo main + baseline commit 1.7.3",
+    "install/ folder tree with EN/PL READMEs",
+    "docs/downloads.md (+pl)",
+    "docs/image-lifecycle.md (+pl): Build with Generalize, Day-2, OSOT fast boot, University/Business profiles, Teams",
+    "tools/Test-SysprepReadiness.ps1 v0.1 (20 checks, EN/PL, read-only) - parse PS5.1 OK, PSSA OK, smoke-run non-admin; C09/C10 need admin run on VM"
+  ],
+  "osotFindings": [
+    "Generalize requires audit mode; cannot be combined with Finalize; reboot required after",
+    "Order: Optimize > Generalize > Horizon/DEM/AV agents > Finalize; Day-2 = Optimize + Finalize again, no Generalize",
+    "OSOT min 2603 for 25H2; 2606+ disables device encryption/BitLocker in Optimize",
+    "Top Sysprep blockers 24H2/25H2: device encryption, per-user AppX not provisioned (0x80073cf2), Store per-user updates, pending reboot (0x36b7), Copilot/BingSearch after OOBE",
+    "To verify: -notification disable vs Teams toasts; Finalize 6 (clear default user profile)"
+  ]
 }

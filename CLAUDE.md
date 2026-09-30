@@ -10,6 +10,9 @@ Current state and next steps: see `status.md` / `status.json` (keep both in sync
 ## Files
 - `Win11/VDI-ImageMaint.ps1` – main tool (v1.7.3, ~2200 lines, monolith; module split planned)
 - `Win11/Set-FSLogixConfig.ps1` – FSLogix registry, redirections.xml, groups, AV exclusions (v1.0)
+- `tools/Test-SysprepReadiness.ps1` – read-only pre-Generalize checks (EN/PL string table = the i18n pattern to follow)
+- `install/` – mirror of `C:\install` (READMEs only, binaries git-ignored); `docs/` – EN docs, `docs/pl/` – PL docs
+- `docs/image-lifecycle.md` – Build (with Generalize, once per feature release) vs Day-2 (no Generalize) – the design basis for OSOT work
 - On the VM everything lives in `C:\install` (script, `packages.json`, `OSOT\`, `Office\`, `Patches\`,
   `FSLogix\`, `Horizon\`, `Apps\`, `Scripts\`); logs/state in `C:\ProgramData\VDI-ImageMaint\`.
 - `packages.json` and `OSOT\Optimize.json` are NOT in this repo yet – ask the user for them.
@@ -44,6 +47,9 @@ Invoke-Pester                                          # Pester 5.9 installed (t
 ```
 Nothing here can be run end-to-end locally (needs admin, VM, Horizon). Say clearly what was only
 statically checked vs. tested on the VM.
+
+## Roadmap after Windows
+- Linux (Debian/Ubuntu) image optimization for Horizon Linux Agent – separate phase, after the Windows tool is done.
 
 ## VDI specifics to keep in mind
 - Instant Clone: no disk compaction/zeroing in OSOT Finalize; no pending reboot at Seal.
