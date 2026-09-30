@@ -82,6 +82,10 @@
     # 1b. Jak wyżej, ale z automatycznym restartem i wznowieniem po zalogowaniu (max 5 rund)
     .\VDI-ImageMaint.ps1 -Mode Update -WingetAll -AutoReboot
 
+    # 1c. Cały cykl miesięczny jednym poleceniem: Update z restartami -> Seal (SYSTEM) -> wyłączenie VM
+    #     (to samo robi START.cmd, opcja 7)
+    .\VDI-ImageMaint.ps1 -Mode Update -AutoReboot -ThenSeal -Shutdown
+
     # Tylko wybrane pakiety z manifestu
     .\VDI-ImageMaint.ps1 -Mode Packages -PackageIds FSLogix,WindowsPatches
 
@@ -139,6 +143,7 @@ param(
     [string[]]$PackageIds,             # ogranicz do wybranych Id z manifestu
     [switch]$Apply,                    # Discover: zapisz wynik do packages.json (z kopią zapasową)
     [switch]$AutoReboot,               # restart + automatyczne wznowienie po zalogowaniu
+    [switch]$ThenSeal,                 # Update: po zakończeniu (bez oczekującego restartu) od razu Seal jako SYSTEM
     [int]$MaxRounds = 5,               # limit restartów przy -AutoReboot
     [int]$ResumeRound = 0,             # (wewnętrzne) numer rundy po wznowieniu
 
@@ -1064,6 +1069,7 @@ $script:BoundParams      = @{}
 $script:OsotExit         = $null
 $script:BuildFinalize    = $false   # PostGeneralize: Finalize wg Osot.FinalizeBuild
 $script:ForceInstallIds  = @()      # PostGeneralize: pakiety instalowane mimo Enabled=false / RequireInstalled
+$script:SealDone         = $false   # Update -ThenSeal: Seal wykonany (warunek -Shutdown)
 
 $DefaultManifestJson = @'
 {
@@ -2192,6 +2198,16 @@ function Invoke-Update {
     if ($hard.Count -gt 0 -and $AutoReboot) {
         Write-Log "Wymagany restart ($($hard -join ', ')) - kolejna runda Update po restarcie" WARN
         Request-RebootAndResume
+    } elseif ($hard.Count -gt 0) {
+        Write-Log "Wymagany restart ($($hard -join ', ')). Po restarcie uruchom ponownie -Mode Update, aż nie będzie nowych aktualizacji." WARN
+        if ($ThenSeal) { Write-Log 'Seal pominięty (-ThenSeal) - obraz wymaga restartu' WARN }
+    } elseif ($ThenSeal) {
+        # Cykl Day-2 jednym poleceniem: Update (z restartami) -> Seal jako SYSTEM -> Finalize [-> wyłączenie]
+        if ($pending.Count) { Write-Log "Oczekujące zmiany plików ($($pending -join ', ')) - nie blokują Seal" }
+        Write-Log 'Aktualizacja zakończona - zamykam obraz (Seal)' STEP
+        $rc = Invoke-SealAsSystemFlow
+        if ($rc -ne 0) { throw "Seal (SYSTEM) zakończony kodem $rc - sprawdź log Seal_*.log" }
+        $script:SealDone = $true
     } elseif ($pending.Count -gt 0) {
         Write-Log "Wymagany restart ($($pending -join ', ')). Po restarcie uruchom ponownie -Mode Update, aż nie będzie nowych aktualizacji." WARN
     } else {
@@ -3102,7 +3118,7 @@ function Invoke-AsSystem {
     param([string]$TargetMode = $Mode)
     # B5: przekazujemy WSZYSTKIE parametry wywołania (np. -NoBlockDetected, -InstallDir, -Manifest, wzorce wykrywania),
     # poza tymi, które obsługuje proces nadrzędny
-    $argText = ConvertTo-ArgumentText -Params $script:BoundParams -Exclude @('Mode', 'AsSystem', 'Shutdown', 'ResumeRound', 'AutoReboot', 'AdminPassword', 'SnapshotConfirmed')
+    $argText = ConvertTo-ArgumentText -Params $script:BoundParams -Exclude @('Mode', 'AsSystem', 'Shutdown', 'ResumeRound', 'AutoReboot', 'ThenSeal', 'AdminPassword', 'SnapshotConfirmed')
     $cmd = "& '{0}' -Mode {1} {2}; exit `$LASTEXITCODE" -f ($PSCommandPath -replace "'", "''"), $TargetMode, $argText
     $taskName = 'VDI-ImageMaint-AsSystem'
     $start    = Get-Date
@@ -3187,7 +3203,8 @@ if ($AsSystem -and -not $isSystem) {
     }
 }
 
-if ($Shutdown -and ($Mode -in @('Seal', 'PostGeneralize')) -and $exitCode -eq 0 -and -not $isSystem) {
+$shutdownMode = ($Mode -in @('Seal', 'PostGeneralize')) -or ($Mode -eq 'Update' -and $script:SealDone)
+if ($Shutdown -and $shutdownMode -and $exitCode -eq 0 -and -not $isSystem) {
     Write-Log 'Wyłączanie VM za 15 s (Ctrl+C aby przerwać)...' WARN
     Start-Sleep -Seconds 15
     Stop-Computer -Force
