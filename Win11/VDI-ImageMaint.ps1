@@ -34,6 +34,13 @@
                 Notepad++ (GUP), OneDrive, K-Lite; dodatkowo WYKRYWA i blokuje inne aktualizatory
                 (zadania/usługi firm trzecich z "update/updater" w nazwie lub ścieżce, poza AV i VDI);
                 opcjonalnie czyści obraz (-Cleanup); wykonuje Inventory; na końcu OSOT Finalize
+      Generalize - BUDOWA obrazu (raz na wydanie Windows, w trybie audytu): naprawa znanych blokerów Sysprep
+                (szyfrowanie, polityka Store, Copilot/BingSearch), kontrola Test-SysprepReadiness.ps1,
+                wygenerowany unattend.xml (AutoLogon + FirstLogonCommands), OSOT -g (Sysprep), restart.
+                Wymaga -SnapshotConfirmed. Po OOBE automatycznie uruchamia się PostGeneralize
+      PostGeneralize - (uruchamiane automatycznie po OOBE) usunięcie Copilot/BingSearch, instalacja agentów
+                z Build.PostGeneralizePackages (restarty + wznowienie), wyłączenie AutoLogon, Seal (jako SYSTEM)
+                z Finalize wg Osot.FinalizeBuild
 
     Katalog instalacyjny (-InstallDir, domyślnie C:\install):
       packages.json                   manifest pakietów (tworzony przy pierwszym uruchomieniu)
@@ -92,15 +99,19 @@
     .\VDI-ImageMaint.ps1 -Mode Status
     .\VDI-ImageMaint.ps1 -Mode Inventory
 
+    # BUDOWA: po Optimize + restarcie, w trybie audytu, po zrobieniu snapshotu "pre-generalize"
+    .\VDI-ImageMaint.ps1 -Mode Generalize -SnapshotConfirmed -Shutdown
+    #   -> Sysprep -> OOBE -> AutoLogon -> PostGeneralize (agenty, restarty) -> Seal -> wyłączenie VM
+
 .NOTES
-    Wersja 1.7.3 (Discover, Ignore, wykrywanie XML ODT, czysta transkrypcja przy odczycie rejestru). Logi: %ProgramData%\VDI-ImageMaint\Logs
+    Wersja 1.8.0 (Generalize/PostGeneralize, poprawki B1-B7). Logi: %ProgramData%\VDI-ImageMaint\Logs
     -AsSystem zalecane dla Seal/Unlock: część usług i zadań (WaaSMedicSvc, UpdateOrchestrator)
     jest chroniona i administrator nie może ich zmienić.
 #>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [ValidateSet('Init', 'Discover', 'Status', 'Inventory', 'WingetList', 'PackageList', 'Packages', 'Optimize', 'Finalize', 'Unlock', 'Update', 'Seal')]
+    [ValidateSet('Init', 'Discover', 'Status', 'Inventory', 'WingetList', 'PackageList', 'Packages', 'Optimize', 'Finalize', 'Unlock', 'Update', 'Seal', 'Generalize', 'PostGeneralize')]
     [string]$Mode,
 
     # --- Katalog z paczkami ---
@@ -171,7 +182,18 @@ param(
     [switch]$Shutdown,
 
     # --- Seal / Unlock / Status ---
-    [switch]$AsSystem
+    [switch]$AsSystem,
+
+    # --- Generalize (budowa obrazu) ---
+    # Potwierdzenie, że istnieje snapshot VM sprzed Generalize (nieudany Sysprep bywa nieodwracalny)
+    [switch]$SnapshotConfirmed,
+    # Osot = OSOT -g (zalecane przez Omnissa); Sysprep = bezpośrednio sysprep.exe (gdy brak OSOT)
+    [ValidateSet('Osot', 'Sysprep')]
+    [string]$GeneralizeEngine = 'Osot',
+    # Hasło wbudowanego Administratora dla OOBE/AutoLogon (bez parametru - pytanie interaktywne)
+    [securestring]$AdminPassword,
+    # Usuń WSZYSTKIE pakiety AppX zainstalowane dla konta, a niezaprowizjonowane (poza MSTeams)
+    [switch]$RemoveUnprovisionedAppx
 )
 
 Set-StrictMode -Version 2.0
@@ -327,6 +349,7 @@ function Write-Log {
 function Get-RegValue {
     # Bez wyjątków przy braku klucza/wartości (PS 5.1 zapisuje przechwycone wyjątki do transkrypcji)
     param([string]$Path, [string]$Name)
+    if (-not $Path) { return $null }   # Get-Item -LiteralPath '' rzuca błąd wiązania (nie wycisza go SilentlyContinue)
     $key = Get-Item -LiteralPath $Path -ErrorAction SilentlyContinue
     if (-not $key) { return $null }
     return $key.GetValue($Name, $null)
@@ -364,7 +387,8 @@ function Get-InstalledApps {
     )
     foreach ($h in $hives) {
         Get-ItemProperty -Path $h.Path -ErrorAction SilentlyContinue |
-            Where-Object { (Get-Prop $_ 'DisplayName') -and -not (Get-Prop $_ 'SystemComponent') -and -not (Get-Prop $_ 'ParentKeyName') } |
+            # Get-Prop zwraca string: SystemComponent=0 daje '0', które jest "prawdą" - porównanie z '1'
+            Where-Object { (Get-Prop $_ 'DisplayName') -and (Get-Prop $_ 'SystemComponent') -ne '1' -and -not (Get-Prop $_ 'ParentKeyName') } |
             ForEach-Object {
                 [pscustomobject]@{
                     Name            = Get-Prop $_ 'DisplayName'
@@ -546,6 +570,7 @@ function New-SealState {
     [ordered]@{
         Created  = (Get-Date).ToString('s')
         Computer = $env:COMPUTERNAME
+        Sealed   = $false   # false = tylko stan bazowy sprzed OSOT (Seal niedokończony)
         Services = @()
         Tasks    = @()
         Registry = @()
@@ -559,8 +584,53 @@ function Get-SealState {
     $s = New-SealState
     $s.Created  = $j.Created
     $s.Computer = $j.Computer
-    foreach ($k in 'Services', 'Tasks', 'Registry', 'Files') { $s[$k] = @($j.$k | Where-Object { $_ }) }
+    $s.Sealed   = [bool](Get-PV $j 'Sealed' $true)   # pliki sprzed 1.8.0 nie mają pola = zapieczętowane
+    foreach ($k in 'Services', 'Tasks', 'Registry', 'Files') { $s[$k] = @(Get-PV $j $k @() | Where-Object { $_ }) }
     return $s
+}
+
+# ---------- stan bazowy (B4) ----------
+# Zapisywany PRZED OSOT: OSOT -windowsupdate disable sam wyłącza usługi i ustawia polityki, więc gdyby stan
+# był zapisywany dopiero po OSOT, Unlock "przywróciłby" wyłączone usługi. Rekordy nigdy nie są nadpisywane.
+function Add-PolicyBaseline {
+    param($Def, $State)
+    if (@($State.Registry | Where-Object { $_.Path -eq $Def.Path -and $_.Name -eq $Def.Name }).Count) { return }
+    $rec = [pscustomobject]@{ Path = $Def.Path; Name = $Def.Name; Existed = $false; OldValue = $null; OldKind = $null }
+    $key = Get-Item -LiteralPath $Def.Path -ErrorAction SilentlyContinue
+    if ($key -and ($key.GetValueNames() -contains $Def.Name)) {
+        $rec.Existed  = $true
+        $rec.OldValue = $key.GetValue($Def.Name, $null, 'DoNotExpandEnvironmentNames')
+        $rec.OldKind  = $key.GetValueKind($Def.Name).ToString()
+    }
+    $State.Registry += $rec
+}
+
+function Add-ServiceBaseline {
+    param([string]$Name, $State)
+    $reg = "HKLM:\SYSTEM\CurrentControlSet\Services\$Name"
+    if (-not (Test-Path $reg)) { return }
+    if (@($State.Services | Where-Object { $_.Name -eq $Name }).Count) { return }
+    $State.Services += [pscustomobject]@{ Name = $Name; Start = [int](Get-RegValue $reg 'Start') }
+}
+
+function Add-TaskBaseline {
+    param($Task, $State)
+    $full = $Task.TaskPath + $Task.TaskName
+    if (@($State.Tasks | Where-Object { $_.FullName -eq $full }).Count) { return }
+    $State.Tasks += [pscustomobject]@{
+        TaskPath = $Task.TaskPath; TaskName = $Task.TaskName; FullName = $full
+        WasEnabled = ($Task.State -ne 'Disabled')
+    }
+}
+
+function Save-SealBaseline {
+    $state = Get-SealState
+    if (-not $state) { $state = New-SealState }
+    foreach ($p in $PolicyDefs) { Add-PolicyBaseline -Def $p -State $state }
+    foreach ($s in @(Resolve-ServiceDefs)) { Add-ServiceBaseline -Name $s.Name -State $state }
+    foreach ($t in @(Get-MatchingTasks)) { Add-TaskBaseline -Task $t -State $state }
+    Save-SealState -State $state
+    Write-Log "Stan bazowy sprzed OSOT zapisany: $StateFile"
 }
 
 function Save-SealState {
@@ -573,19 +643,7 @@ function Save-SealState {
 # =====================================================================
 function Set-PolicyValue {
     param($Def, $State)
-    $known = @($State.Registry | Where-Object { $_.Path -eq $Def.Path -and $_.Name -eq $Def.Name })
-    if ($known.Count -eq 0) {
-        $rec = [pscustomobject]@{ Path = $Def.Path; Name = $Def.Name; Existed = $false; OldValue = $null; OldKind = $null }
-        if (Test-Path $Def.Path) {
-            $key = Get-Item -Path $Def.Path
-            if ($key.GetValueNames() -contains $Def.Name) {
-                $rec.Existed  = $true
-                $rec.OldValue = $key.GetValue($Def.Name)
-                $rec.OldKind  = $key.GetValueKind($Def.Name).ToString()
-            }
-        }
-        $State.Registry += $rec
-    }
+    Add-PolicyBaseline -Def $Def -State $State
     if (-not (Test-Path $Def.Path)) { New-Item -Path $Def.Path -Force | Out-Null }
     $type = if ($Def.ContainsKey('Type')) { $Def.Type } else { 'DWord' }
     New-ItemProperty -Path $Def.Path -Name $Def.Name -Value $Def.Value -PropertyType $type -Force | Out-Null
@@ -597,9 +655,7 @@ function Disable-UpdateService {
     $reg = "HKLM:\SYSTEM\CurrentControlSet\Services\$($Def.Name)"
     if (-not (Test-Path $reg)) { Write-Log "Usługa $($Def.Name) nie istnieje - pomijam"; return }
     $cur = [int](Get-RegValue $reg 'Start')
-    if (@($State.Services | Where-Object { $_.Name -eq $Def.Name }).Count -eq 0) {
-        $State.Services += [pscustomobject]@{ Name = $Def.Name; Start = $cur }
-    }
+    Add-ServiceBaseline -Name $Def.Name -State $State
     try {
         Set-ItemProperty -Path $reg -Name Start -Value 4 -ErrorAction Stop
         Write-Log "Usługa $($Def.Name): Disabled (było Start=$cur)" OK
@@ -614,12 +670,7 @@ function Disable-UpdateService {
 function Disable-OneTask {
     param($Task, $State)
     $full = $Task.TaskPath + $Task.TaskName
-    if (@($State.Tasks | Where-Object { $_.FullName -eq $full }).Count -eq 0) {
-        $State.Tasks += [pscustomobject]@{
-            TaskPath = $Task.TaskPath; TaskName = $Task.TaskName; FullName = $full
-            WasEnabled = ($Task.State -ne 'Disabled')
-        }
-    }
+    Add-TaskBaseline -Task $Task -State $State
     if ($Task.State -eq 'Disabled') { return }
     try {
         Disable-ScheduledTask -TaskPath $Task.TaskPath -TaskName $Task.TaskName -ErrorAction Stop | Out-Null
@@ -704,19 +755,26 @@ function Invoke-ImageCleanup {
     Write-Log "DISM zakończony, kod: $LASTEXITCODE" $(if ($LASTEXITCODE -eq 0) { 'OK' } else { 'WARN' })
 }
 
-function Invoke-Seal {
-    Write-Log 'SEAL - blokada automatycznych aktualizacji' STEP
+function Assert-SealPreconditions {
+    # B6: sprawdzane PRZED OSOT (także w procesie nadrzędnym -AsSystem), żeby nie optymalizować obrazu,
+    # którego Seal i tak zostanie odrzucony
     $pending = @(Test-PendingReboot)
     $hard = @($pending | Where-Object { $_ -ne 'PendingFileRename' })
     if ($hard.Count -gt 0 -and -not $Force) {
         throw "Oczekuje restart ($($hard -join ', ')). Zrestartuj VM przed Seal - inaczej operacje wykonają się na każdym klonie. (-Force pomija sprawdzenie)"
     }
     if ($pending.Count -gt 0) { Write-Log "Uwaga: oczekujący restart ($($pending -join ', '))" WARN }
-    if (-not $SkipOsot -and -not $isSystem) { Invoke-OsotSealPre }
+}
+
+function Invoke-Seal {
+    Write-Log 'SEAL - blokada automatycznych aktualizacji' STEP
+    Assert-SealPreconditions
+    if (-not $SkipOsot -and -not $isSystem) { Save-SealBaseline; Invoke-OsotSealPre }
 
     $state = Get-SealState
-    if ($state) { Write-Log "Obraz był już zapieczętowany ($($state.Created)) - uzupełniam brakujące elementy" }
-    else        { $state = New-SealState }
+    if ($state -and $state.Sealed) { Write-Log "Obraz był już zapieczętowany ($($state.Created)) - uzupełniam brakujące elementy" }
+    elseif ($state) { Write-Log "Stan bazowy z $($state.Created) - kontynuuję Seal" }
+    else            { $state = New-SealState }
 
     $script:SealIssues = 0
     try {
@@ -730,6 +788,7 @@ function Invoke-Seal {
         Disable-UpdaterFiles -State $state
         Write-Log 'Wykrywanie innych mechanizmów aktualizacji' STEP
         Disable-DetectedUpdaters -State $state
+        $state.Sealed = $true
     } finally {
         Save-SealState -State $state
         Write-Log "Zapis stanu: $StateFile"
@@ -775,7 +834,7 @@ function Invoke-Unlock {
             if ((Test-Path "$f.disabled") -and -not (Test-Path $f)) { Rename-Item "$f.disabled" -NewName (Split-Path $f -Leaf); Write-Log "Przywrócono: $f" OK }
         }
         Write-Log 'Zadania harmonogramu pozostawiono bez zmian (brak informacji o stanie pierwotnym)' WARN
-        return
+        return 0
     }
 
     foreach ($r in $state.Registry) {
@@ -812,6 +871,7 @@ function Invoke-Unlock {
 
     if ($issues -eq 0) { Remove-Item $StateFile -Force; Write-Log 'Stan przywrócony w całości, zapis Seal usunięty' OK }
     else { Write-Log "Przywrócono z $issues problemami - zapis stanu zachowany, uruchom Unlock z -AsSystem" WARN }
+    return $issues
 }
 
 # =====================================================================
@@ -883,6 +943,7 @@ function Find-Osot {
 
 function Invoke-Osot {
     param([string[]]$Arguments, [string]$Label)
+    $script:OsotExit = $null   # kod wyjścia ostatniego uruchomienia ($null = nie uruchomiono)
     if ($SkipOsot) { return }
     if ($isSystem) { Write-Log "OSOT ($Label) uruchamiany jest z konta administratora, nie w kontekście SYSTEM"; return }
     $exe = Find-Osot
@@ -893,6 +954,7 @@ function Invoke-Osot {
     Write-Log "Plik: $($exe.FullName)"
     $p = Start-Process -FilePath $exe.FullName -ArgumentList $argLine -Wait -PassThru -NoNewWindow `
         -RedirectStandardOutput $log -RedirectStandardError "$log.err"
+    $script:OsotExit = $p.ExitCode
     Write-Log "OSOT [$Label] kod: $($p.ExitCode), log: $log" $(if ($p.ExitCode -eq 0) { 'OK' } else { 'WARN' })
 }
 
@@ -917,6 +979,8 @@ function Get-OsotConfig {
         Finalize      = [string](Get-PV $o 'Finalize' '0 1 3 4 10')
         Report        = [bool](Get-PV $o 'Report' $true)
     }
+    # Budowa obrazu (PostGeneralize) może mieć pełniejszy zestaw Finalize niż cykl Day-2
+    if ($script:BuildFinalize) { $cfg.Finalize = [string](Get-PV $o 'FinalizeBuild' $cfg.Finalize) }
     if ($OsotOptimize)     { $cfg.Optimize = $true }
     if ($OsotSkipOptimize) { $cfg.Optimize = $false }
     if ($OsotTemplate)     { $cfg.Template = $OsotTemplate }
@@ -978,6 +1042,9 @@ $script:ProvCache        = $null
 $script:OfficeHandled    = $false
 $script:PackageRunResult = ''
 $script:BoundParams      = @{}
+$script:OsotExit         = $null
+$script:BuildFinalize    = $false   # PostGeneralize: Finalize wg Osot.FinalizeBuild
+$script:ForceInstallIds  = @()      # PostGeneralize: pakiety instalowane mimo Enabled=false / RequireInstalled
 
 $DefaultManifestJson = @'
 {
@@ -1001,7 +1068,23 @@ $DefaultManifestJson = @'
       "keep-all"
     ],
     "Finalize": "0 1 3 4 10",
+    "FinalizeBuild": "0 1 3 4 5 8 10 11",
     "Report": true
+  },
+  "Build": {
+    "_opis": "Budowa obrazu (-Mode Generalize -> PostGeneralize). Puste pole = bieżące ustawienie systemu. UILanguage musi być zainstalowanym językiem.",
+    "TimeZone": "",
+    "InputLocale": "",
+    "SystemLocale": "",
+    "UserLocale": "",
+    "UILanguage": "",
+    "ComputerName": "",
+    "SkipRearm": false,
+    "PersistAllDeviceInstalls": true,
+    "AutoLogonCount": 10,
+    "PostGeneralizePackages": ["VMwareTools", "HorizonAgent", "DEM", "AppVolumesAgent"],
+    "RemoveUserAppx": ["Microsoft.Copilot", "Microsoft.BingSearch"],
+    "AppxSettleSeconds": 120
   },
   "Ignore": [],
   "Packages": [
@@ -1361,7 +1444,8 @@ function Get-PackagePlan {
         Type = ([string](Get-PV $Pkg 'Type' 'exe')).ToLower(); Installed = ''; Package = ''
         Action = ''; Reason = ''; Files = @(); Pkg = $Pkg
     }
-    $enabled = [bool](Get-PV $Pkg 'Enabled' $true)
+    $forced  = ($script:ForceInstallIds -contains $id)   # PostGeneralize: świeża instalacja agentów
+    $enabled = [bool](Get-PV $Pkg 'Enabled' $true) -or $forced
     $files = @(Resolve-PackageFiles $Pkg)
     if ($files.Count -eq 0) {
         $plan.Action = 'brak pliku'; $plan.Reason = [string](Get-PV $Pkg 'File' '')
@@ -1384,7 +1468,7 @@ function Get-PackagePlan {
     }
     $pkgVersion = [string](Get-PV $Pkg 'Version' '')
     if (-not $pkgVersion) { $pkgVersion = [string](Get-FileVersionText $files[0]) }
-    $req    = [bool](Get-PV $Pkg 'RequireInstalled' $false)
+    $req    = [bool](Get-PV $Pkg 'RequireInstalled' $false) -and -not $forced
     $detect = Get-PV $Pkg 'Detect'
     $dType  = [string](Get-PV $detect 'Type' 'Always')
 
@@ -1457,7 +1541,7 @@ function Install-PlannedPackage {
         $log = Join-Path $LogDir ('PKG_{0}_{1}_{2}.log' -f $Plan.Id, $f.BaseName, (Get-Date -Format 'yyyyMMdd_HHmmss'))
         $v = $Vars.Clone(); $v['File'] = $f.FullName; $v['Dir'] = $f.DirectoryName; $v['Log'] = $log
         $argText = Expand-PkgString ([string](Get-PV $pkg 'Arguments' '')) $v
-        $rc = $null; $exe = $null; $al = ''
+        $rc = $null; $exe = $null; $al = ''; $shown = $null
 
         if ($Plan.Type -eq 'odt') {
             $cfg = Resolve-OdtConfig $pkg $f
@@ -1483,11 +1567,18 @@ function Install-PlannedPackage {
                 'msp' { $exe = 'msiexec.exe'; $al = ("/p `"{0}`" /qn /norestart /l*v `"{1}`" {2}" -f $f.FullName, $log, $argText).Trim() }
                 'msu' { $exe = Join-Path $env:SystemRoot 'System32\dism.exe'; $al = "/Online /Add-Package /PackagePath:`"$($f.FullName)`" /Quiet /NoRestart /LogPath:`"$log`"" }
                 'cab' { $exe = Join-Path $env:SystemRoot 'System32\dism.exe'; $al = "/Online /Add-Package /PackagePath:`"$($f.FullName)`" /Quiet /NoRestart /LogPath:`"$log`"" }
-                'ps1' { $exe = 'powershell.exe'; $al = ("-NoProfile -ExecutionPolicy Bypass -File `"{0}`" {1}" -f $f.FullName, $argText).Trim() }
+                'ps1' {
+                    # B2: -EncodedCommand zamiast -File - Arguments mają składnię PowerShell (apostrofy, tablice 'a','b');
+                    # dotychczasowe wpisy w cudzysłowach "..." działają tak samo
+                    $exe = 'powershell.exe'
+                    $cmdText = ("& '{0}' {1}; exit `$LASTEXITCODE" -f ($f.FullName -replace "'", "''"), $argText)
+                    $al = '-NoProfile -ExecutionPolicy Bypass -EncodedCommand ' + (ConvertTo-EncodedCommand $cmdText)
+                    $shown = "-Command $cmdText"
+                }
                 default { Write-Log "[$($Plan.Id)] nieznany typ '$($Plan.Type)'" ERR }
             }
             if (-not $exe) { $failed = $true; break }
-            Write-Log "[$($Plan.Id)] $([IO.Path]::GetFileName($exe)) $al"
+            Write-Log "[$($Plan.Id)] $([IO.Path]::GetFileName($exe)) $(if ($shown) { $shown } else { $al })"
             $sp = @{ FilePath = $exe; Wait = $true; PassThru = $true; WorkingDirectory = $f.DirectoryName }
             if ($al) { $sp['ArgumentList'] = $al }
             try { $rc = (Start-Process @sp).ExitCode } catch { Write-Log "[$($Plan.Id)] $($_.Exception.Message)" ERR; $rc = -1 }
@@ -1749,17 +1840,29 @@ function Invoke-Init {
 }
 
 # ---------- restart i wznowienie ----------
-function Get-ResumeCommand {
-    $parts = @("& '" + ($PSCommandPath -replace "'", "''") + "'")
-    foreach ($k in @($script:BoundParams.Keys)) {
-        if ($k -eq 'ResumeRound') { continue }
-        $v = $script:BoundParams[$k]
+function ConvertTo-ArgumentText {
+    # Parametry w składni PowerShell (dla -Command / -EncodedCommand, NIE dla -File - tam apostrofy zostają w wartości)
+    param($Params, [string[]]$Exclude = @())
+    $parts = @()
+    foreach ($k in @($Params.Keys)) {
+        if ($Exclude -contains $k) { continue }
+        $v = $Params[$k]
+        if ($v -is [securestring]) { continue }   # hasła nigdy nie trafiają do wiersza poleceń
         if ($v -is [System.Management.Automation.SwitchParameter]) { if ($v.IsPresent) { $parts += "-$k" }; continue }
         $vals = @(@($v) | ForEach-Object { "'" + ([string]$_ -replace "'", "''") + "'" })
         $parts += ("-$k " + ($vals -join ','))
     }
-    $parts += "-ResumeRound $($ResumeRound + 1)"
     return ($parts -join ' ')
+}
+
+function ConvertTo-EncodedCommand {
+    param([string]$Text)
+    return [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($Text))
+}
+
+function Get-ResumeCommand {
+    $a = ConvertTo-ArgumentText -Params $script:BoundParams -Exclude @('ResumeRound')
+    return ("& '{0}' {1} -ResumeRound {2}" -f ($PSCommandPath -replace "'", "''"), $a, ($ResumeRound + 1))
 }
 
 function Request-RebootAndResume {
@@ -1770,7 +1873,7 @@ function Request-RebootAndResume {
     if ($ResumeRound -ge $MaxRounds) { Write-Log "Osiągnięto limit $MaxRounds restartów (-MaxRounds) - przerwij i sprawdź logi" ERR; return }
     $user = [Security.Principal.WindowsIdentity]::GetCurrent().Name
     $cmd  = Get-ResumeCommand
-    $action    = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ("-NoProfile -ExecutionPolicy Bypass -NoExit -Command `"{0}`"" -f $cmd)
+    $action    = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -ExecutionPolicy Bypass -NoExit -EncodedCommand ' + (ConvertTo-EncodedCommand $cmd))
     $trigger   = New-ScheduledTaskTrigger -AtLogOn -User $user
     $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Highest
     Register-ScheduledTask -TaskName $ResumeTaskName -Action $action -Trigger $trigger -Principal $principal -Force | Out-Null
@@ -1880,8 +1983,13 @@ function Update-Teams {
 
     $bs = $TeamsBootstrapperPath
     if (-not $bs) {
+        # obok skryptu albo w C:\install (np. Teams\)
         $local = Join-Path (Split-Path $PSCommandPath) 'teamsbootstrapper.exe'
         if (Test-Path $local) { $bs = $local }
+        elseif (Test-Path $InstallDir) {
+            $hit = Get-ChildItem -Path $InstallDir -Recurse -File -Filter 'teamsbootstrapper.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($hit) { $bs = $hit.FullName }
+        }
     }
     if (-not $bs -or -not (Test-Path $bs)) {
         $bs = Join-Path $env:TEMP 'teamsbootstrapper.exe'
@@ -1890,6 +1998,12 @@ function Update-Teams {
             [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
             Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?linkid=2243204&clcid=0x409' -OutFile $bs -UseBasicParsing
         } catch { Write-Log "Nie udało się pobrać teamsbootstrapper: $($_.Exception.Message) (podaj -TeamsBootstrapperPath)" WARN; return }
+    }
+    # S2: uruchamiamy tylko plik z ważnym podpisem Microsoft
+    $sig = Get-AuthenticodeSignature -FilePath $bs
+    if ($sig.Status -ne 'Valid' -or [string]$sig.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation') {
+        Write-Log "teamsbootstrapper: nieprawidłowy podpis ($($sig.Status)) - nie uruchamiam $bs" ERR
+        return
     }
 
     $ErrorActionPreference = 'Continue'
@@ -1988,7 +2102,13 @@ function Update-Windows {
 }
 
 function Invoke-Update {
-    Invoke-Unlock
+    $issues = Invoke-Unlock
+    if ($issues -gt 0 -and -not $isSystem) {
+        # B7: chronione usługi/zadania (WaaSMedicSvc, UsoSvc, UpdateOrchestrator) - Unlock ponownie jako SYSTEM
+        Write-Log 'Część blokad jest chroniona - ponawiam Unlock w kontekście SYSTEM' WARN
+        $rc = Invoke-AsSystem -TargetMode 'Unlock'
+        if ($rc -ne 0) { Write-Log "Unlock jako SYSTEM: kod $rc - Windows Update może nie działać, sprawdź Status" WARN }
+    }
     if (-not $SkipOsot) { Invoke-OsotEnableUpdates }
     $before = @(Get-InstalledApps)
 
@@ -2156,32 +2276,446 @@ function Show-Status {
     if ($pending.Count) { Write-Log "Oczekujący restart: $($pending -join ', ')" WARN } else { Write-Log 'Brak oczekującego restartu' OK }
 
     $st = Get-SealState
-    if ($st) { Write-Log "Obraz ZAPIECZĘTOWANY (od $($st.Created))" OK } else { Write-Log 'Obraz NIE jest zapieczętowany (brak zapisu stanu)' WARN }
+    if ($st -and $st.Sealed) { Write-Log "Obraz ZAPIECZĘTOWANY (od $($st.Created))" OK }
+    elseif ($st) { Write-Log "Zapisany tylko stan bazowy ($($st.Created)) - Seal niedokończony" WARN }
+    else { Write-Log 'Obraz NIE jest zapieczętowany (brak zapisu stanu)' WARN }
+}
+
+# =====================================================================
+#  GENERALIZE (budowa obrazu) - Sysprep i automatyczna kontynuacja po OOBE
+# =====================================================================
+# Kolejność Omnissa: Optimize -> Generalize -> agenty Horizon/DEM/App Volumes -> Finalize.
+# Generalize wykonujemy RAZ na wydanie Windows (tryb audytu). Cykl Day-2 (Update/Seal) go nie powtarza.
+# Kontynuacja: unattend.xml (AutoLogon + FirstLogonCommands) uruchamia -Mode PostGeneralize po OOBE;
+# kolejne restarty (agenty) obsługuje zwykłe wznowienie AtLogOn (-AutoReboot).
+$BuildDir       = Join-Path $BaseDir 'Build'
+$UnattendPath   = Join-Path $BuildDir 'unattend.xml'
+$BuildStateFile = Join-Path $BaseDir 'build-state.json'
+$WinlogonKey    = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'
+
+function Get-BuildConfig {
+    # Sekcja "Build" manifestu (opcjonalna). Domyślne ustawienia regionalne = bieżące ustawienia systemu,
+    # bo UILanguage MUSI być zainstalowanym językiem (inaczej OOBE się nie powiedzie).
+    $m = $null
+    $mp = Get-ManifestPath
+    if (Test-Path $mp) { try { $m = Get-Content -Path $mp -Raw -Encoding UTF8 | ConvertFrom-Json } catch { } }
+    $b = Get-PV $m 'Build'
+    $culture = (Get-Culture).Name
+    # pusty string w manifeście = wartość domyślna
+    $str = { param($Name, $Default) $v = [string](Get-PV $b $Name ''); if ($v.Trim()) { $v.Trim() } else { $Default } }
+    [ordered]@{
+        TimeZone                 = & $str 'TimeZone' (Get-TimeZone).Id
+        InputLocale              = & $str 'InputLocale' $culture
+        SystemLocale             = & $str 'SystemLocale' (Get-WinSystemLocale).Name
+        UILanguage               = & $str 'UILanguage' ([Globalization.CultureInfo]::InstalledUICulture.Name)
+        UserLocale               = & $str 'UserLocale' $culture
+        ComputerName             = & $str 'ComputerName' $env:COMPUTERNAME
+        SkipRearm                = [bool](Get-PV $b 'SkipRearm' $false)
+        PersistAllDeviceInstalls = [bool](Get-PV $b 'PersistAllDeviceInstalls' $true)
+        SysprepVmMode            = [bool](Get-PV $b 'SysprepVmMode' $false)
+        KeepBitLocker            = [bool](Get-PV $b 'KeepBitLocker' $false)
+        AutoLogonCount           = [int](Get-PV $b 'AutoLogonCount' 10)
+        PostGeneralizePackages   = @(Get-PV $b 'PostGeneralizePackages' @('VMwareTools', 'HorizonAgent', 'DEM', 'AppVolumesAgent'))
+        RemoveUserAppx           = @(Get-PV $b 'RemoveUserAppx' @('Microsoft.Copilot', 'Microsoft.BingSearch'))
+        AppxSettleSeconds        = [int](Get-PV $b 'AppxSettleSeconds' 120)
+    }
+}
+
+function Set-BuildStage {
+    param([string]$Stage)
+    [pscustomobject]@{ Stage = $Stage; Updated = (Get-Date).ToString('s'); Computer = $env:COMPUTERNAME } |
+        ConvertTo-Json | Set-Content -Path $BuildStateFile -Encoding UTF8
+    Write-Log "Etap budowy: $Stage"
+}
+
+function Get-BuildStage {
+    if (-not (Test-Path $BuildStateFile)) { return '' }
+    try { return [string](Get-PV (Get-Content -Path $BuildStateFile -Raw | ConvertFrom-Json) 'Stage' '') } catch { return '' }
+}
+
+function Test-AuditMode {
+    $state = [string](Get-RegValue 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\State' 'ImageState')
+    return ((Test-Path 'HKLM:\SYSTEM\Setup\Status\AuditBoot') -or $state -match 'RESEAL_TO_AUDIT|UNDEPLOYABLE')
+}
+
+function Get-BuiltinAdminName {
+    # Nazwa konta RID 500 (bywa zmieniona lub zlokalizowana)
+    $u = Get-LocalUser -ErrorAction SilentlyContinue | Where-Object { $_.SID.Value -match '-500$' } | Select-Object -First 1
+    if ($u) { return $u.Name } else { return 'Administrator' }
+}
+
+function Get-UnprovisionedAppx {
+    # Pakiety zainstalowane dla konta, ale niezaprowizjonowane - główna przyczyna błędu Sysprep 0x80073cf2
+    $prov = @{}
+    foreach ($p in @(Get-AppxProvisionedPackage -Online)) { $prov[[string]$p.DisplayName] = $true }
+    foreach ($a in @(Get-AppxPackage -AllUsers)) {
+        if ((Get-PV $a 'IsFramework' $false) -or (Get-PV $a 'IsResourcePackage' $false) -or (Get-PV $a 'NonRemovable' $false)) { continue }
+        if ([string](Get-PV $a 'SignatureKind' '') -eq 'System') { continue }
+        if ($prov.ContainsKey([string]$a.Name)) { continue }
+        $inst = @(@(Get-PV $a 'PackageUserInformation' @()) | Where-Object { [string]$_.InstallState -eq 'Installed' })
+        if ($inst.Count) { $a }
+    }
+}
+
+function Remove-UserAppx {
+    param([string[]]$Names)
+    foreach ($n in $Names) {
+        foreach ($a in @(Get-AppxPackage -AllUsers -Name $n -ErrorAction SilentlyContinue)) {
+            try { Remove-AppxPackage -Package $a.PackageFullName -AllUsers -ErrorAction Stop; Write-Log "AppX usunięty: $($a.PackageFullName)" OK }
+            catch { Write-Log "AppX $($a.PackageFullName): $($_.Exception.Message)" WARN }
+        }
+    }
+}
+
+function Wait-VolumeDecrypted {
+    # Szyfrowanie urządzenia (Win11 24H2/25H2 z vTPM) blokuje Sysprep przy wyjściu z trybu audytu
+    param([int]$TimeoutMinutes = 180)
+    $vol = $null
+    try {
+        $vol = Get-CimInstance -Namespace 'root\cimv2\Security\MicrosoftVolumeEncryption' -ClassName Win32_EncryptableVolume `
+            -Filter "DriveLetter='$($env:SystemDrive)'" -ErrorAction Stop
+    } catch { return $true }   # brak BitLockera w systemie
+    if (-not $vol) { return $true }
+    $cs = Invoke-CimMethod -InputObject $vol -MethodName GetConversionStatus
+    if ([int]$cs.ConversionStatus -eq 0) { return $true }
+    Write-Log "Dysk $($env:SystemDrive) zaszyfrowany (status $($cs.ConversionStatus), $($cs.EncryptionPercentage)%) - odszyfrowuję (manage-bde -off)" WARN
+    & manage-bde.exe -off $env:SystemDrive | Out-Null
+    $deadline = (Get-Date).AddMinutes($TimeoutMinutes)
+    do {
+        Start-Sleep -Seconds 30
+        $cs = Invoke-CimMethod -InputObject $vol -MethodName GetConversionStatus
+        Write-Log "  odszyfrowywanie: status $($cs.ConversionStatus), pozostało $($cs.EncryptionPercentage)%"
+    } while ([int]$cs.ConversionStatus -ne 0 -and (Get-Date) -lt $deadline)
+    return ([int]$cs.ConversionStatus -eq 0)
+}
+
+function Invoke-SysprepRemediation {
+    param($Cfg)
+    Write-Log 'Naprawa znanych blokerów Sysprep' STEP
+    # Aktualizacje Store dla konta = pakiety nowsze niż zaprowizjonowane (0x80073cf2)
+    $store = 'HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore'
+    if ((Get-RegValue $store 'AutoDownload') -ne 2) {
+        if (-not (Test-Path $store)) { New-Item -Path $store -Force | Out-Null }
+        New-ItemProperty -Path $store -Name AutoDownload -Value 2 -PropertyType DWord -Force | Out-Null
+        Write-Log 'Store AutoDownload=2' OK
+    }
+    if (-not $Cfg.KeepBitLocker) {
+        $bl = 'HKLM:\SYSTEM\CurrentControlSet\Control\BitLocker'
+        if (-not (Test-Path $bl)) { New-Item -Path $bl -Force | Out-Null }
+        New-ItemProperty -Path $bl -Name PreventDeviceEncryption -Value 1 -PropertyType DWord -Force | Out-Null
+        if (Test-Path 'HKLM:\SYSTEM\CurrentControlSet\Services\BDESVC') {
+            try { Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\BDESVC' -Name Start -Value 4 -ErrorAction Stop } catch { Write-Log "BDESVC: $($_.Exception.Message)" WARN }
+        }
+        Write-Log 'PreventDeviceEncryption=1, BDESVC wyłączona' OK
+        if (-not (Wait-VolumeDecrypted)) { throw "Dysk $($env:SystemDrive) nadal zaszyfrowany - Sysprep się nie powiedzie" }
+    }
+    Remove-UserAppx -Names $Cfg.RemoveUserAppx
+    $left = @(Get-UnprovisionedAppx)
+    foreach ($a in $left) {
+        if ($a.Name -eq 'MSTeams') {
+            Write-Log 'MSTeams zainstalowany tylko dla konta - zaprowizjonuj: teamsbootstrapper.exe -p (nie usuwam)' WARN
+        } elseif ($RemoveUnprovisionedAppx) {
+            Remove-UserAppx -Names @($a.Name)
+        } else {
+            Write-Log "AppX tylko dla konta: $($a.PackageFullName) (usuń lub użyj -RemoveUnprovisionedAppx)" WARN
+        }
+    }
+}
+
+function Invoke-ReadinessCheck {
+    # tools\Test-SysprepReadiness.ps1 (obok skryptu, w C:\install lub w ..\tools repozytorium)
+    $cands = @(
+        (Join-Path (Split-Path $PSCommandPath) 'Test-SysprepReadiness.ps1'),
+        (Join-Path (Split-Path (Split-Path $PSCommandPath)) 'tools\Test-SysprepReadiness.ps1')
+    )
+    $checker = $cands | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if (-not $checker -and (Test-Path $InstallDir)) {
+        $hit = Get-ChildItem -Path $InstallDir -Recurse -File -Filter 'Test-SysprepReadiness.ps1' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($hit) { $checker = $hit.FullName }
+    }
+    if (-not $checker) {
+        if ($Force) { Write-Log 'Brak Test-SysprepReadiness.ps1 - kontynuuję bez kontroli (-Force)' WARN; return }
+        throw 'Brak Test-SysprepReadiness.ps1 (skopiuj go do C:\install\Scripts). -Force pomija kontrolę.'
+    }
+    Write-Log "Kontrola gotowości: $checker" STEP
+    $json = Join-Path $LogDir ('SysprepReadiness_{0}.json' -f (Get-Date -Format 'yyyyMMdd_HHmmss'))
+    $p = Start-Process -FilePath 'powershell.exe' -Wait -PassThru -NoNewWindow -ArgumentList (
+        '-NoProfile -ExecutionPolicy Bypass -File "{0}" -InstallDir "{1}" -OutFile "{2}"' -f $checker, $InstallDir, $json)
+    if (Test-Path $json) {
+        $r = Get-Content -Path $json -Raw -Encoding UTF8 | ConvertFrom-Json
+        foreach ($x in @($r.Results | Where-Object { $_.Status -in 'FAIL', 'WARN' })) {
+            Write-Log ("{0} {1}: {2}" -f $x.Id, $x.Check, $x.Detail) $(if ($x.Status -eq 'FAIL') { 'ERR' } else { 'WARN' })
+        }
+    }
+    if ($p.ExitCode -ge 2) {
+        if ($Force) { Write-Log 'Kontrola gotowości: FAIL - kontynuuję (-Force)' WARN }
+        else { throw "Kontrola gotowości: FAIL (raport: $json). Usuń przyczyny i uruchom ponownie." }
+    } else {
+        Write-Log "Kontrola gotowości: kod $($p.ExitCode) (0 = OK, 1 = ostrzeżenia)" $(if ($p.ExitCode -eq 0) { 'OK' } else { 'WARN' })
+    }
+}
+
+function New-UnattendXml {
+    param($Cfg, [securestring]$Password, [string]$FirstLogonCommand)
+    $esc = { param($s) [Security.SecurityElement]::Escape([string]$s) }
+    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
+    try { $plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) }
+    finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+    # Format "PlainText=false" z WSIM: Base64(UTF-16LE(hasło + nazwa pola)); Windows Setup usuwa hasła z kopii w Panther
+    $admPwd   = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($plain + 'AdministratorPassword'))
+    $logonPwd = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($plain + 'Password'))
+    $plain = $null
+    $admin = Get-BuiltinAdminName
+    $c = 'processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS"'
+    $rearm = if ($Cfg.SkipRearm) { @"
+
+    <component name="Microsoft-Windows-Security-SPP" $c>
+      <SkipRearm>1</SkipRearm>
+    </component>
+"@ } else { '' }
+    return @"
+<?xml version="1.0" encoding="utf-8"?>
+<!-- VDI-ImageMaint: Generalize ($(Get-Date -Format 'yyyy-MM-dd HH:mm')). Plik usuwany po OOBE. -->
+<unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+  <settings pass="generalize">
+    <component name="Microsoft-Windows-PnpSysprep" $c>
+      <PersistAllDeviceInstalls>$(([string]$Cfg.PersistAllDeviceInstalls).ToLower())</PersistAllDeviceInstalls>
+    </component>$rearm
+  </settings>
+  <settings pass="specialize">
+    <component name="Microsoft-Windows-Shell-Setup" $c>
+      <ComputerName>$(& $esc $Cfg.ComputerName)</ComputerName>
+      <TimeZone>$(& $esc $Cfg.TimeZone)</TimeZone>
+    </component>
+    <component name="Microsoft-Windows-Deployment" $c>
+      <RunSynchronous>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Path>net user "$(& $esc $admin)" /active:yes</Path>
+          <Description>Enable built-in administrator for AutoLogon</Description>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
+  </settings>
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-International-Core" $c>
+      <InputLocale>$(& $esc $Cfg.InputLocale)</InputLocale>
+      <SystemLocale>$(& $esc $Cfg.SystemLocale)</SystemLocale>
+      <UILanguage>$(& $esc $Cfg.UILanguage)</UILanguage>
+      <UserLocale>$(& $esc $Cfg.UserLocale)</UserLocale>
+    </component>
+    <component name="Microsoft-Windows-Shell-Setup" $c>
+      <OOBE>
+        <HideEULAPage>true</HideEULAPage>
+        <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
+        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+        <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+        <HideLocalAccountScreen>true</HideLocalAccountScreen>
+        <ProtectYourPC>3</ProtectYourPC>
+      </OOBE>
+      <UserAccounts>
+        <AdministratorPassword>
+          <Value>$admPwd</Value>
+          <PlainText>false</PlainText>
+        </AdministratorPassword>
+      </UserAccounts>
+      <AutoLogon>
+        <Enabled>true</Enabled>
+        <Username>$(& $esc $admin)</Username>
+        <LogonCount>$([int]$Cfg.AutoLogonCount)</LogonCount>
+        <Password>
+          <Value>$logonPwd</Value>
+          <PlainText>false</PlainText>
+        </Password>
+      </AutoLogon>
+      <FirstLogonCommands>
+        <SynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <CommandLine>$(& $esc $FirstLogonCommand)</CommandLine>
+          <Description>VDI-ImageMaint PostGeneralize</Description>
+          <RequiresUserInput>false</RequiresUserInput>
+        </SynchronousCommand>
+      </FirstLogonCommands>
+      <TimeZone>$(& $esc $Cfg.TimeZone)</TimeZone>
+    </component>
+  </settings>
+</unattend>
+"@
+}
+
+function Read-AdminPassword {
+    if ($AdminPassword) { return $AdminPassword }
+    $admin = Get-BuiltinAdminName
+    for ($i = 0; $i -lt 3; $i++) {
+        $p1 = Read-Host -AsSecureString "Hasło konta $admin po Generalize (AutoLogon do dokończenia budowy)"
+        $p2 = Read-Host -AsSecureString 'Powtórz hasło'
+        $b1 = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($p1); $b2 = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($p2)
+        try {
+            $same = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($b1) -ceq [Runtime.InteropServices.Marshal]::PtrToStringBSTR($b2)
+            $empty = $p1.Length -eq 0
+        } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($b1); [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($b2) }
+        if ($same -and -not $empty) { return $p1 }
+        Write-Log 'Hasła różne lub puste - spróbuj ponownie' WARN
+    }
+    throw 'Nie podano hasła administratora'
+}
+
+function Invoke-Generalize {
+    Write-Log 'GENERALIZE - Sysprep obrazu wzorcowego (budowa, raz na wydanie Windows)' STEP
+    if ($isSystem) { throw 'Generalize uruchamiaj z konta administratora (OSOT nie działa jako SYSTEM).' }
+    if (-not (Test-AuditMode)) {
+        if ($Force) { Write-Log 'System NIE jest w trybie audytu - kontynuuję (-Force)' WARN }
+        else { throw 'System nie jest w trybie audytu (OSOT Generalize tego wymaga). Buduj z ISO: Ctrl+Shift+F3 na pierwszym ekranie OOBE. -Force pomija sprawdzenie.' }
+    }
+    if (-not $SnapshotConfirmed) {
+        throw 'Zrób snapshot VM "pre-generalize" (nieudany Sysprep bywa nieodwracalny) i uruchom ponownie z -SnapshotConfirmed.'
+    }
+    $pending = @(Test-PendingReboot | Where-Object { $_ -ne 'PendingFileRename' })
+    if ($pending.Count) { throw "Oczekuje restart ($($pending -join ', ')) - Sysprep kończy się błędem 0x36b7. Zrestartuj i uruchom ponownie." }
+    if ($GeneralizeEngine -eq 'Osot' -and -not $SkipOsot -and -not (Find-Osot)) { throw "Brak OSOT w $InstallDir (albo użyj -GeneralizeEngine Sysprep)." }
+
+    $cfg = Get-BuildConfig
+    Write-Log ("Ustawienia OOBE: strefa={0}, UI={1}, system={2}, użytkownik={3}, klawiatura={4}, nazwa={5}" -f $cfg.TimeZone, $cfg.UILanguage,
+        $cfg.SystemLocale, $cfg.UserLocale, $cfg.InputLocale, $cfg.ComputerName)
+    Invoke-SysprepRemediation -Cfg $cfg
+    Invoke-ReadinessCheck
+    $admPass = Read-AdminPassword
+
+    # Po OOBE: AutoLogon -> FirstLogonCommands -> PostGeneralize (limit 1024 znaków, dlatego -File)
+    $cont = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{0}" -Mode PostGeneralize -InstallDir "{1}"' -f $PSCommandPath, $InstallDir
+    if ($Manifest) { $cont += ' -Manifest "{0}"' -f (Get-ManifestPath) }
+    if ($Shutdown) { $cont += ' -Shutdown' }
+    if ($cont.Length -gt 1000) { throw "Polecenie FirstLogonCommands za długie ($($cont.Length) znaków)" }
+
+    New-Item -ItemType Directory -Path $BuildDir -Force | Out-Null
+    # Plik zawiera (zakodowane) hasło - dostęp tylko SYSTEM i Administratorzy
+    & icacls.exe $BuildDir /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
+    $xml = New-UnattendXml -Cfg $cfg -Password $admPass -FirstLogonCommand $cont
+    [IO.File]::WriteAllText($UnattendPath, $xml, (New-Object System.Text.UTF8Encoding($false)))
+    [void][xml](Get-Content -Path $UnattendPath -Raw)   # walidacja składni XML
+    Write-Log "unattend.xml: $UnattendPath" OK
+    Set-BuildStage 'Generalizing'
+
+    if ($GeneralizeEngine -eq 'Osot' -and -not $SkipOsot) {
+        # -g bez -reboot: restart dopiero po potwierdzeniu, że Sysprep się udał
+        Invoke-Osot -Label 'Generalize' -Arguments @('-g', $UnattendPath, '-v')
+    } else {
+        $sp = Join-Path $env:SystemRoot 'System32\Sysprep\sysprep.exe'
+        $a = "/generalize /oobe /quit /unattend:`"$UnattendPath`""
+        if ($cfg.SysprepVmMode) { $a += ' /mode:vm' }
+        Write-Log "sysprep.exe $a" STEP
+        [void](Start-Process -FilePath $sp -ArgumentList $a -Wait -PassThru)
+    }
+    # OSOT może uruchomić sysprep.exe asynchronicznie - czekamy na jego zakończenie
+    $deadline = (Get-Date).AddMinutes(60)
+    while ((Get-Process -Name sysprep -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) { Start-Sleep -Seconds 10 }
+
+    $state = [string](Get-RegValue 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\State' 'ImageState')
+    if ($state -ne 'IMAGE_STATE_GENERALIZE_RESEAL_TO_OOBE') {
+        $err = Join-Path $env:SystemRoot 'System32\Sysprep\Panther\setuperr.log'
+        if (Test-Path $err) { Get-Content -Path $err -Tail 15 | ForEach-Object { Write-Log "  $_" ERR } }
+        Set-BuildStage 'GeneralizeFailed'
+        throw "Sysprep nie zakończył się poprawnie (ImageState=$state). Szczegóły: $err i setupact.log. Przywróć snapshot, jeśli VM nie startuje."
+    }
+    Set-BuildStage 'Generalized'
+    Write-Log 'Sysprep zakończony poprawnie. Restart -> OOBE (unattend) -> AutoLogon -> PostGeneralize' OK
+    Write-Log 'Restart za 15 s...' WARN
+    try { Stop-Transcript | Out-Null } catch { }
+    Start-Sleep -Seconds 15
+    Restart-Computer -Force
+    exit 0
+}
+
+function Disable-AutoLogon {
+    Set-ItemProperty -Path $WinlogonKey -Name AutoAdminLogon -Value '0'
+    foreach ($n in 'DefaultPassword', 'AutoLogonCount') { Remove-ItemProperty -Path $WinlogonKey -Name $n -ErrorAction SilentlyContinue }
+    Write-Log 'AutoLogon wyłączony, hasło usunięte z Winlogon' OK
+}
+
+function Export-WingetToLastInventory {
+    $last = Get-ChildItem -Path (Join-Path $BaseDir 'Inventory') -Directory -ErrorAction SilentlyContinue |
+        Sort-Object Name -Descending | Select-Object -First 1
+    if ($last) { Export-WingetPackages -Dir $last.FullName }
+}
+
+function Invoke-SealAsSystemFlow {
+    # Seal z konta admina: baseline + OSOT Optimize (admin) -> blokady jako SYSTEM -> winget export -> OSOT Finalize (admin)
+    Assert-SealPreconditions
+    if (-not $SkipOsot) { Save-SealBaseline; Invoke-OsotSealPre }
+    $rc = Invoke-AsSystem -TargetMode 'Seal'
+    Export-WingetToLastInventory
+    if ($rc -eq 0 -and -not $SkipOsot) { Invoke-OsotFinalize }
+    return $rc
+}
+
+function Invoke-PostGeneralize {
+    Write-Log 'POST-GENERALIZE - dokończenie budowy obrazu po OOBE' STEP
+    # Hasło w unattend (zakodowane) - usuwamy kopię źródłową; Windows usuwa hasła z kopii w Panther
+    if (Test-Path $BuildDir) { Remove-Item -Path $BuildDir -Recurse -Force -ErrorAction SilentlyContinue; Write-Log "Usunięto $BuildDir" }
+    $stage = Get-BuildStage
+    if ($stage -notin 'Generalized', 'PostGeneralize') { Write-Log "Etap budowy: '$stage' (oczekiwano Generalized) - kontynuuję" WARN }
+    Set-BuildStage 'PostGeneralize'
+    $cfg = Get-BuildConfig
+
+    # Kolejne rundy (restarty po agentach) wznawia zadanie AtLogOn; AutoLogon loguje administratora
+    $script:AutoReboot = [System.Management.Automation.SwitchParameter]::Present
+    $script:BoundParams['AutoReboot'] = [System.Management.Automation.SwitchParameter]::Present
+
+    if ($ResumeRound -eq 0 -and $cfg.AppxSettleSeconds -gt 0) {
+        Write-Log "Czekam $($cfg.AppxSettleSeconds) s na prowizjonowanie AppX po pierwszym logowaniu (zalecenie Omnissa)"
+        Start-Sleep -Seconds $cfg.AppxSettleSeconds
+    }
+    Remove-UserAppx -Names $cfg.RemoveUserAppx
+
+    Write-Log "Agenty po Generalize: $($cfg.PostGeneralizePackages -join ', ')" STEP
+    $script:ForceInstallIds = @($cfg.PostGeneralizePackages)
+    $script:PackageIds      = @($cfg.PostGeneralizePackages)
+    Invoke-PackagePlatform          # przy RebootAfter: restart + wznowienie (exit)
+    if ($script:PackageRunResult -eq 'error') { throw 'Błąd manifestu - przerwano budowę' }
+    $script:ForceInstallIds = @()
+
+    $pending = @(Test-PendingReboot | Where-Object { $_ -ne 'PendingFileRename' })
+    if ($pending.Count) {
+        Write-Log "Oczekuje restart ($($pending -join ', ')) przed Seal" WARN
+        Request-RebootAndResume
+        return
+    }
+
+    Disable-AutoLogon
+    $script:BuildFinalize = $true
+    $rc = Invoke-SealAsSystemFlow
+    if ($rc -ne 0) { throw "Seal (SYSTEM) zakończony kodem $rc - sprawdź log Seal_*.log" }
+    Set-BuildStage 'Done'
+    Write-Log 'Budowa obrazu zakończona: Generalize -> agenty -> Seal -> Finalize' OK
+    Write-Log 'Dalej: wyłącz VM -> snapshot -> Horizon Console: Push Image' STEP
 }
 
 # =====================================================================
 #  URUCHOMIENIE JAKO SYSTEM
 # =====================================================================
 function Invoke-AsSystem {
-    $a = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"", '-Mode', $Mode)
-    if ($Cleanup) { $a += '-Cleanup' }
-    if ($Force)   { $a += '-Force' }
+    param([string]$TargetMode = $Mode)
+    # B5: przekazujemy WSZYSTKIE parametry wywołania (np. -NoBlockDetected, -InstallDir, -Manifest, wzorce wykrywania),
+    # poza tymi, które obsługuje proces nadrzędny
+    $argText = ConvertTo-ArgumentText -Params $script:BoundParams -Exclude @('Mode', 'AsSystem', 'Shutdown', 'ResumeRound', 'AutoReboot', 'AdminPassword', 'SnapshotConfirmed')
+    $cmd = "& '{0}' -Mode {1} {2}; exit `$LASTEXITCODE" -f ($PSCommandPath -replace "'", "''"), $TargetMode, $argText
     $taskName = 'VDI-ImageMaint-AsSystem'
     $start    = Get-Date
 
-    $action    = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ($a -join ' ')
+    Write-Log "SYSTEM: $cmd"
+    $action    = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -ExecutionPolicy Bypass -EncodedCommand ' + (ConvertTo-EncodedCommand $cmd))
     $principal = New-ScheduledTaskPrincipal -UserId 'NT AUTHORITY\SYSTEM' -LogonType ServiceAccount -RunLevel Highest
     $settings  = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Hours 2) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
     Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Settings $settings -Force | Out-Null
 
-    Write-Log "Uruchamiam $Mode jako SYSTEM..." STEP
+    Write-Log "Uruchamiam $TargetMode jako SYSTEM..." STEP
     Start-ScheduledTask -TaskName $taskName
     Start-Sleep -Seconds 3
-    while ((Get-ScheduledTask -TaskName $taskName).State -eq 'Running') { Start-Sleep -Seconds 3 }
+    while ((Get-ScheduledTask -TaskName $taskName).State -in 'Running', 'Queued') { Start-Sleep -Seconds 3 }
     $rc = (Get-ScheduledTaskInfo -TaskName $taskName).LastTaskResult
     Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
 
-    $log = Get-ChildItem -Path $LogDir -Filter "$($Mode)_*.log" -ErrorAction SilentlyContinue |
+    $log = Get-ChildItem -Path $LogDir -Filter "$($TargetMode)_*.log" -ErrorAction SilentlyContinue |
         Where-Object { $_.LastWriteTime -ge $start } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
     if ($log) { Get-Content -Path $log.FullName | Write-Host; Write-Log "Log: $($log.FullName)" }
     return [int]$rc
@@ -2199,16 +2733,20 @@ if (-not $isSystem -and (Get-ScheduledTask -TaskName $ResumeTaskName -ErrorActio
 $exitCode = 0
 
 if ($AsSystem -and -not $isSystem) {
-    if ($Mode -in 'Update', 'WingetList', 'Packages', 'PackageList', 'Optimize', 'Finalize', 'Init', 'Discover') { throw "Tryb $Mode uruchamiaj jako administrator (winget nie działa poprawnie w kontekście SYSTEM)." }
-    # OSOT musi działać z konta administratora (synchronizacja HKCU -> Default User), nie jako SYSTEM
-    if ($Mode -eq 'Seal' -and -not $SkipOsot) { Invoke-OsotSealPre }
-    $exitCode = Invoke-AsSystem
-    if ($Mode -in 'Seal', 'Inventory') {
-        $last = Get-ChildItem -Path (Join-Path $BaseDir 'Inventory') -Directory -ErrorAction SilentlyContinue |
-            Sort-Object Name -Descending | Select-Object -First 1
-        if ($last) { Export-WingetPackages -Dir $last.FullName }
+    if ($Mode -in 'Update', 'WingetList', 'Packages', 'PackageList', 'Optimize', 'Finalize', 'Init', 'Discover', 'Generalize', 'PostGeneralize') {
+        throw "Tryb $Mode uruchamiaj jako administrator (OSOT i winget nie działają poprawnie w kontekście SYSTEM)."
     }
-    if ($Mode -eq 'Seal' -and $exitCode -eq 0 -and -not $SkipOsot) { Invoke-OsotFinalize }
+    try {
+        # OSOT musi działać z konta administratora (synchronizacja HKCU -> Default User), nie jako SYSTEM
+        if ($Mode -eq 'Seal') { $exitCode = Invoke-SealAsSystemFlow }
+        else {
+            $exitCode = Invoke-AsSystem
+            if ($Mode -eq 'Inventory') { Export-WingetToLastInventory }
+        }
+    } catch {
+        Write-Log $_.Exception.Message ERR
+        $exitCode = 1
+    }
 } else {
     $log = Join-Path $LogDir ('{0}_{1}.log' -f $Mode, (Get-Date -Format 'yyyyMMdd_HHmmss'))
     Start-Transcript -Path $log -Force | Out-Null
@@ -2220,23 +2758,30 @@ if ($AsSystem -and -not $isSystem) {
             'PackageList' { Invoke-PackagePlatform -DryRun; Write-Log 'OSOT' STEP; Show-OsotConfig }
             'Init'       { Invoke-Init }
             'Discover'   { Invoke-Discover }
-            'Optimize'   { Show-OsotConfig; Invoke-OsotSealPre }
+            'Optimize'   { Show-OsotConfig; Save-SealBaseline; Invoke-OsotSealPre }
             'Finalize'   { Invoke-OsotFinalize }
             'Packages'   { Invoke-PackagePlatform }
             'Inventory'  { Invoke-Inventory }
-            'Unlock' { Invoke-Unlock; Show-Status }
+            'Unlock' {
+                $issues = Invoke-Unlock
+                Show-Status
+                if ($issues -gt 0) { $exitCode = 1 }   # kod dla Invoke-AsSystem (B7)
+            }
             'Update' { Invoke-Update }
             'Seal'   { Invoke-Seal }
+            'Generalize'     { Invoke-Generalize }
+            'PostGeneralize' { Invoke-PostGeneralize }
         }
     } catch {
         Write-Log $_.Exception.Message ERR
         $exitCode = 1
     } finally {
-        Stop-Transcript | Out-Null
+        # S3: transkrypcja mogła zostać już zatrzymana (restart z wznowieniem, Generalize)
+        try { Stop-Transcript | Out-Null } catch { }
     }
 }
 
-if ($Shutdown -and $Mode -eq 'Seal' -and $exitCode -eq 0 -and -not $isSystem) {
+if ($Shutdown -and ($Mode -in @('Seal', 'PostGeneralize')) -and $exitCode -eq 0 -and -not $isSystem) {
     Write-Log 'Wyłączanie VM za 15 s (Ctrl+C aby przerwać)...' WARN
     Start-Sleep -Seconds 15
     Stop-Computer -Force

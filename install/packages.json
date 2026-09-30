@@ -1,0 +1,135 @@
+{
+  "_opis": "Manifest VDI-ImageMaint dla obrazu uczelni. Wszystko w C:\\install. Enabled=false = pakiet tylko raportowany. Kolejność wg Order.",
+  "Variables": {
+    "AppVolumesManager": "appvolumes.domena.local",
+    "AppVolumesPort": "443",
+    "FSLogixShare": "\\\\serwer\\Profiles$"
+  },
+  "Osot": {
+    "_opis": "Seal: optymalizacja wg OSOT\\Optimize.json (Balanced - fonty i cienie zostają), na końcu Finalize bez Compact (2) i zerowania (7).",
+    "Optimize": true,
+    "Template": "",
+    "Level": "",
+    "SettingsFile": "OSOT\\Optimize.json",
+    "CommonOptions": ["-visualeffect", "balanced", "-notification", "disable"],
+    "Finalize": "0 1 3 4 5 6 8",
+    "FinalizeBuild": "0 1 3 4 5 6 8 10 11",
+    "Report": true
+  },
+  "Build": {
+    "_opis": "Budowa obrazu (-Mode Generalize -> PostGeneralize). Puste/brak pola = bieżące ustawienie systemu. UILanguage musi być zainstalowanym językiem. PostGeneralizePackages = Id z Packages instalowane PO Sysprep (mimo Enabled=false / RequireInstalled).",
+    "TimeZone": "Central European Standard Time",
+    "InputLocale": "pl-PL",
+    "SystemLocale": "pl-PL",
+    "UserLocale": "pl-PL",
+    "UILanguage": "",
+    "ComputerName": "",
+    "SkipRearm": false,
+    "PersistAllDeviceInstalls": true,
+    "AutoLogonCount": 10,
+    "PostGeneralizePackages": ["VMwareTools", "HorizonAgent", "DEM", "AppVolumesAgent"],
+    "RemoveUserAppx": ["Microsoft.Copilot", "Microsoft.BingSearch"],
+    "AppxSettleSeconds": 120
+  },
+  "Ignore": [
+    "(?i)\\\\Optional Components\\\\",
+    "(?i)x86\\.msi$"
+  ],
+  "Packages": [
+    {
+      "Id": "WindowsPatches",
+      "Name": "Poprawki Windows (MSU z folderu Patches)",
+      "Enabled": true,
+      "Order": 5,
+      "Type": "msu",
+      "File": "Patches\\*.msu",
+      "Multiple": true,
+      "Detect": { "Type": "Hotfix" },
+      "RebootAfter": true
+    },
+    {
+      "Id": "VMwareTools",
+      "Name": "VMware Tools",
+      "Enabled": false,
+      "Order": 10,
+      "Type": "exe",
+      "File": "VMware-tools-*.exe",
+      "Arguments": "/S /v \"/qn REBOOT=R\"",
+      "Detect": { "Type": "Uninstall", "Name": "^VMware Tools$" },
+      "RequireInstalled": true,
+      "RebootAfter": true
+    },
+    {
+      "Id": "HorizonAgent",
+      "Name": "Omnissa Horizon Agent",
+      "Enabled": false,
+      "Order": 11,
+      "Type": "exe",
+      "File": "*Horizon-Agent-x86_64*.exe",
+      "Arguments": "/s /v\"/qn REBOOT=ReallySuppress\"",
+      "Detect": { "Type": "Uninstall", "Name": "Horizon Agent$" },
+      "RequireInstalled": true,
+      "RebootAfter": true
+    },
+    {
+      "Id": "DEM",
+      "Name": "Omnissa Dynamic Environment Manager",
+      "Enabled": false,
+      "Order": 12,
+      "Type": "msi",
+      "File": "*Dynamic Environment Manager*x64*.msi",
+      "ExcludePath": "(?i)Optional Components",
+      "Arguments": "ADDLOCAL=FlexEngine",
+      "Detect": { "Type": "Uninstall", "Name": "Dynamic Environment Manager" },
+      "RequireInstalled": true,
+      "RebootAfter": true
+    },
+    {
+      "Id": "AppVolumesAgent",
+      "Name": "App Volumes Agent",
+      "Enabled": false,
+      "Order": 13,
+      "Type": "msi",
+      "File": "App Volumes Agent*.msi",
+      "Arguments": "MANAGER_ADDR={AppVolumesManager} MANAGER_PORT={AppVolumesPort} EnforceSSLCertificateValidation=1 REBOOT=ReallySuppress",
+      "Detect": { "Type": "Uninstall", "Name": "App Volumes Agent" },
+      "RequireInstalled": true,
+      "RebootAfter": true
+    },
+    {
+      "Id": "FSLogix",
+      "Name": "Microsoft FSLogix Apps",
+      "Enabled": true,
+      "Order": 20,
+      "Type": "exe",
+      "Archive": "*FSLogix*.zip",
+      "File": "FSLogixAppsSetup.exe",
+      "PreferPath": "\\\\x64\\\\",
+      "Arguments": "/install /quiet /norestart /log \"{Log}\"",
+      "Detect": { "Type": "Uninstall", "Name": "^Microsoft FSLogix Apps$" },
+      "RequireInstalled": true
+    },
+    {
+      "Id": "FSLogixConfig",
+      "Name": "Konfiguracja FSLogix (rejestr, redirections.xml, wykluczenia AV)",
+      "Enabled": false,
+      "Order": 22,
+      "Type": "ps1",
+      "File": "Scripts\\Set-FSLogixConfig.ps1",
+      "Arguments": "-VHDLocations \"{FSLogixShare}\" -ConfigVersion 1",
+      "Detect": { "Type": "Registry", "Path": "HKLM:\\SOFTWARE\\EMS\\VDI-Image", "Name": "FSLogixConfigVersion", "Value": "1" }
+    },
+    {
+      "Id": "Office365",
+      "Name": "Microsoft 365 Apps (Office Deployment Tool)",
+      "Enabled": true,
+      "Order": 30,
+      "Type": "odt",
+      "File": "setup.exe",
+      "Recurse": true,
+      "FileInfoMatch": "Office",
+      "Config": "Configuration_x64.xml",
+      "Detect": { "Type": "Always" }
+    }
+  ]
+}

@@ -68,7 +68,8 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
 $LogDir = Join-Path $env:ProgramData 'VDI-ImageMaint\Logs'
-New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
+# Log i raport AV powstają także przy -WhatIf (nie zmieniają konfiguracji systemu)
+New-Item -ItemType Directory -Path $LogDir -Force -WhatIf:$false | Out-Null
 $Stamp  = Get-Date -Format 'yyyyMMdd_HHmmss'
 $script:Warnings = 0
 
@@ -168,7 +169,7 @@ $VdiServicePattern = '(?i)\\Omnissa\\|\\VMware View\\|\\Remote Experience\\|Clou
 #  START
 # =====================================================================
 $log = Join-Path $LogDir "FSLogixConfig_$Stamp.log"
-Start-Transcript -Path $log -Force | Out-Null
+Start-Transcript -Path $log -Force -WhatIf:$false -Confirm:$false | Out-Null
 try {
     Write-Log "FSLogix - konfiguracja obrazu VDI | $env:COMPUTERNAME | $([Security.Principal.WindowsIdentity]::GetCurrent().Name)" STEP
     if (Test-Path (Join-Path $FrxApps 'frx.exe')) {
@@ -228,7 +229,7 @@ try {
         New-Item -ItemType Directory -Path $RedirectionsFolder -Force | Out-Null
         if ($existing) { Copy-Item $xmlPath "$xmlPath.bak_$Stamp" -Force; Write-Log "  kopia poprzedniej wersji: redirections.xml.bak_$Stamp" }
         [IO.File]::WriteAllText($xmlPath, $xmlText, (New-Object System.Text.UTF8Encoding($false)))
-        [xml]$check = [IO.File]::ReadAllText($xmlPath)   # walidacja składni
+        [void][xml][IO.File]::ReadAllText($xmlPath)   # walidacja składni
         Write-Log "  zapisano $($excludes.Count) wykluczeń" OK
     }
 
@@ -252,7 +253,8 @@ try {
         }
         if ($ProfileIncludeGroups.Count) {
             $inMembers = @()
-            try { $inMembers = @(Get-LocalGroupMember -Group $inGroup -ErrorAction Stop) } catch { }
+            try { $inMembers = @(Get-LocalGroupMember -Group $inGroup -ErrorAction Stop) }
+            catch { Write-Log "  $inGroup : nie można odczytać członków ($($_.Exception.Message)) - sprawdź ręcznie, czy Everyone został usunięty" WARN }
             foreach ($g in $ProfileIncludeGroups) {
                 if (@($inMembers | Where-Object { $_.Name -eq $g }).Count) { Write-Log "  = $inGroup : $g"; continue }
                 if ($PSCmdlet.ShouldProcess($inGroup, "dodaj $g")) {
@@ -307,7 +309,7 @@ try {
     $avFile = Join-Path $LogDir "AV-wykluczenia_$Stamp.txt"
     @('# Wykluczenia AV dla FSLogix / Horizon / App Volumes / DEM', "# $env:COMPUTERNAME, $(Get-Date -Format 'yyyy-MM-dd HH:mm')", '',
       '[Ścieżki / pliki]') + $avPaths + @('', '[Procesy]') + $avProcs + @('', '[Rozszerzenia]') + $avExts |
-        Set-Content -Path $avFile -Encoding UTF8
+        Set-Content -Path $avFile -Encoding UTF8 -WhatIf:$false
 
     Write-Log 'Wykluczenia antywirusa' STEP
     Write-Log ("  ścieżki: {0}, procesy: {1}, rozszerzenia: {2} (lista: {3})" -f $avPaths.Count, $avProcs.Count, $avExts.Count, $avFile)
@@ -360,6 +362,6 @@ try {
     Write-Log $_.Exception.Message ERR
     $exit = 1
 } finally {
-    Stop-Transcript | Out-Null
+    try { Stop-Transcript | Out-Null } catch { }   # B3: bez transkrypcji Stop-Transcript rzuca błąd
 }
 exit $exit
