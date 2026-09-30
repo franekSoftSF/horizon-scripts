@@ -1,5 +1,17 @@
 # Changelog
 
+## VDI-ImageMaint 1.10.0 – 2026-09-30
+
+### Added
+- `START.cmd` + `Scripts\Start-Menu.ps1`: double-click launcher (UAC, unblock, EN/PL menu with the steps in order).
+- `Update -ThenSeal`: monthly cycle in one step (update with reboots, Seal as SYSTEM, Finalize, optional shutdown).
+- Configure: third profile **Graphics** (OSOT `quality`, GPU acceleration kept in Office/Edge/Adobe, thumbnails and
+  ink kept; FSLogix 100 GB, Adobe media cache excluded, `RoamIdentity`); Business/Graphics add `-RoamIdentity`.
+- OneDrive for users who keep data there: per-machine package `OneDrive` (`/allusers`), wizard clears the OSOT
+  OneDrive removal items and enables the package.
+- `docs/profiles-gpo.md` (+pl): profiles, OneDrive on non-persistent VDI, GPO, DEM and FSLogix recommendations.
+- winget catalog: Graphics profile, Blender, Krita.
+
 ## VDI-ImageMaint 1.9.0 – 2026-09-30
 
 ### Added

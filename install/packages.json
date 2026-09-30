@@ -120,6 +120,16 @@
       "Detect": { "Type": "Registry", "Path": "HKLM:\\SOFTWARE\\EMS\\VDI-Image", "Name": "FSLogixConfigVersion", "Value": "1" }
     },
     {
+      "Id": "OneDrive",
+      "Name": "Microsoft OneDrive (instalacja dla całej maszyny, /allusers)",
+      "Enabled": false,
+      "Order": 25,
+      "Type": "exe",
+      "File": "Apps\\OneDriveSetup.exe",
+      "Arguments": "/allusers /silent",
+      "Detect": { "Type": "Uninstall", "Name": "^Microsoft OneDrive$" }
+    },
+    {
       "Id": "Office365",
       "Name": "Microsoft 365 Apps (Office Deployment Tool)",
       "Enabled": true,

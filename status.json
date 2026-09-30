@@ -1,7 +1,7 @@
 {
   "updated": "2026-09-30",
   "versions": {
-    "VDI-ImageMaint.ps1": "1.9.0",
+    "VDI-ImageMaint.ps1": "1.10.0",
     "Set-FSLogixConfig.ps1": "1.0.1",
     "Test-SysprepReadiness.ps1": "0.1"
   },
@@ -252,7 +252,9 @@
     "install/ folder tree with EN/PL READMEs",
     "docs/downloads.md (+pl)",
     "docs/image-lifecycle.md (+pl): Build with Generalize, Day-2, OSOT fast boot, University/Business profiles, Teams",
-    "install/Scripts/Test-SysprepReadiness.ps1 v0.1 (20 checks, EN/PL, read-only) - parse PS5.1 OK, PSSA OK, smoke-run non-admin; C09/C10 need admin run on VM"
+    "install/Scripts/Test-SysprepReadiness.ps1 v0.1 (20 checks, EN/PL, read-only) - parse PS5.1 OK, PSSA OK, smoke-run non-admin; C09/C10 need admin run on VM",
+    "START.cmd + Start-Menu.ps1 (EN/PL), Update -ThenSeal",
+    "Graphics profile, OneDrive per-machine, docs/profiles-gpo.md"
   ],
   "osotFindings": [
     "Generalize requires audit mode; cannot be combined with Finalize; reboot required after",

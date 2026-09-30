@@ -42,6 +42,8 @@ Broadcom) and copy them to the folder listed below.
 | New Teams MSIX x64 (`MSTeams-x64.msix`) | `Teams\` | <https://go.microsoft.com/fwlink/?linkid=2196106> | For offline provisioning. VDI guidance: <https://learn.microsoft.com/en-us/microsoftteams/new-teams-vdi-requirements-deploy> |
 | FSLogix (`FSLogix_<version>.zip`) | `FSLogix\` | <https://aka.ms/fslogix_download>, release notes: <https://learn.microsoft.com/en-us/fslogix/overview-release-notes> | Do not unpack, the tool does it |
 | Microsoft Edge for Business (MSI x64) | `Apps\` | <https://www.microsoft.com/edge/business/download> | Only if Edge is installed or repaired offline |
+| OneDrive per-machine (`OneDriveSetup.exe`) | `Apps\` | <https://go.microsoft.com/fwlink/?linkid=844652> | Installed with `/allusers` (package `OneDrive`). Refresh every month - Seal blocks the OneDrive updater on clones |
+| NVIDIA vGPU guest driver + license token | – (before Generalize) | NVIDIA Licensing Portal (matching the host vGPU manager) | Graphics profile only |
 | App Installer / winget | – | <https://aka.ms/getwinget> | OSOT and LTSC often remove it; needed for `-Mode Update` |
 
 ## Optional

@@ -42,6 +42,8 @@ Potem kopiujesz plik do folderu z tabeli.
 | MSIX nowego Teams x64 (`MSTeams-x64.msix`) | `Teams\` | <https://go.microsoft.com/fwlink/?linkid=2196106> | Do instalacji offline. Wytyczne VDI: <https://learn.microsoft.com/en-us/microsoftteams/new-teams-vdi-requirements-deploy> |
 | FSLogix (`FSLogix_<wersja>.zip`) | `FSLogix\` | <https://aka.ms/fslogix_download>, informacje o wydaniach: <https://learn.microsoft.com/en-us/fslogix/overview-release-notes> | Nie rozpakowuj, narzędzie zrobi to samo |
 | Microsoft Edge for Business (MSI x64) | `Apps\` | <https://www.microsoft.com/edge/business/download> | Tylko gdy Edge instalujesz lub naprawiasz offline |
+| OneDrive dla całej maszyny (`OneDriveSetup.exe`) | `Apps\` | <https://go.microsoft.com/fwlink/?linkid=844652> | Instalowany z `/allusers` (pakiet `OneDrive`). Odświeżaj co miesiąc - Seal blokuje aktualizator OneDrive na klonach |
+| Sterownik gościa NVIDIA vGPU + token licencji | – (przed Generalize) | NVIDIA Licensing Portal (zgodny z menedżerem vGPU na hoście) | Tylko profil Grafik |
 | App Installer / winget | – | <https://aka.ms/getwinget> | OSOT i LTSC często go usuwają, a jest potrzebny w `-Mode Update` |
 
 ## Opcjonalne

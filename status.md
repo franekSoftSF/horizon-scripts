@@ -1,6 +1,6 @@
 # Status projektu VDI-ImageMaint
 
-_Aktualizacja: 2026-09-30_ · VDI-ImageMaint **1.9.0** · Set-FSLogixConfig **1.0.1** · Test-SysprepReadiness **0.1**
+_Aktualizacja: 2026-09-30_ · VDI-ImageMaint **1.10.0** · Set-FSLogixConfig **1.0.1** · Test-SysprepReadiness **0.1**
 
 ## Układ repozytorium
 - `install/` = kompletny `C:\install` (skrypty, manifest, katalog winget, XML Office, OSOT JSON; binaria poza git)
@@ -15,12 +15,15 @@ _Aktualizacja: 2026-09-30_ · VDI-ImageMaint **1.9.0** · Set-FSLogixConfig **1.
 - [x] **Configure** – kreator krok po kroku (profil, Office, FSLogix, App Volumes, ustawienia regionalne, OSOT, winget w oknie wyboru)
 - [x] Aplikacje winget z manifestu instalowane dla całej maszyny; Seal blokuje też aktualizacje Adobe Reader
 - [x] `Office\Configuration_x64.xml`: Updates=FALSE, FORCEAPPSHUTDOWN=TRUE, Display=None; `Uninstall.xml` = Remove All
+- [x] `START.cmd` (dwuklik) → menu PL/EN z krokami po kolei; `Update -ThenSeal` = cykl miesięczny jednym krokiem
+- [x] Profil **Grafik** (OSOT quality + GPU, FSLogix 100 GB) i OneDrive dla całej maszyny; `docs/profiles-gpo.md` (GPO, DEM, FSLogix)
 
 ## Jak testowano (bez VM)
 - Parser PS 5.1: 0 błędów we wszystkich skryptach; PSScriptAnalyzer: tylko puste bloki catch (celowe)
 - Testy funkcji w izolacji (PS 5.1): unattend.xml (poprawny XML, wszystkie fazy, hasła w formacie WSIM),
   przekazywanie parametrów do SYSTEM (B5), pakiety ps1 z apostrofami i tablicami (B2), filtr SystemComponent (B1)
-- Kreator Configure przeszedł całość na kopii `install/` z odpowiedziami ze skryptu (tryb konsolowy `-NoGui`)
+- Kreator Configure przeszedł całość na kopii `install/` dla profili Firma i Grafik (tryb konsolowy `-NoGui`)
+- `START.cmd` → menu (bez UAC, wejście przekierowane) i menu PS w obu językach, łącznie z blokadą Generalize bez snapshotu
 - `Set-FSLogixConfig.ps1 -WhatIf`: kod 0, bez zmian w rejestrze (B3)
 - **Nie testowano na VM**: Generalize/PostGeneralize (Sysprep, OOBE, AutoLogon), okno Out-GridView, instalacje winget,
   C09/C10 w Test-SysprepReadiness (wymaga admina)

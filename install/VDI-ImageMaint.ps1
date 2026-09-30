@@ -113,7 +113,7 @@
     #   -> Sysprep -> OOBE -> AutoLogon -> PostGeneralize (agenty, restarty) -> Seal -> wyłączenie VM
 
 .NOTES
-    Wersja 1.9.0 (Configure, winget z manifestu, Generalize/PostGeneralize, poprawki B1-B7). Logi: %ProgramData%\VDI-ImageMaint\Logs
+    Wersja 1.10.0 (profil Grafik, OneDrive per-machine, START.cmd, Configure, winget, Generalize/PostGeneralize). Logi: %ProgramData%\VDI-ImageMaint\Logs
     -AsSystem zalecane dla Seal/Unlock: część usług i zadań (WaaSMedicSvc, UpdateOrchestrator)
     jest chroniona i administrator nie może ich zmienić.
 #>
@@ -1231,6 +1231,19 @@ $DefaultManifestJson = @'
         "Name": "^Microsoft FSLogix Apps RuleEditor"
       },
       "RequireInstalled": true
+    },
+    {
+      "Id": "OneDrive",
+      "Name": "Microsoft OneDrive (instalacja dla całej maszyny, /allusers)",
+      "Enabled": false,
+      "Order": 25,
+      "Type": "exe",
+      "File": "Apps\\OneDriveSetup.exe",
+      "Arguments": "/allusers /silent",
+      "Detect": {
+        "Type": "Uninstall",
+        "Name": "^Microsoft OneDrive$"
+      }
     },
     {
       "Id": "Office365",
@@ -2550,7 +2563,7 @@ function Invoke-ConfigureOffice {
 }
 
 function Invoke-ConfigureFSLogix {
-    param($ManifestObj, $Vars)
+    param($ManifestObj, $Vars, [string]$ImageProfile)
     Write-Log 'Krok 3/7: FSLogix (kontenery profili)' STEP
     $cur = [string](Get-PV $Vars 'FSLogixShare' '')
     if ($cur -match '\\serwer\\') { $cur = '' }   # wartość przykładowa
@@ -2558,7 +2571,10 @@ function Invoke-ConfigureFSLogix {
     if (-not $share) { Write-Log 'FSLogix: bez udziału - konfiguracja pozostaje wyłączona'; return }
     if ($share -notmatch '^\\\\[^\\]+\\[^\\]+') { Write-Log "To nie jest ścieżka UNC: $share - pomijam" WARN; return }
     Set-PV $Vars 'FSLogixShare' $share
-    $size = [int](Read-Value 'Maksymalny rozmiar VHDX w MB' '30000')
+    # Grafik: duże pliki robocze i pamięci podręczne aplikacji graficznych; Firma: OST Outlooka i OneDrive
+    $defSize = @{ University = '30000'; Business = '50000'; Graphics = '100000' }[$ImageProfile]
+    if (-not $defSize) { $defSize = '30000' }
+    $size = [int](Read-Value 'Maksymalny rozmiar VHDX w MB' $defSize)
     $inc = @((Read-Value 'Grupy z kontenerem, oddzielone przecinkami (Enter = wszyscy)' '') -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
     $exc = @((Read-Value 'Konta/grupy BEZ kontenera, np. DOMENA\VDI-Admins (Enter = brak)' '') -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
     $q = { param($list) ($list | ForEach-Object { "'" + ($_ -replace "'", "''") + "'" }) -join ',' }
@@ -2569,6 +2585,12 @@ function Invoke-ConfigureFSLogix {
     $argsNoVer = "-VHDLocations '{FSLogixShare}' -SizeInMBs $size"
     if ($inc.Count) { $argsNoVer += ' -ProfileIncludeGroups ' + (& $q $inc) }
     if ($exc.Count) { $argsNoVer += ' -ProfileExcludeMembers ' + (& $q $exc) }
+    # Firma/Grafik: tokeny Entra ID (SSO M365, OneDrive, Teams) w kontenerze
+    if ($ImageProfile -in 'Business', 'Graphics') { $argsNoVer += ' -RoamIdentity' }
+    # Grafik: pamięć podręczna multimediów Adobe odtwarza się sama - poza kontenerem
+    if ($ImageProfile -eq 'Graphics') {
+        $argsNoVer += ' -ExtraExcludes ' + (& $q @('AppData\Roaming\Adobe\Common\Media Cache Files', 'AppData\Roaming\Adobe\Common\Media Cache'))
+    }
     $oldArgs = [string](Get-PV $pkg 'Arguments' '')
     # Zmiana parametrów = nowa wersja konfiguracji (detekcja Registry uruchomi skrypt ponownie)
     if (($oldArgs -replace '\s*-ConfigVersion\s+\d+', '') -ne $argsNoVer) { $ver++ }
@@ -2585,14 +2607,18 @@ function Invoke-ConfigureOsot {
     $o = Get-PV $ManifestObj 'Osot'
     if (-not $o) { Write-Log 'Brak sekcji Osot w manifeście - pomijam' WARN; return }
     $keepNotif = Read-YesNo 'Zachować powiadomienia aplikacji (Teams: czat, połączenia przychodzące)?' $true
-    $keepOneDrive = Read-YesNo 'Zachować OneDrive (np. Known Folder Move)?' ($ImageProfile -eq 'Business')
+    $keepOneDrive = Read-YesNo 'Użytkownicy trzymają dane w OneDrive (Known Folder Move) - zachować i zainstalować OneDrive dla całej maszyny?' ($ImageProfile -ne 'University')
+    $graphics = ($ImageProfile -eq 'Graphics')
 
     $co = @(Get-PV $o 'CommonOptions' @())
     $new = @()
     for ($i = 0; $i -lt $co.Count; $i++) {
-        if ($co[$i] -eq '-notification' -and $i + 1 -lt $co.Count) { $i++; continue }   # usuwamy parę -notification X
+        # usuwamy pary ustawiane przez kreator: -notification X, -visualeffect X
+        if ($co[$i] -in '-notification', '-visualeffect' -and $i + 1 -lt $co.Count) { $i++; continue }
         $new += $co[$i]
     }
+    # Grafik (vGPU): pełne efekty wizualne; pozostałe profile: balanced (wygładzanie czcionek i cienie zostają)
+    $new = @(@('-visualeffect', $(if ($graphics) { 'quality' } else { 'balanced' })) + $new)
     if (-not $keepNotif) { $new += @('-notification', 'disable') }
     Set-PV $o 'CommonOptions' $new
     Write-Log "Osot.CommonOptions: $($new -join ' ')" OK
@@ -2609,15 +2635,36 @@ function Invoke-ConfigureOsot {
             $want = -not $keepNotif
             if ([bool]$it.IsSelected -ne $want) { $it.IsSelected = $want; $changed++ }
         }
-        if ([string](Get-PV $it 'Entity' '') -eq 'OneDrive' -and $step -match '^Remove OneDrive') {
+        $entity = [string](Get-PV $it 'Entity' '')
+        if ($entity -eq 'OneDrive' -and $step -match '^(Remove OneDrive|Prevent the usage of OneDrive|Prevent OneDrive network)') {
             if ($keepOneDrive -and [bool]$it.IsSelected) { $it.IsSelected = $false; $changed++ }
         }
+        # Grafik: akceleracja GPU w Office/Edge/Adobe, miniatury obrazów, pióro - NIE wyłączamy
+        if ($graphics -and [bool]$it.IsSelected -and (
+                $entity -eq 'Hardware Acceleration' -or
+                $step -match '^Turn off (the )?caching of thumbnail' -or
+                $step -match '^Disable Ink Collection')) {
+            $it.IsSelected = $false; $changed++
+        }
     }
-    $n = Get-PV (Get-PV $j 'CommonOptions') 'Notification'
+    $co2 = Get-PV $j 'CommonOptions'
+    $n = Get-PV $co2 'Notification'
     if ($n -and $null -ne (Get-PV $n 'Disable') -and [bool]$n.Disable -ne (-not $keepNotif)) { $n.Disable = (-not $keepNotif); $changed++ }
+    $ve = Get-PV $co2 'VisualEffect'
+    if ($ve -and $null -ne (Get-PV $ve 'BestQuality')) {
+        $want = @{ BestQuality = $graphics; Balanced = (-not $graphics); BestPerformance = $false; DisableHardwareAcceleration = (-not $graphics) }
+        foreach ($k in $want.Keys) {
+            if ($null -ne (Get-PV $ve $k) -and [bool]$ve.$k -ne $want[$k]) { $ve.$k = $want[$k]; $changed++ }
+        }
+        foreach ($k in 'VisualEffectUpdated', 'HardwareAccelerationUpdated') { if ($null -ne (Get-PV $ve $k)) { $ve.$k = $true } }
+    }
+    # OneDrive dla całej maszyny (instalacja per użytkownik na klonach nietrwałych = za każdym razem od nowa)
+    $od = Find-ManifestPackage $ManifestObj 'OneDrive'
+    if ($od) { Set-PV $od 'Enabled' $keepOneDrive; Write-Log "Pakiet OneDrive (per-machine): $(if ($keepOneDrive) { 'włączony' } else { 'wyłączony' })" }
+    elseif ($keepOneDrive) { Write-Log 'Brak wpisu OneDrive w manifeście - dodaj OneDriveSetup.exe do Apps\ (docs/profiles-gpo.md)' WARN }
     if ($changed) {
         Save-TextWithBackup -Path $sfPath -Text ($j | ConvertTo-Json -Depth 20 -Compress)
-        Write-Log "Optimize.json: zmieniono $changed pozycji (powiadomienia: $(if ($keepNotif) { 'włączone' } else { 'wyłączone' }), OneDrive: $(if ($keepOneDrive) { 'zachowany' } else { 'bez zmian' }))" OK
+        Write-Log "Optimize.json: zmieniono $changed pozycji (powiadomienia: $(if ($keepNotif) { 'włączone' } else { 'wyłączone' }), OneDrive: $(if ($keepOneDrive) { 'zachowany' } else { 'bez zmian' }), efekty: $(if ($graphics) { 'quality + akceleracja GPU' } else { 'balanced' }))" OK
     } else { Write-Log 'Optimize.json: bez zmian' }
     Write-Log 'Do sprawdzenia na klonie: czy "Let Windows apps run in the background" (Optimize.json) nie blokuje Teams w tle' WARN
 }
@@ -2667,8 +2714,10 @@ function Invoke-Configure {
 
     Write-Log 'Krok 1/7: profil' STEP
     $curProfile = [string](Get-PV $m 'Profile' 'University')
-    $profiles = @('University', 'Business')
-    $pi = Read-Choice 'Profil obrazu:' @('Uczelnia (University) - laboratoria, studenci i pracownicy', 'Firma (Business) - pracownicy biurowi, intensywne Teams') ([Math]::Max(0, [array]::IndexOf($profiles, $curProfile)))
+    $profiles = @('University', 'Business', 'Graphics')
+    $pi = Read-Choice 'Profil obrazu:' @('Uczelnia (University) - laboratoria, studenci i pracownicy',
+        'Firma (Business) - pracownicy biurowi, intensywne Teams, dane w OneDrive',
+        'Grafik / projektant (Graphics) - vGPU, pełne efekty wizualne, akceleracja GPU w aplikacjach') ([Math]::Max(0, [array]::IndexOf($profiles, $curProfile)))
     $prof = $profiles[$pi]
     Set-PV $m 'Profile' $prof
 
@@ -2676,7 +2725,7 @@ function Invoke-Configure {
 
     $vars = Get-PV $m 'Variables'
     if (-not $vars) { $vars = [pscustomobject]@{}; Set-PV $m 'Variables' $vars }
-    Invoke-ConfigureFSLogix -ManifestObj $m -Vars $vars
+    Invoke-ConfigureFSLogix -ManifestObj $m -Vars $vars -ImageProfile $prof
 
     Write-Log 'Krok 4/7: App Volumes' STEP
     $avm = Read-Value 'Adres App Volumes Manager (FQDN; Enter = bez zmian)' ([string](Get-PV $vars 'AppVolumesManager' ''))
