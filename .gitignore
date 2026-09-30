@@ -1,0 +1,18 @@
+# Installers and binaries are never committed - see docs/downloads.md
+*.exe
+*.msi
+*.msp
+*.msu
+*.cab
+*.zip
+*.msix
+*.msixbundle
+*.appx
+*.appxbundle
+*.iso
+*.wim
+*.img
+install/Office/Data/
+# Customer-specific data stays local
+install/packages.local.json
+*.bak_*
