@@ -1,5 +1,8 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.4.2 – 2026-10-02
+- VHCI: when the agent patch does not fit an unpacked vhci-hcd folder (changed by hand or patched for another agent version), the next source is tried and finally the pristine download; patches are dry-run first (no half-patched tree), the patch output goes to the log; downloads are checked to be real tarballs.
+
 ## 0.4.1 – 2026-10-02
 - Installers are found in Horizon/ and in HORIZON_EXTRA_DIRS (default /install, the hand-made layout of existing images); agent installers may be .tar.gz or already unpacked folders, chosen by the version in the name (Omnissa 2506 over VMware 2406).
 - VHCI source may be an unpacked vhci-hcd-1.15 folder; an already applied Omnissa patch is detected and not applied twice.

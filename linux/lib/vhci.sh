@@ -10,24 +10,59 @@
 
 VHCI_DKMS_NAME="usb-vhci-hcd"
 
-# VHCI source: unpacked folder or .tar.gz in the source dirs, else downloaded to Horizon/.
-vhci_source_archive() {
+# VHCI source candidates, best first: unpacked folders and .tar.gz in the source dirs,
+# then the download (pristine source from the URL in the Omnissa docs).
+vhci_source_candidates() {
     local f
-    f=$(find_sources "vhci-hcd-${VHCI_VERSION}" d | head -n1 || true)
-    [[ -n $f && -f ${f}/Makefile ]] && { printf '%s' "$f"; return 0; }
-    f=$(find_sources "vhci-hcd-${VHCI_VERSION}.tar.gz" f | head -n1 || true)
-    [[ -n $f && -s $f ]] && { printf '%s' "$f"; return 0; }
+    find_sources "vhci-hcd-${VHCI_VERSION}" d | while IFS= read -r f; do
+        [[ -f ${f}/Makefile ]] && printf '%s\n' "$f"
+    done
+    find_sources "vhci-hcd-${VHCI_VERSION}.tar.gz" f
+    printf 'download\n'
+}
+
+# vhci_download -> prints the downloaded .tar.gz (checked to be a real gzip tarball)
+vhci_download() {
+    local f="${VDI_ROOT}/Horizon/vhci-hcd-${VHCI_VERSION}.tar.gz"
     install -d "${VDI_ROOT}/Horizon"
-    f="${VDI_ROOT}/Horizon/vhci-hcd-${VHCI_VERSION}.tar.gz"
-    if [[ ! -s $f ]]; then
+    if [[ ! -s $f ]] || ! tar -tzf "$f" >/dev/null 2>&1; then
         logt INFO vhci_downloading "$VHCI_URL"
-        curl -fsSL -o "$f" "$VHCI_URL" || {
+        if ! curl -fsSL -o "$f" "$VHCI_URL" || ! tar -tzf "$f" >/dev/null 2>&1; then
             rm -f "$f"
             logt ERR vhci_source_missing "$f" "$VHCI_URL"
             return 1
-        }
+        fi
     fi
     printf '%s' "$f"
+}
+
+# vhci_prepare SOURCE PATCH WORKDIR - copy/unpack SOURCE into WORKDIR/vhci-hcd-<v> and make
+# sure the Omnissa patch is in (applied now, or already there). Never touches SOURCE.
+# Returns 1 when the patch does not fit this source; patch output goes to the log.
+vhci_prepare() {
+    local src=$1 patch=$2 work=$3 dir out
+    dir="${work}/vhci-hcd-${VHCI_VERSION}"
+    rm -rf "$dir"
+    if [[ -d $src ]]; then
+        cp -r "$src" "$dir"
+        (cd "$dir" && make clean >/dev/null 2>&1) || true
+    else
+        tar -xzf "$src" -C "$work" || return 1
+    fi
+    [[ -d $dir ]] || return 1
+    logt INFO vhci_source "$src"
+    if (cd "$dir" && patch -p1 -R --dry-run -s <"$patch") >/dev/null 2>&1; then
+        logt INFO vhci_already_patched
+        return 0
+    fi
+    # Dry run first: a failing patch must not leave a half-patched tree behind.
+    if out=$(cd "$dir" && patch -p1 --dry-run <"$patch" 2>&1); then
+        (cd "$dir" && patch -p1 -s <"$patch")
+        return 0
+    fi
+    logt WARN vhci_patch_no_fit "$src"
+    [[ -w $LOG_DIR ]] && printf '%s\n' "$out" >>"$LOG_FILE"
+    return 1
 }
 
 vhci_installed_for() {
@@ -53,20 +88,21 @@ vhci_install() {
     logt INFO vhci_building "$VHCI_VERSION" "$(uname -r)"
     # linux-headers-amd64 follows the kernel meta-package, so DKMS can rebuild after "update".
     apt_install patch g++ make dkms "linux-headers-$(uname -r)" linux-headers-amd64
-    archive=$(vhci_source_archive) || return 1
-
+    # A folder unpacked by hand may be patched already - or changed so that this agent's
+    # patch no longer fits (e.g. patched for an older agent): then fall back to the next
+    # candidate, finally the pristine download.
+    local cand ok=0
     src=$(mktemp -d /tmp/vdi-vhci.XXXXXX)
-    if [[ -d $archive ]]; then
-        cp -r "$archive" "${src}/vhci-hcd-${VHCI_VERSION}"
-        (cd "${src}/vhci-hcd-${VHCI_VERSION}" && make clean >/dev/null 2>&1) || true
-    else
-        tar -xzf "$archive" -C "$src"
-    fi
-    logt INFO vhci_source "$archive"
-    # An unpacked folder may already carry the Omnissa patch (done by hand before).
-    if (cd "${src}/vhci-hcd-${VHCI_VERSION}" && patch -p1 -R --dry-run -s <"$patch") >/dev/null 2>&1; then
-        logt INFO vhci_already_patched
-    elif ! (cd "${src}/vhci-hcd-${VHCI_VERSION}" && patch -p1 <"$patch") >/dev/null; then
+    while IFS= read -r cand; do
+        if [[ $cand == download ]]; then
+            cand=$(vhci_download) || break
+        fi
+        if vhci_prepare "$cand" "$patch" "$src"; then
+            ok=1
+            break
+        fi
+    done < <(vhci_source_candidates)
+    if ((ok == 0)); then
         logt ERR vhci_patch_failed "$patch"
         rm -rf "$src"
         return 1
