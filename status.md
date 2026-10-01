@@ -23,6 +23,8 @@ _Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogi
       workspace w kontenerze FSLogix, Dokumenty/Pulpit przez przekierowanie folderów DEM na UNC.
       Test lokalny instalatora na prawdziwym ZIP 2026-09 i prawdziwe pobieranie; **nie testowano na VM**
       (wykrywanie JDK przy starcie Eclipse, `user.home` przy przekierowaniu DEM)
+- [x] **Configure: krok 3/8 Java/Eclipse** (kreator ma teraz 8 kroków): wybór JDK, pakiet java/jee, workspace bez pytania,
+      -Xmx, opcjonalne wykluczenie cache Maven/Gradle z FSLogix; test kreatora na kopii `install/` (-NoGui) + 4 testy Pester
 
 - [x] **Przygotowanie do Windows 11 26H2 i agenta Horizon** (2026-10-01): tabela wydań 24H2/25H2/26H2/26H1 ze wsparciem
       Horizon Agent (KB 78714), OSOT i końcem wsparcia; Update pomija aktualizacje funkcji, dopóki `Windows.TargetRelease`

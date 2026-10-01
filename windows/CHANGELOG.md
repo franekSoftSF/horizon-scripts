@@ -3,6 +3,9 @@
 ## VDI-ImageMaint 2.0.0 – in progress
 
 ### Added
+- Configure: new step 3/8 "Java development" (now 8 steps): Temurin JDK 21 + 25 / 21 / 25 (the first one sets JAVA_HOME),
+  Eclipse java/jee, workspace without prompt (University default), -Xmx, optional FSLogix exclusion of the Maven/Gradle
+  caches (merged with the Graphics excludes); packages missing in older manifests are added from the template.
 - **Windows 11 26H2 readiness** (new `Private\Windows.ps1`, EN/PL `Windows.psd1`): release table 24H2 (26100), 25H2 (26200),
   26H2 (26300), 26H1 (28000, not a VDI guest) with Horizon Agent minimum (KB 78714), OSOT minimum and servicing end.
   `Status`/`Update` show the release, servicing end and Horizon/OSOT support; the package plan warns when the Horizon

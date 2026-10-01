@@ -1,4 +1,4 @@
-﻿# -Mode Configure: step-by-step wizard (profile, Microsoft 365, FSLogix, App Volumes, build locale, OSOT, winget).
+﻿# -Mode Configure: step-by-step wizard (profile, Microsoft 365, Java/Eclipse, FSLogix, App Volumes, build locale, OSOT, winget).
 # Every file is backed up before it is changed (.bak_<date>).
 
 function Read-Choice {
@@ -157,8 +157,78 @@ function Invoke-ConfigureOffice {
     Set-PV $pkg 'Config' (Split-Path $cfgPath -Leaf)
 }
 
+function Get-JdkArguments {
+    # Temurin MSI: the primary JDK sets JAVA_HOME, PATH and .jar; the other one is only installed side by side.
+    # Fixed INSTALLDIR: the monthly MSI upgrade keeps the path (Eclipse Installed JREs, scripts).
+    param([int]$Major, [bool]$Primary)
+    $features = $(if ($Primary) { 'FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome' } else { 'FeatureMain' })
+    return ('ADDLOCAL={0} INSTALLDIR="C:\Program Files\Eclipse Adoptium\jdk-{1}"' -f $features, $Major)
+}
+
+function Get-TemplatePackage {
+    # Package from the manifest; added from Templates\packages.default.json when an older manifest lacks it
+    param($ManifestObj, [string]$Id)
+    $pkg = Find-ManifestPackage $ManifestObj $Id
+    if ($pkg) { return $pkg }
+    $tpl = Find-ManifestPackage (Get-Content -Path $DefaultManifestFile -Raw -Encoding UTF8 | ConvertFrom-Json) $Id
+    if (-not $tpl) { return $null }
+    Set-PV $ManifestObj 'Packages' (@(Get-PV $ManifestObj 'Packages' @()) + $tpl)
+    Write-Log (T 'cfg.java.pkgAdded' $Id)
+    return $tpl
+}
+
+function Invoke-ConfigureJava {
+    # Temurin JDKs + Eclipse IDE (packages TemurinJDK21, TemurinJDK25, EclipseJava).
+    # Returns the FSLogix excludes for the Java build caches (none = they stay in the container).
+    param($ManifestObj, [string]$ImageProfile)
+    Write-Log (T 'cfg.stepJava') STEP
+    $ecl = Find-ManifestPackage $ManifestObj 'EclipseJava'
+    $curArgs = [string](Get-PV $ecl 'Arguments' '')
+    $on = $(if ($ecl) { [bool](Get-PV $ecl 'Enabled' $false) } else { $ImageProfile -eq 'University' })
+    if (-not (Read-YesNo (T 'cfg.java.enable') $on)) {
+        foreach ($id in 'TemurinJDK21', 'TemurinJDK25', 'EclipseJava') {
+            $p = Find-ManifestPackage $ManifestObj $id
+            if ($p) { Set-PV $p 'Enabled' $false }
+        }
+        Write-Log (T 'cfg.java.off')
+        return @()
+    }
+
+    $ji = Read-Choice (T 'cfg.java.jdk') @((T 'cfg.java.jdk.both'), (T 'cfg.java.jdk.21'), (T 'cfg.java.jdk.25'))
+    $majors = @(@{ 0 = @(21, 25); 1 = @(21); 2 = @(25) }[$ji])
+    foreach ($maj in 21, 25) {
+        $p = Get-TemplatePackage $ManifestObj "TemurinJDK$maj"
+        if (-not $p) { Write-Log (T 'cfg.java.noPkg' "TemurinJDK$maj") WARN; continue }
+        $use = ($majors -contains $maj)
+        Set-PV $p 'Enabled' $use
+        if ($use) { Set-PV $p 'Arguments' (Get-JdkArguments -Major $maj -Primary ($maj -eq $majors[0])) }
+    }
+
+    $ecl = Get-TemplatePackage $ManifestObj 'EclipseJava'
+    if (-not $ecl) { Write-Log (T 'cfg.java.noPkg' 'EclipseJava') WARN; return @() }
+    $package = @('java', 'jee')[(Read-Choice (T 'cfg.java.pkg') @((T 'cfg.java.pkg.java'), (T 'cfg.java.pkg.jee')) $(if ($curArgs -match '-Package\s+jee') { 1 } else { 0 }))]
+    # labs (University) get no workspace prompt by default; a choice made earlier is kept
+    $force = Read-YesNo (T 'cfg.java.forceWs') (($ImageProfile -eq 'University') -or ($curArgs -match '-ForceWorkspace'))
+    $heapCur = $(if ($curArgs -match '-MaxHeapMB\s+(\d+)') { $Matches[1] } else { '0' })
+    $heapText = Read-Value (T 'cfg.java.heap') $heapCur
+    $heap = 0
+    if (-not [int]::TryParse($heapText, [ref]$heap) -or ($heap -ne 0 -and ($heap -lt 512 -or $heap -gt 32768))) {
+        Write-Log (T 'cfg.java.heapBad' $heapText) WARN; $heap = 0
+    }
+    $a = "-Source '{InstallDir}\Apps\Eclipse' -Package $package"
+    if ($force) { $a += ' -ForceWorkspace' }
+    if ($heap) { $a += " -MaxHeapMB $heap" }
+    Set-PV $ecl 'Arguments' $a
+    Set-PV $ecl 'Enabled' $true
+    if ($package -eq 'jee') { Write-Log (T 'cfg.java.jeeDownload') WARN }
+    Write-Log (T 'cfg.java.done' ($majors -join ' + ') $package $a) OK
+
+    if (Read-YesNo (T 'cfg.java.caches') $false) { return @('.m2\repository', '.gradle\caches') }
+    return @()
+}
+
 function Invoke-ConfigureFSLogix {
-    param($ManifestObj, $Vars, [string]$ImageProfile)
+    param($ManifestObj, $Vars, [string]$ImageProfile, [string[]]$ExtraExcludes = @())
     Write-Log (T 'cfg.step3') STEP
     $cur = [string](Get-PV $Vars 'FSLogixShare' '')
     if ($cur -match '\\(serwer|server)\\') { $cur = '' }   # sample value
@@ -182,10 +252,12 @@ function Invoke-ConfigureFSLogix {
     if ($exc.Count) { $argsNoVer += ' -ProfileExcludeMembers ' + (& $q $exc) }
     # Business/Graphics: Entra ID tokens (M365 SSO, OneDrive, Teams) in the container
     if ($ImageProfile -in 'Business', 'Graphics') { $argsNoVer += ' -RoamIdentity' }
-    # Graphics: the Adobe media cache is rebuilt automatically - keep it out of the container
-    if ($ImageProfile -eq 'Graphics') {
-        $argsNoVer += ' -ExtraExcludes ' + (& $q @('AppData\Roaming\Adobe\Common\Media Cache Files', 'AppData\Roaming\Adobe\Common\Media Cache'))
-    }
+    # Graphics: the Adobe media cache is rebuilt automatically - keep it out of the container;
+    # Java step: optionally the Maven/Gradle caches
+    $extra = @()
+    if ($ImageProfile -eq 'Graphics') { $extra += @('AppData\Roaming\Adobe\Common\Media Cache Files', 'AppData\Roaming\Adobe\Common\Media Cache') }
+    $extra += @($ExtraExcludes | Where-Object { $_ })
+    if ($extra.Count) { $argsNoVer += ' -ExtraExcludes ' + (& $q $extra) }
     $oldArgs = [string](Get-PV $pkg 'Arguments' '')
     # Changed arguments = new configuration version (Registry detection runs the script again)
     if (($oldArgs -replace '\s*-ConfigVersion\s+\d+', '') -ne $argsNoVer) { $ver++ }
@@ -320,10 +392,11 @@ function Invoke-Configure {
     Set-PV $m 'Profile' $prof
 
     Invoke-ConfigureOffice -ManifestObj $m -ImageProfile $prof
+    $javaExcludes = @(Invoke-ConfigureJava -ManifestObj $m -ImageProfile $prof)
 
     $vars = Get-PV $m 'Variables'
     if (-not $vars) { $vars = [pscustomobject]@{}; Set-PV $m 'Variables' $vars }
-    Invoke-ConfigureFSLogix -ManifestObj $m -Vars $vars -ImageProfile $prof
+    Invoke-ConfigureFSLogix -ManifestObj $m -Vars $vars -ImageProfile $prof -ExtraExcludes $javaExcludes
 
     Write-Log (T 'cfg.step4') STEP
     # Horizon Agent ADDLOCAL: profile default unless the manifest already has a list for this profile

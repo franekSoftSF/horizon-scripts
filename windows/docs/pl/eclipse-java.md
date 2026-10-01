@@ -48,6 +48,10 @@ Pliki: `-Mode Download` (START.cmd opcja 2) pobiera wszystkie trzy (API Adoptium
    i pokazuje je w Installed JREs i środowiskach wykonawczych **(sprawdź przy pierwszym logowaniu)**.
 4. Dodaje skrót w menu Start dla wszystkich i wpis odinstalowania (`-Uninstall` usuwa wszystko).
 
+**`-Mode Configure`, krok 3/8** ustawia to wszystko: JDK (21 + 25 / 21 / 25; pierwsze dostaje `JAVA_HOME`), pakiet Eclipse
+(java / jee), workspace bez pytania (domyślnie tak dla profilu Uczelnia), `-Xmx` oraz opcjonalne wykluczenie cache
+Maven/Gradle z FSLogix (dołączane do `-ExtraExcludes` w `FSLogixConfig`). Starsze manifesty dostają trzy pakiety z szablonu.
+
 Opcje do `Arguments` w manifeście: `-Package jee` (Enterprise Java and Web), `-ForceWorkspace`, `-MaxHeapMB 3072`,
 `-AllowUserUpdates` (niezalecane).
 

@@ -48,6 +48,10 @@ Files: `-Mode Download` (START.cmd option 2) fetches all three (Adoptium API, cu
    by itself and lists them under Installed JREs and execution environments **(verify on the first logon)**.
 4. It adds a Start menu shortcut for all users and an Uninstall entry (`-Uninstall` removes everything).
 
+**`-Mode Configure`, step 3/8** sets all of this: JDKs (21 + 25 / 21 / 25; the first one gets `JAVA_HOME`), Eclipse package
+(java / jee), workspace without prompt (default yes for University), `-Xmx`, and the optional FSLogix exclusion of the
+Maven/Gradle caches (merged into `-ExtraExcludes` of `FSLogixConfig`). Older manifests get the three packages from the template.
+
 Options for `Arguments` in the manifest: `-Package jee` (Enterprise Java and Web), `-ForceWorkspace`, `-MaxHeapMB 3072`,
 `-AllowUserUpdates` (not recommended).
 

@@ -147,6 +147,64 @@ Describe 'Format-Json' {
     }
 }
 
+Describe 'Configure: Java / Eclipse step' {
+    It 'adds the packages from the template to an old manifest and builds the arguments' {
+        InModuleScope VDI-ImageMaint {
+            $m = '{"Packages":[{"Id":"Office365","File":"setup.exe"}]}' | ConvertFrom-Json
+            Mock Read-YesNo { $true }
+            Mock Read-YesNo { $false } -ParameterFilter { $Prompt -eq (T 'cfg.java.caches') }
+            Mock Read-Choice { 2 } -ParameterFilter { $Title -eq (T 'cfg.java.jdk') }   # Temurin 25 only
+            Mock Read-Choice { 1 } -ParameterFilter { $Title -eq (T 'cfg.java.pkg') }   # jee
+            Mock Read-Value { '3072' }
+            $ex = @(Invoke-ConfigureJava -ManifestObj $m -ImageProfile 'University')
+            $ex.Count | Should -Be 0
+            $jdk21 = Find-ManifestPackage $m 'TemurinJDK21'
+            $jdk25 = Find-ManifestPackage $m 'TemurinJDK25'
+            $ecl   = Find-ManifestPackage $m 'EclipseJava'
+            $jdk21.Enabled | Should -BeFalse
+            $jdk25.Enabled | Should -BeTrue
+            $jdk25.Arguments | Should -Match '^ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome INSTALLDIR="C:\\Program Files\\Eclipse Adoptium\\jdk-25"$'
+            $ecl.Enabled | Should -BeTrue
+            $ecl.Arguments | Should -Be "-Source '{InstallDir}\Apps\Eclipse' -Package jee -ForceWorkspace -MaxHeapMB 3072"
+        }
+    }
+    It 'both JDKs: 21 is primary, 25 side by side; caches excluded; invalid heap falls back to 0' {
+        InModuleScope VDI-ImageMaint {
+            $m = Get-Content -Path $DefaultManifestFile -Raw -Encoding UTF8 | ConvertFrom-Json
+            Mock Read-YesNo { $true }
+            Mock Read-YesNo { $false } -ParameterFilter { $Prompt -eq (T 'cfg.java.forceWs') }
+            Mock Read-Choice { 0 }
+            Mock Read-Value { '100' }
+            $ex = @(Invoke-ConfigureJava -ManifestObj $m -ImageProfile 'Business')
+            $ex | Should -Be @('.m2\repository', '.gradle\caches')
+            (Find-ManifestPackage $m 'TemurinJDK21').Arguments | Should -Match 'FeatureJavaHome INSTALLDIR=.*jdk-21"$'
+            (Find-ManifestPackage $m 'TemurinJDK25').Arguments | Should -Match '^ADDLOCAL=FeatureMain INSTALLDIR=.*jdk-25"$'
+            (Find-ManifestPackage $m 'EclipseJava').Arguments | Should -Be "-Source '{InstallDir}\Apps\Eclipse' -Package java"
+            @($m.Packages | Where-Object { $_.Id -eq 'EclipseJava' }).Count | Should -Be 1
+        }
+    }
+    It '"no" disables the three packages and keeps the caches in the container' {
+        InModuleScope VDI-ImageMaint {
+            $m = Get-Content -Path $DefaultManifestFile -Raw -Encoding UTF8 | ConvertFrom-Json
+            foreach ($p in $m.Packages) { if ($p.Id -match 'Temurin|Eclipse') { $p.Enabled = $true } }
+            Mock Read-YesNo { $false }
+            @(Invoke-ConfigureJava -ManifestObj $m -ImageProfile 'University').Count | Should -Be 0
+            @($m.Packages | Where-Object { $_.Id -match 'Temurin|Eclipse' -and $_.Enabled }).Count | Should -Be 0
+        }
+    }
+    It 'FSLogix: Java excludes are merged with the Graphics excludes into one -ExtraExcludes' {
+        InModuleScope VDI-ImageMaint {
+            $m = Get-Content -Path $DefaultManifestFile -Raw -Encoding UTF8 | ConvertFrom-Json
+            $vars = [pscustomobject]@{ FSLogixShare = '' }
+            Mock Read-Value { if ($Prompt -eq (T 'cfg.fsl.share')) { '\\fs01\Profiles$' } else { $Default } }
+            Invoke-ConfigureFSLogix -ManifestObj $m -Vars $vars -ImageProfile 'Graphics' -ExtraExcludes @('.m2\repository')
+            $a = (Find-ManifestPackage $m 'FSLogixConfig').Arguments
+            ([regex]::Matches($a, '-ExtraExcludes')).Count | Should -Be 1
+            $a | Should -Match "Media Cache','\.m2\\repository' -ConfigVersion"
+        }
+    }
+}
+
 Describe 'New-OdtConfigXml' {
     It 'creates a VDI configuration: SCA, no updates, silent, one language + proofing tools' {
         InModuleScope VDI-ImageMaint {
