@@ -77,13 +77,39 @@ Akcje (menu **C** / **R** albo bezpośrednio skrypt):
 
 Każdy klon dostaje vTPM dzięki opcji puli („Add vTPM device to VMs”), a nie ze złotego obrazu (KB 85960).
 
-## 3. Co przetestowano
+## 3. Horizon Push Image (`Invoke-HorizonPushImage.ps1`, REST API)
+
+Nie wymaga PowerCLI - używa REST API Horizon Server (Horizon 8 2206+). Ustawienia: sekcja `Horizon` w `vcenter.json`:
+
+| Pole | Znaczenie |
+|---|---|
+| `Server` | FQDN Connection Servera (HTTPS). Logowanie: `-Credential` albo pytanie (`DOMENA\użytkownik`), nigdy nie zapisywane |
+| `Pools` | Pule Instant Clone używające tego złotego obrazu, np. `["W11-Students", "W11-Staff"]` |
+| `LogoffPolicy` | `WAIT_FOR_LOGOFF` (domyślnie) albo `FORCE_LOGOFF` |
+| `StopOnFirstError` | `true` (domyślnie) – Push Image zatrzymuje się na pierwszej maszynie z błędem |
+
+Złoty obraz to `VM.Name`, a vCenter to `Server`.
+
+| Akcja | Wywołania REST |
+|---|---|
+| `-Action Push` (menu **P**, z `-Wait`) | `POST /rest/login` → `GET /monitor/v2/virtual-centers` → `GET /external/v1/datacenters`, `base-vms`, `base-snapshots` → dla każdej puli `GET /inventory/v2/desktop-pools/{id}` (zachowuje ustawienie vTPM puli) → `POST /inventory/v2/desktop-pools/{id}/action/schedule-push-image` → `POST /rest/logout` |
+| `-Action Status` | stan obrazu w każdej puli (bieżący / oczekujący / operacja / błąd) |
+| `-Action Cancel` | `POST /inventory/v1/desktop-pools/{id}/action/cancel-scheduled-push-image` (przed startem) |
+| `-Action List` | snapshoty złotego obrazu widziane przez Horizon |
+
+- Snapshot: domyślnie najnowszy `Gold*` (tworzy go `Invoke-GoldenVm -Action Release`) albo `-SnapshotName`.
+- `-StartTime` dla okna serwisowego (np. dziś 02:00), inaczej od razu. `-WhatIf` pokazuje JSON i niczego nie wysyła.
+- **Wycofanie:** wypchnij poprzedni snapshot `Gold` (`-SnapshotName "Gold 2026-09-02 ..."`). Trzymaj 2–3 ostatnie snapshoty Gold.
+- Certyfikat Connection Servera jest sprawdzany. `-SkipCertificateCheck` używaj tylko w labie.
+## 4. Co przetestowano
 
 - Testy Pester w `windows/tests/BuildMedia.Tests.ps1` obejmują:
+  - wyszukiwanie obrazu i snapshotu, treść żądania Push Image i format wywołań REST (z atrapą API);
   - pliki odpowiedzi (obie metody);
   - zapis ISO metody B (PS 5.1 i pwsh 7, po zamontowaniu: UDF, komplet plików);
   - `-ValidateOnly` i ścieżki błędów.
 - **Jeszcze nie testowano:**
+  - Push Image na prawdziwym Connection Serverze;
   - budowy nośnika OSDCloud (wymaga ADK);
   - akcji vCenter (wymagają PowerCLI i vCenter);
   - instalacji na prawdziwej VM.

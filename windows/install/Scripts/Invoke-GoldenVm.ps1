@@ -101,7 +101,7 @@ $Strings = @{
         'mustBeOff'  = 'VM {0} must be powered off for Release (run Seal with -Shutdown first)'
         'eject'      = 'CD/DVD emptied: {0}'
         'vtpm'       = 'vTPM removed from the golden image (Horizon adds one per clone when the pool option is on)'
-        'released'   = 'Ready for the pool: {0} / snapshot "{1}". Horizon Console -> pool -> Maintain -> Schedule (Push Image) with this snapshot.'
+        'released'   = 'Ready for the pool: {0} / snapshot "{1}". Push Image: menu P (Invoke-HorizonPushImage.ps1) or Horizon Console -> pool -> Maintain -> Schedule.'
     }
     pl = @{
         'title'      = 'VDI-ImageMaint - VM złotego obrazu w vCenter ({0})'
@@ -129,7 +129,7 @@ $Strings = @{
         'mustBeOff'  = 'VM {0} musi być wyłączona do Release (najpierw Seal z -Shutdown)'
         'eject'      = 'Opróżniono CD/DVD: {0}'
         'vtpm'       = 'Usunięto vTPM ze złotego obrazu (Horizon dodaje go do każdego klona, gdy opcja puli jest włączona)'
-        'released'   = 'Gotowe dla puli: {0} / snapshot "{1}". Horizon Console -> pula -> Maintain -> Schedule (Push Image) z tym snapshotem.'
+        'released'   = 'Gotowe dla puli: {0} / snapshot "{1}". Push Image: menu P (Invoke-HorizonPushImage.ps1) albo Horizon Console -> pula -> Maintain -> Schedule.'
     }
 }
 

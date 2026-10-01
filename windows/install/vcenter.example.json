@@ -16,5 +16,12 @@
     "MemoryGB": 8,
     "DiskGB": 80,
     "GuestId": "windows11_64Guest"
+  },
+  "Horizon": {
+    "_description": "Push Image (Scripts\\Invoke-HorizonPushImage.ps1): Connection Server, instant clone pools that use this golden VM, WAIT_FOR_LOGOFF or FORCE_LOGOFF. / Connection Server, pule Instant Clone z tym obrazem.",
+    "Server": "cs01.domain.local",
+    "Pools": ["W11-Students", "W11-Staff"],
+    "LogoffPolicy": "WAIT_FOR_LOGOFF",
+    "StopOnFirstError": true
   }
 }

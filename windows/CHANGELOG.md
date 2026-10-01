@@ -3,6 +3,10 @@
 ## VDI-ImageMaint 2.0.0 – in progress
 
 ### Added
+- **Horizon Push Image** - `Scripts\Invoke-HorizonPushImage.ps1` 1.0 (EN/PL, REST API, START menu **P**, `Horizon` section in
+  `vcenter.json`): `Push` finds vCenter, golden VM and the newest `Gold*` snapshot (or `-SnapshotName`) and schedules
+  `schedule-push-image` (v2) on every pool (logoff policy, `-StartTime`, stop on first error, pool vTPM kept), `-Wait` watches the
+  pools; `Status`, `Cancel`, `List`; `-WhatIf`; rollback = push an older Gold snapshot. Credentials never stored.
 - **vCenter automation** - `Scripts\Invoke-GoldenVm.ps1` 1.0 (EN/PL, VMware PowerCLI, START menu **C** / **R**, settings in
   `vcenter.json` from `vcenter.example.json`): `-Action New` uploads the build ISO and creates the golden VM (Windows 11 guest,
   EFI + Secure Boot, no vTPM, PVSCSI, VMXNET3, thin disk, no floppy, `devices.hotplug=FALSE`, boot CD -> disk), connects the CDs,

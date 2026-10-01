@@ -25,6 +25,7 @@ $Tool   = Join-Path $Root 'VDI-ImageMaint.ps1'
 $Check  = Join-Path $PSScriptRoot 'Test-SysprepReadiness.ps1'
 $Media  = Join-Path $PSScriptRoot 'New-BuildMedia.ps1'
 $VCenter = Join-Path $PSScriptRoot 'Invoke-GoldenVm.ps1'
+$Push   = Join-Path $PSScriptRoot 'Invoke-HorizonPushImage.ps1'
 $LogDir = Join-Path $env:ProgramData 'VDI-ImageMaint\Logs'
 
 # =====================================================================
@@ -52,6 +53,8 @@ $Strings = @{
         'mC' = 'vCenter: create the golden image VM and start the installation (vcenter.json)'
         'mR' = 'vCenter: release for the pool (empty CDs, no vTPM, snapshot) - VM powered off'
         'q.osd' = 'Use the OSDCloud media (VDI-OSDCloud.iso) instead of VDI-Build.iso?'
+        'mP' = 'Horizon: Push Image of the newest Gold snapshot to the pools (vcenter.json Horizon)'
+        'q.push' = 'Push the image now? Users follow the logoff policy from vcenter.json'
         'choice'     = 'Select a step and press Enter'
         'i1' = 'Answer the questions. Enter accepts the default in brackets. Every file is backed up first.'
         'i2' = 'Downloads the packages that need no login into the right folders, checks their signatures and extracts the archives. Packages that need a login (OSOT, Horizon agents) are listed at the end.'
@@ -99,6 +102,8 @@ $Strings = @{
         'mC' = 'vCenter: utwórz VM złotego obrazu i uruchom instalację (vcenter.json)'
         'mR' = 'vCenter: wydanie do puli (puste CD, bez vTPM, snapshot) - VM wyłączona'
         'q.osd' = 'Użyć nośnika OSDCloud (VDI-OSDCloud.iso) zamiast VDI-Build.iso?'
+        'mP' = 'Horizon: Push Image najnowszego snapshotu Gold do pul (vcenter.json Horizon)'
+        'q.push' = 'Wypchnąć obraz teraz? Użytkownicy - wg polityki wylogowania z vcenter.json'
         'choice'     = 'Wybierz krok i naciśnij Enter'
         'i1' = 'Odpowiadaj na pytania. Enter przyjmuje wartość domyślną w nawiasie. Przed zmianą każdego pliku powstaje kopia.'
         'i2' = 'Pobiera pakiety niewymagające logowania do właściwych folderów, sprawdza podpisy i rozpakowuje archiwa. Pakiety wymagające logowania (OSOT, agenty Horizon) zostaną wypisane na końcu.'
@@ -207,6 +212,7 @@ function Show-Menu {
     Write-Host ('    O. {0}' -f (T 'mO'))
     Write-Host ('    C. {0}' -f (T 'mC'))
     Write-Host ('    R. {0}' -f (T 'mR'))
+    Write-Host ('    P. {0}' -f (T 'mP'))
     Write-Host ('    L. {0}    Q. {1}' -f (T 'mL'), (T 'mQ'))
     Write-Host ''
 }
@@ -264,6 +270,7 @@ while ($true) {
             Invoke-Tool $VCenter @('-Action', 'New', '-Method', $m, '-InstallDir', $Root)
         }
         'R' { Invoke-Tool $VCenter @('-Action', 'Release', '-InstallDir', $Root) }
+        'P' { if (Read-YesNo (T 'q.push') $false) { Invoke-Tool $Push @('-Action', 'Push', '-Wait', '-InstallDir', $Root) } }
         'S' { Invoke-Tool $Tool @('-Mode', 'Status') }
         'U' {
             Show-Info (T 'iU')

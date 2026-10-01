@@ -73,9 +73,33 @@ Actions (menu **C** / **R**, or the script):
 
 The pool gets a vTPM per clone by the pool option ("Add vTPM device to VMs"), not from the golden image (KB 85960).
 
-## 3. What was tested
+## 3. Horizon Push Image (`Invoke-HorizonPushImage.ps1`, REST API)
 
-- Answer files (both methods), Setup ISO writing (PS 5.1 + pwsh 7, mounted: UDF, all files), `-ValidateOnly` and
+No PowerCLI needed - the Horizon Server REST API (Horizon 8 2206+). Settings: the `Horizon` section in `vcenter.json`:
+
+| Field | Meaning |
+|---|---|
+| `Server` | Connection Server FQDN (HTTPS). Sign-in: `-Credential` or a prompt (`DOMAIN\user`), never stored |
+| `Pools` | Instant clone pools that use this golden VM, e.g. `["W11-Students", "W11-Staff"]` |
+| `LogoffPolicy` | `WAIT_FOR_LOGOFF` (default) or `FORCE_LOGOFF` |
+| `StopOnFirstError` | `true` (default) – the push stops at the first failing machine |
+
+The golden VM is `VM.Name`, the vCenter is `Server`.
+
+| Action | REST calls |
+|---|---|
+| `-Action Push` (menu **P**, with `-Wait`) | `POST /rest/login` → `GET /monitor/v2/virtual-centers` → `GET /external/v1/datacenters`, `base-vms`, `base-snapshots` → for every pool `GET /inventory/v2/desktop-pools/{id}` (keeps the pool's vTPM setting) → `POST /inventory/v2/desktop-pools/{id}/action/schedule-push-image` → `POST /rest/logout` |
+| `-Action Status` | image state per pool (current / pending / operation / error) |
+| `-Action Cancel` | `POST /inventory/v1/desktop-pools/{id}/action/cancel-scheduled-push-image` (before the push starts) |
+| `-Action List` | snapshots of the golden VM as Horizon sees them |
+
+- Snapshot: default the newest `Gold*` (made by `Invoke-GoldenVm -Action Release`), or `-SnapshotName`.
+- `-StartTime` for a maintenance window (e.g. tonight 02:00), otherwise now. `-WhatIf` prints the JSON and sends nothing.
+- **Rollback:** push the previous `Gold` snapshot (`-SnapshotName "Gold 2026-09-02 ..."`). Keep the last 2–3 Gold snapshots.
+- The Connection Server certificate is checked. `-SkipCertificateCheck` is for a lab only.
+## 4. What was tested
+
+- Push Image lookups, request body and REST call format (mocked), answer files (both methods), Setup ISO writing (PS 5.1 + pwsh 7, mounted: UDF, all files), `-ValidateOnly` and
   the error paths: Pester tests in `windows/tests/BuildMedia.Tests.ps1`.
-- **Not tested yet:** the OSDCloud media build (needs ADK), the vCenter actions (need PowerCLI and a vCenter), and the
+- **Not tested yet:** Push Image against a Connection Server, the OSDCloud media build (needs ADK), the vCenter actions (need PowerCLI and a vCenter), and the
   installation in a real VM. Test once in a lab and keep the result in `status.md`.
