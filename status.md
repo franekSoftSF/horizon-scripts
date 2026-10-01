@@ -1,6 +1,6 @@
 # Status projektu VDI-ImageMaint
 
-_Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogixConfig **1.0.1** · Test-SysprepReadiness **0.1**
+_Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogixConfig **1.1.0** · Test-SysprepReadiness **0.1**
 
 ## Układ repozytorium
 - `windows/` – narzędzie Windows, `linux/` – narzędzie Linux (osobna praca)
@@ -54,7 +54,7 @@ _Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogi
 ## Plan
 1. ~~Git~~ ✔ · 2. ~~B1–B7~~ ✔ · 2a. ~~Generalize/PostGeneralize~~ ✔ · 2b. ~~Configure + winget~~ ✔
 3. **Test na VM** (budowa od ISO: tryb audytu → Update → Optimize → Generalize → PostGeneralize) i poprawki po teście
-4. ~~Moduł + i18n~~ ✔ (2026-10-01: `install/Modules/VDI-ImageMaint`, 407 komunikatów EN/PL, `-Language`); ~~`-Mode Download`~~ ✔ (7 pakietów, test z prawdziwym pobieraniem); dalej: tłumaczenie Set-FSLogixConfig
+4. ~~Moduł + i18n~~ ✔ (2026-10-01: `install/Modules/VDI-ImageMaint`, 407 komunikatów EN/PL, `-Language`); ~~`-Mode Download`~~ ✔ (7 pakietów, test z prawdziwym pobieraniem); ~~tłumaczenie Set-FSLogixConfig~~ ✔
 5. ~~Pester~~ ✔ (60 testów, PS 5.1 + pwsh 7, PSScriptAnalyzer bez uwag); dalej: walidacja manifestu (`-Mode Validate`, JSON Schema)
 6. Komponenty Horizon (ADDLOCAL, kolejność, restarty), kontrola jakości klona (Teams Media Optimized, FSLogix, logowanie)
 7. Raport HTML cyklu, vCenter/Horizon (snapshot, Push Image)

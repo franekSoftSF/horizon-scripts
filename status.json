@@ -2,7 +2,7 @@
   "updated": "2026-10-01",
   "versions": {
     "VDI-ImageMaint.ps1": "2.0.0-dev",
-    "Set-FSLogixConfig.ps1": "1.0.1",
+    "Set-FSLogixConfig.ps1": "1.1.0",
     "Test-SysprepReadiness.ps1": "0.1"
   },
   "languages": {
@@ -34,7 +34,7 @@
     },
     "pester": {
       "status": "pass",
-      "detail": "60 tests in Windows PowerShell 5.1 and PowerShell 7 (windows/tests/Invoke-Tests.ps1)"
+      "detail": "61 tests in Windows PowerShell 5.1 and PowerShell 7 (windows/tests/Invoke-Tests.ps1)"
     }
   },
   "issues": [
@@ -248,7 +248,8 @@
     "Graphics profile, OneDrive per-machine, docs/profiles-gpo.md",
     "Module split (install/Modules/VDI-ImageMaint) + English primary / Polish secondary, 407 keys, -Language",
     "-Mode Download: ODT, Teams bootstrapper+MSIX, FSLogix, OneDrive, LGPO, SDelete, VMware Tools (signature check, unzip, hash compare) - tested with real downloads",
-    "Windows tool moved to windows/; Pester suite 60/60 in PS 5.1 and pwsh 7; PSScriptAnalyzer clean"
+    "Windows tool moved to windows/; Pester suite 60/60 in PS 5.1 and pwsh 7; PSScriptAnalyzer clean",
+    "Set-FSLogixConfig 1.1.0: English + EN/PL messages, -Language"
   ],
   "osotFindings": [
     "Generalize requires audit mode; cannot be combined with Finalize; reboot required after",

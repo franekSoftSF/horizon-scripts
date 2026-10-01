@@ -19,7 +19,7 @@ Current state and next steps: see `status.md` / `status.json` (keep both in sync
     Winget, Seal, Osot, Packages, Discover, Update, Inventory, Configure, Build), `Public/Invoke-VdiImageMaint.ps1`,
     `en-US/*.psd1` + `pl-PL/*.psd1` string tables (one file per area), `Templates/packages.default.json`
   - `windows/install/START.cmd` + `windows/install/Scripts/Start-Menu.ps1` – double-click launcher and EN/PL menu
-  - `windows/install/Scripts/Set-FSLogixConfig.ps1` – FSLogix registry, redirections.xml, groups, AV exclusions (v1.0.1)
+  - `windows/install/Scripts/Set-FSLogixConfig.ps1` – FSLogix registry, redirections.xml, groups, AV exclusions (v1.1.0, EN/PL inline table)
   - `windows/install/Scripts/Test-SysprepReadiness.ps1` – read-only pre-Generalize checks (EN/PL string table = the i18n pattern to follow)
   - `windows/install/packages.json` (manifest, customer University), `windows/install/winget-catalog.json`, `windows/install/OSOT/Optimize.json`, `windows/install/Office/*.xml`
 - Binaries are git-ignored; `windows/docs/` – EN docs, `windows/docs/pl/` – PL docs; `windows/CHANGELOG.md`
@@ -32,7 +32,7 @@ Current state and next steps: see `status.md` / `status.json` (keep both in sync
   second language** – every user-facing string must exist in both.
 - User-facing messages go through `T 'key' arg0 arg1` (module) – keys in `en-US\<Area>.psd1` and the same keys in
   `pl-PL\<Area>.psd1`; en-US is the fallback. Never hard-coded literals in new code. Standalone scripts
-  (Test-SysprepReadiness, Start-Menu) keep an inline EN/PL table.
+  (Test-SysprepReadiness, Start-Menu, Set-FSLogixConfig) keep an inline EN/PL table (checked by the tests).
 - Manifest keys, log levels, CSV column names, `seal-state.json` keys, plan actions and inventory statuses are
   language-neutral (English codes); only the display is translated.
 - Talk to the user in Polish.

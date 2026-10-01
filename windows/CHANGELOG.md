@@ -7,7 +7,9 @@
   EN/PL key and placeholder parity, every used key defined, file encoding/CRLF/parsing, pure functions (versions, names,
   winget table, argument text, JSON), ODT XML, unattend.xml, install plan on TestDrive, seal baseline (HKCU), download
   helpers (mocked network and signatures), mode/handler consistency; PSScriptAnalyzer with `windows/PSScriptAnalyzerSettings.psd1`.
-- Set-FSLogixConfig: `Set-Reg` is an advanced function with ShouldProcess (-WhatIf flows through it).
+- **Set-FSLogixConfig 1.1.0**: English code/help, EN/PL messages (inline table), `-Language auto|en|pl`; `Set-Reg` is an
+  advanced function with ShouldProcess; AV report file `AV-exclusions_<date>.txt`; redirections.xml written by 1.0
+  (Polish comment) is not rewritten when its content is unchanged.
 - `-Mode Download`: Office Deployment Tool, Teams bootstrapper + MSIX, FSLogix ZIP, OneDrive, LGPO.exe, sdelete64.exe and
   VMware Tools are downloaded into the right folders - Authenticode publisher check (every EXE inside the FSLogix ZIP),
   ZIP extraction, SHA-256 compare (unchanged files kept), older versions removed; manual items listed at the end.
