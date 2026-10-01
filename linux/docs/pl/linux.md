@@ -97,6 +97,8 @@ zostaje bez zmian: wykryte wartości trafiają do `vdi-imagemaint.conf.detected`
      `/etc/vdi-imagemaint/runonce.local`, przed restartem SSSD/NFS.
    - `check` akceptuje przejęty pulpit, sposób dołączenia i katalogi domowe.
 
+Jeśli `check` zgłasza L21 (brak sterownika USB VHCI) na przejętym obrazie, uruchom `sudo ./vdi-imagemaint.sh usb`: zbuduje sterownik z łatką z zainstalowanego agenta albo z archiwum agenta w `Horizon/`, bez reinstalacji agenta.
+
 Po `adopt` używaj `check`, potem `agent` (aktualizacja), `recording`, `apps`, `optimize`, `collab` i `seal` jak zwykle.
 Dokumentacja zaleca budowę obrazu ze świeżej instalacji, nigdy z klona.
 

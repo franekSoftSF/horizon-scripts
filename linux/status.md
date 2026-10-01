@@ -1,6 +1,6 @@
 # Status – VDI-ImageMaint dla Linuksa
 
-_Aktualizacja: 2026-10-02_ · wersja **0.3.1** · Debian 12 + MATE · Horizon 2506 Instant Clone
+_Aktualizacja: 2026-10-02_ · wersja **0.3.2** · Debian 12 + MATE · Horizon 2506 Instant Clone
 
 ## Zrobione
 - [x] Szkielet: `vdi-imagemaint.sh` (menu + tryby), `lib/common.sh` (konfiguracja, i18n EN/PL, log, śledzenie zmian w JSON)
@@ -22,6 +22,9 @@ _Aktualizacja: 2026-10-02_ · wersja **0.3.1** · Debian 12 + MATE · Horizon 25
       zachowanie winbind/RunOnceScript); `get-vdi-imagemaint.sh` – instalacja/aktualizacja z GitHuba z zachowaniem plików lokalnych
 
 - [x] 0.3.1: `adopt` sam tworzy `vdi-imagemaint.conf` z wykrytych ustawień (pyta tylko o profil); istniejąca konfiguracja → `.detected` + lista różnic
+
+- [x] 0.3.2: po pierwszym teście na VM (przejęty obraz): tryb `usb` (sam sterownik VHCI), L20 jako ostrzeżenie przy zainstalowanym agencie,
+      L23 rozpoznaje wartości przykładowe, menu nie zgłasza wyników check jako błędu kroku
 
 ## Jak testowano (bez VM)
 - Kontener `debian:12` (Docker): 29/29 testów (`tests/run-tests.sh`), shellcheck 0 uwag

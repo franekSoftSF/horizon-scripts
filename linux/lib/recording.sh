@@ -17,7 +17,7 @@ recording_find_archive() {
         return 0
     fi
     find "${VDI_ROOT}/Horizon" -maxdepth 1 -type f -iname 'Horizon.Recording.Linux.Agent-*.tar.gz' -printf '%f\n' 2>/dev/null |
-        sort -V | tail -n1 | sed "s|^|${VDI_ROOT}/Horizon/|"
+        sort -V | tail -n1 | sed "s|^|${VDI_ROOT}/Horizon/|" || true
 }
 
 # Horizon.Recording.Linux.Agent-x.x.x.x.tar.gz -> x.x.x.x

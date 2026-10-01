@@ -32,7 +32,7 @@ NFS_EXPORT="/export/home"
 NFS_SEC="krb5p"
 
 # Horizon Linux Agent (put Omnissa-horizonagent-linux-x86_64-*.tar.gz in Horizon/)
-HORIZON_CS_FQDN="cs01.ad.example.edu"
+HORIZON_CS_FQDN=""                # e.g. "cs01.ad.uni.edu cs02.ad.uni.edu" - checked for DNS resolution
 
 # Horizon Recording (put Horizon.Recording.Linux.Agent-*.tar.gz in Horizon/)
 REC_ENABLE="no"

@@ -1,5 +1,13 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.3.2 – 2026-10-02
+- New mode `usb`: USB VHCI driver only (patch from the installed agent or the agent archive), for adopted images - no agent reinstall.
+- check: missing agent installer dependencies are a warning when the agent is already installed; example Connection Server names are reported as "set the configuration", not as a DNS error.
+- Menu: errors found by check are no longer shown as "step did not finish".
+- Example configuration: HORIZON_CS_FQDN empty by default.
+- adopt always installs the per-clone script and sets RunOnceScript (seal removes SSH host keys and relies on it); an existing RunOnceScript stays chained. Previously only images that already had a RunOnceScript got it.
+- check L00: example values left in vdi-imagemaint.conf are listed, with a pointer to vdi-imagemaint.conf.detected.
+
 ## 0.3.1 – 2026-10-02
 - `adopt` creates `vdi-imagemaint.conf` from the detected settings (locale, time zone, keyboard, AD domain/workgroup, SSSD names and ID mapping, NFS from fstab/autofs, SSO, USB, smart card, True SSO, Collaboration, Recording); asks only for the profile. An existing configuration is never overwritten: detected values go to `vdi-imagemaint.conf.detected` and differences are listed.
 - `get-vdi-imagemaint.sh` points existing images to `adopt`.
