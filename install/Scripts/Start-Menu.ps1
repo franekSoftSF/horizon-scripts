@@ -148,7 +148,8 @@ function Invoke-Tool {
     Write-Host ''
     Write-Host (T 'running' @(((Split-Path $Script -Leaf), ($Arguments -join ' ')) -join ' ')) -ForegroundColor DarkGray
     $ps = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-    & $ps -NoProfile -ExecutionPolicy Bypass -File $Script @Arguments
+    # the tools speak the same language as the menu
+    & $ps -NoProfile -ExecutionPolicy Bypass -File $Script @Arguments -Language $Lang
     $rc = $LASTEXITCODE
     Write-Host ''
     if ($rc -eq 0) { Write-Host (T 'ok') -ForegroundColor Green }

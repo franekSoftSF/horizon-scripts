@@ -1,0 +1,257 @@
+{
+  "_description": "VDI-ImageMaint manifest. Everything lives in C:\\install: the tool, this file, OSOT and the packages (any subfolder - the search is recursive). Enabled=false = package is only reported. Packages run in Order. Run -Mode Configure to fill it in step by step.",
+  "Profile": "University",
+  "Variables": {
+    "AppVolumesManager": "appvolumes.domain.local",
+    "AppVolumesPort": "443",
+    "FSLogixShare": ""
+  },
+  "Osot": {
+    "_description": "Seal: optimization (-o) with Windows/Office Update turned off, Finalize (-f) at the end. SettingsFile = 'Export Selections' from the OSOT GUI (optional). Finalize = Day-2 set, FinalizeBuild = image build set (no Compact 2, no zeroing 7 on Instant Clone).",
+    "Optimize": true,
+    "Template": "",
+    "Level": "",
+    "SettingsFile": "OSOT\\Optimize.json",
+    "CommonOptions": [
+      "-visualeffect",
+      "balanced"
+    ],
+    "Finalize": "0 1 3 4 5 8 10 11",
+    "FinalizeBuild": "0 1 3 4 5 8 10 11",
+    "Report": true
+  },
+  "Build": {
+    "_description": "Image build (-Mode Generalize -> PostGeneralize). Empty field = current system setting. UILanguage must be an installed language. PostGeneralizePackages = Ids from Packages installed AFTER Sysprep (despite Enabled=false / RequireInstalled).",
+    "TimeZone": "",
+    "InputLocale": "",
+    "SystemLocale": "",
+    "UserLocale": "",
+    "UILanguage": "",
+    "ComputerName": "",
+    "SkipRearm": false,
+    "PersistAllDeviceInstalls": true,
+    "AutoLogonCount": 10,
+    "PostGeneralizePackages": [
+      "VMwareTools",
+      "HorizonAgent",
+      "DEM",
+      "AppVolumesAgent"
+    ],
+    "RemoveUserAppx": [
+      "Microsoft.Copilot",
+      "Microsoft.BingSearch"
+    ],
+    "AppxSettleSeconds": 120
+  },
+  "Winget": {
+    "Install": []
+  },
+  "Ignore": [
+    "(?i)\\\\Optional Components\\\\",
+    "(?i)x86\\.msi$"
+  ],
+  "Packages": [
+    {
+      "Id": "WindowsPatches",
+      "Name": "Windows patches (MSU from the Patches folder)",
+      "Enabled": true,
+      "Order": 5,
+      "Type": "msu",
+      "File": "Patches\\*.msu",
+      "Multiple": true,
+      "Detect": {
+        "Type": "Hotfix"
+      },
+      "RebootAfter": true
+    },
+    {
+      "Id": "WindowsPatchesCab",
+      "Name": "Windows patches (CAB from the Patches folder)",
+      "Enabled": true,
+      "Order": 6,
+      "Type": "cab",
+      "File": "Patches\\*.cab",
+      "Multiple": true,
+      "Detect": {
+        "Type": "Hotfix"
+      },
+      "RebootAfter": true
+    },
+    {
+      "Id": "VMwareTools",
+      "Name": "VMware Tools",
+      "Enabled": false,
+      "Order": 10,
+      "Type": "exe",
+      "File": "VMware-tools-*.exe",
+      "Arguments": "/S /v \"/qn REBOOT=R\"",
+      "Detect": {
+        "Type": "Uninstall",
+        "Name": "^VMware Tools$"
+      },
+      "RequireInstalled": true,
+      "RebootAfter": true
+    },
+    {
+      "Id": "HorizonAgent",
+      "Name": "Omnissa Horizon Agent",
+      "Enabled": false,
+      "Order": 11,
+      "Type": "exe",
+      "File": "*Horizon-Agent-x86_64*.exe",
+      "Arguments": "/s /v\"/qn REBOOT=ReallySuppress\"",
+      "Detect": {
+        "Type": "Uninstall",
+        "Name": "Horizon Agent$"
+      },
+      "RequireInstalled": true,
+      "RebootAfter": true
+    },
+    {
+      "Id": "DEM",
+      "Name": "Omnissa Dynamic Environment Manager",
+      "Enabled": false,
+      "Order": 12,
+      "Type": "msi",
+      "File": "*Dynamic Environment Manager*x64*.msi",
+      "ExcludePath": "(?i)Optional Components",
+      "Arguments": "ADDLOCAL=FlexEngine",
+      "Detect": {
+        "Type": "Uninstall",
+        "Name": "Dynamic Environment Manager"
+      },
+      "RequireInstalled": true,
+      "RebootAfter": true
+    },
+    {
+      "Id": "AppVolumesAgent",
+      "Name": "App Volumes Agent",
+      "Enabled": false,
+      "Order": 13,
+      "Type": "msi",
+      "File": "App Volumes Agent*.msi",
+      "Arguments": "MANAGER_ADDR={AppVolumesManager} MANAGER_PORT={AppVolumesPort} EnforceSSLCertificateValidation=1 REBOOT=ReallySuppress",
+      "Detect": {
+        "Type": "Uninstall",
+        "Name": "App Volumes Agent"
+      },
+      "RequireInstalled": true,
+      "RebootAfter": true
+    },
+    {
+      "Id": "FSLogix",
+      "Name": "Microsoft FSLogix Apps",
+      "Enabled": true,
+      "Order": 20,
+      "Type": "exe",
+      "Archive": "*FSLogix*.zip",
+      "File": "FSLogixAppsSetup.exe",
+      "PreferPath": "\\\\x64\\\\",
+      "Arguments": "/install /quiet /norestart /log \"{Log}\"",
+      "Detect": {
+        "Type": "Uninstall",
+        "Name": "^Microsoft FSLogix Apps$"
+      },
+      "RequireInstalled": true
+    },
+    {
+      "Id": "FSLogixConfig",
+      "Name": "FSLogix configuration (registry, redirections.xml, AV exclusions)",
+      "Enabled": false,
+      "Order": 22,
+      "Type": "ps1",
+      "File": "Scripts\\Set-FSLogixConfig.ps1",
+      "Arguments": "-VHDLocations '{FSLogixShare}' -ConfigVersion 1",
+      "Detect": {
+        "Type": "Registry",
+        "Path": "HKLM:\\SOFTWARE\\EMS\\VDI-Image",
+        "Name": "FSLogixConfigVersion",
+        "Value": "1"
+      }
+    },
+    {
+      "Id": "OneDrive",
+      "Name": "Microsoft OneDrive (per machine, /allusers)",
+      "Enabled": false,
+      "Order": 25,
+      "Type": "exe",
+      "File": "Apps\\OneDriveSetup.exe",
+      "Arguments": "/allusers /silent",
+      "Detect": {
+        "Type": "Uninstall",
+        "Name": "^Microsoft OneDrive$"
+      }
+    },
+    {
+      "Id": "Office365",
+      "Name": "Microsoft 365 Apps (Office Deployment Tool)",
+      "Enabled": true,
+      "Order": 30,
+      "Type": "odt",
+      "File": "setup.exe",
+      "Recurse": true,
+      "FileInfoMatch": "Office",
+      "Config": "Configuration_x64.xml",
+      "Detect": {
+        "Type": "Always"
+      }
+    },
+    {
+      "Id": "PatchesMsp",
+      "Name": "Application MSP patches (Patches folder)",
+      "Enabled": false,
+      "Order": 35,
+      "Type": "msp",
+      "File": "Patches\\*.msp",
+      "Multiple": true,
+      "SuccessCodes": [
+        0,
+        1642
+      ],
+      "Detect": {
+        "Type": "Always"
+      }
+    },
+    {
+      "Id": "NewOutlook",
+      "Name": "New Outlook (MSIX provisioned, Apps folder)",
+      "Enabled": false,
+      "Order": 40,
+      "Type": "appx",
+      "File": "Apps\\Microsoft.OutlookForWindows*.msixbundle",
+      "Detect": {
+        "Type": "Appx",
+        "Name": "Microsoft.OutlookForWindows"
+      }
+    },
+    {
+      "Id": "Example-MSI",
+      "Name": "Example: MSI application (Apps folder)",
+      "Enabled": false,
+      "Order": 50,
+      "Type": "msi",
+      "File": "Apps\\Application*.msi",
+      "Arguments": "ALLUSERS=1",
+      "Detect": {
+        "Type": "Uninstall",
+        "Name": "^Application"
+      },
+      "StopProcesses": [
+        "application"
+      ]
+    },
+    {
+      "Id": "Example-EXE",
+      "Name": "Example: EXE installer with own file detection",
+      "Enabled": false,
+      "Order": 51,
+      "Type": "exe",
+      "File": "Apps\\Tool*.exe",
+      "Arguments": "/S",
+      "Detect": {
+        "Type": "File",
+        "Path": "C:\\Program Files\\Tool\\tool.exe"
+      }
+    }
+  ]
+}

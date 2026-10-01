@@ -9,7 +9,11 @@ Current state and next steps: see `status.md` / `status.json` (keep both in sync
 
 ## Files
 - `install/` = the complete `C:\install` (copy it to the VM):
-  - `install/VDI-ImageMaint.ps1` – main tool (v1.9.0, ~3000 lines, monolith; module split planned)
+  - `install/VDI-ImageMaint.ps1` – thin entry point (same parameters + `-Language auto|en|pl`) → `Invoke-VdiImageMaint`
+  - `install/Modules/VDI-ImageMaint/` – the module (v2.0.0): `Private/*.ps1` per area (00-Strings, 01-Config, Common,
+    Winget, Seal, Osot, Packages, Discover, Update, Inventory, Configure, Build), `Public/Invoke-VdiImageMaint.ps1`,
+    `en-US/*.psd1` + `pl-PL/*.psd1` string tables (one file per area), `Templates/packages.default.json`
+  - `install/START.cmd` + `install/Scripts/Start-Menu.ps1` – double-click launcher and EN/PL menu
   - `install/Scripts/Set-FSLogixConfig.ps1` – FSLogix registry, redirections.xml, groups, AV exclusions (v1.0.1)
   - `install/Scripts/Test-SysprepReadiness.ps1` – read-only pre-Generalize checks (EN/PL string table = the i18n pattern to follow)
   - `install/packages.json` (manifest, customer University), `install/winget-catalog.json`, `install/OSOT/Optimize.json`, `install/Office/*.xml`
@@ -21,9 +25,11 @@ Current state and next steps: see `status.md` / `status.json` (keep both in sync
 ## Language (i18n)
 - **English is the primary language** (code, comments, default messages, docs). **Polish is the
   second language** – every user-facing string must exist in both.
-- User-facing messages go through a string table (planned: `Import-LocalizedData`,
-  `en-US\*.psd1` + `pl-PL\*.psd1`), never hard-coded literals in new code.
-- Manifest keys, log levels, CSV column names and `seal-state.json` keys are language-neutral (English).
+- User-facing messages go through `T 'key' arg0 arg1` (module) – keys in `en-US\<Area>.psd1` and the same keys in
+  `pl-PL\<Area>.psd1`; en-US is the fallback. Never hard-coded literals in new code. Standalone scripts
+  (Test-SysprepReadiness, Start-Menu) keep an inline EN/PL table.
+- Manifest keys, log levels, CSV column names, `seal-state.json` keys, plan actions and inventory statuses are
+  language-neutral (English codes); only the display is translated.
 - Talk to the user in Polish.
 
 ## Code conventions (must follow)
@@ -37,13 +43,15 @@ Current state and next steps: see `status.md` / `status.json` (keep both in sync
 - **OSOT never as SYSTEM** (HKCU → Default User sync); **winget never as SYSTEM**.
 - Do not change the `packages.json` format in a backward-incompatible way.
 - Logging via `Write-Log` (INFO/OK/WARN/ERR/STEP).
-- In `-Mode` switches, remember `exit` inside functions ends the whole script (breaks module/tests).
+- Never `exit` inside module functions: after scheduling a reboot call `Stop-ForRestart` (throws `RestartSignal`,
+  the entry point returns 0). Module functions use `$script:EntryScript` instead of `$PSCommandPath`.
+- Mode handlers run inside `$null = switch` – stray pipeline output never reaches the exit code.
 
 ## Verification (run before claiming done)
 ```powershell
 # parse under both engines
 powershell.exe -NoProfile -Command "[System.Management.Automation.Language.Parser]::ParseFile('<file>',[ref]`$null,[ref]`$e); `$e"
-Invoke-ScriptAnalyzer -Path Win11 -Recurse            # PSScriptAnalyzer 1.25 installed
+Invoke-ScriptAnalyzer -Path install -Recurse          # PSScriptAnalyzer 1.25 installed
 Invoke-Pester                                          # Pester 5.9 installed (tests/ – to be created)
 ```
 Nothing here can be run end-to-end locally (needs admin, VM, Horizon). Say clearly what was only

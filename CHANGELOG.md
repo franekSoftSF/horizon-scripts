@@ -1,5 +1,20 @@
 # Changelog
 
+## VDI-ImageMaint 2.0.0 – in progress
+
+### Changed
+- Split into the module `Modules\VDI-ImageMaint` (Private per area, Public `Invoke-VdiImageMaint`);
+  `VDI-ImageMaint.ps1` is a thin entry point with the same parameters.
+- **English is the primary language**, Polish the second: all ~400 messages in `en-US\*.psd1` / `pl-PL\*.psd1`,
+  new parameter `-Language auto|en|pl` (auto = Polish on Polish Windows). Code and comments in English.
+- Language-neutral data: plan actions (install/update/skip/current/missing), Inventory status
+  (Blocked/Active/NoUpdater/NotDetected), CSV columns (`packages.csv`, `detected-updaters.csv`), detected updater
+  type (Task/Service). **Inventory CSV file and column names changed** (were Polish).
+- Default manifest moved to `Templates\packages.default.json` (English, with Build, Winget and OneDrive).
+- No `exit` inside functions: reboot scheduling ends the run through a restart signal (exit code 0).
+- `ConvertFrom-WingetTable`: pure parser of the winget table (testable).
+- The START menu passes its language to the tools.
+
 ## VDI-ImageMaint 1.10.0 – 2026-09-30
 
 ### Added

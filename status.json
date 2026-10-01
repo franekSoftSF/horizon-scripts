@@ -1,14 +1,14 @@
 {
-  "updated": "2026-09-30",
+  "updated": "2026-10-01",
   "versions": {
-    "VDI-ImageMaint.ps1": "1.10.0",
+    "VDI-ImageMaint.ps1": "2.0.0-dev",
     "Set-FSLogixConfig.ps1": "1.0.1",
     "Test-SysprepReadiness.ps1": "0.1"
   },
   "languages": {
     "primary": "en-US",
     "secondary": "pl-PL",
-    "i18nImplemented": false
+    "i18nImplemented": true
   },
   "targets": [
     "university",
@@ -254,7 +254,8 @@
     "docs/image-lifecycle.md (+pl): Build with Generalize, Day-2, OSOT fast boot, University/Business profiles, Teams",
     "install/Scripts/Test-SysprepReadiness.ps1 v0.1 (20 checks, EN/PL, read-only) - parse PS5.1 OK, PSSA OK, smoke-run non-admin; C09/C10 need admin run on VM",
     "START.cmd + Start-Menu.ps1 (EN/PL), Update -ThenSeal",
-    "Graphics profile, OneDrive per-machine, docs/profiles-gpo.md"
+    "Graphics profile, OneDrive per-machine, docs/profiles-gpo.md",
+    "Module split (install/Modules/VDI-ImageMaint) + English primary / Polish secondary, 407 keys, -Language"
   ],
   "osotFindings": [
     "Generalize requires audit mode; cannot be combined with Finalize; reboot required after",

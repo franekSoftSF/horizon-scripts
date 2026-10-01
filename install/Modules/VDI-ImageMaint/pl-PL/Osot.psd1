@@ -1,0 +1,16 @@
+﻿@{
+    'osot.pathMissing' = 'OSOT: nie znaleziono {0}'
+    'osot.notSystem'   = 'OSOT ({0}) uruchamiany jest z konta administratora, nie w kontekście SYSTEM'
+    'osot.notFound'    = 'Nie znaleziono OSOT w {0} - pomijam ({1})'
+    'osot.file'        = 'Plik: {0}'
+    'osot.exit'        = 'OSOT [{0}] kod: {1}, log: {2}'
+    'osot.noSettings'  = 'OSOT: brak pliku wyborów {0} - używam wyborów z szablonu'
+    'osot.found'       = 'OSOT: {0} (wersja {1})'
+    'osot.absent'      = 'OSOT: brak w {0}'
+    'osot.default'     = 'domyślny'
+    'osot.cfg'         = 'OSOT w Seal: optymalizacja={0} | szablon={1} | poziom={2} | wybory={3}'
+    'osot.common'      = 'OSOT opcje wspólne: {0} -windowsupdate disable -officeupdate disable'
+    'osot.finalize'    = 'OSOT Finalize: {0}'
+    'osot.off'         = 'wyłączony'
+    'osot.finalizeOff' = 'OSOT Finalize wyłączony (Finalize pusty lub -OsotFinalize none)'
+}

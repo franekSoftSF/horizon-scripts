@@ -1,0 +1,16 @@
+﻿@{
+    'osot.pathMissing' = 'OSOT: {0} not found'
+    'osot.notSystem'   = 'OSOT ({0}) runs from the administrator account, not as SYSTEM'
+    'osot.notFound'    = 'OSOT not found in {0} - skipped ({1})'
+    'osot.file'        = 'File: {0}'
+    'osot.exit'        = 'OSOT [{0}] exit code: {1}, log: {2}'
+    'osot.noSettings'  = 'OSOT: selections file {0} not found - using the template selections'
+    'osot.found'       = 'OSOT: {0} (version {1})'
+    'osot.absent'      = 'OSOT: not found in {0}'
+    'osot.default'     = 'default'
+    'osot.cfg'         = 'OSOT in Seal: optimize={0} | template={1} | level={2} | selections={3}'
+    'osot.common'      = 'OSOT common options: {0} -windowsupdate disable -officeupdate disable'
+    'osot.finalize'    = 'OSOT Finalize: {0}'
+    'osot.off'         = 'off'
+    'osot.finalizeOff' = 'OSOT Finalize is off (Finalize empty or -OsotFinalize none)'
+}
