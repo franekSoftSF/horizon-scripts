@@ -49,6 +49,51 @@ Włącz obraz wzorcowy i uruchom `sudo ./vdi-imagemaint.sh update --then-seal`. 
 wykona `apt full-upgrade` i zamknie go ponownie. Jeśli nowe jądro wymaga restartu, uruchom VM ponownie,
 a potem wykonaj `seal`.
 
+## Pobieranie z GitHuba
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/franekSoftSF/horizon-scripts/main/linux/get-vdi-imagemaint.sh | sudo bash
+```
+
+`get-vdi-imagemaint.sh`:
+- znajduje najnowsze wydanie `linux-v*` (w repozytorium są też wydania Windows);
+- pobiera je i sprawdza sumę SHA-256;
+- instaluje w `/opt/vdi-imagemaint`.
+
+To samo polecenie aktualizuje narzędzie. Wymieniane są tylko pliki narzędzia; `vdi-imagemaint.conf`,
+`Horizon/`, `certs/` i `apps/*.conf` zostają bez zmian. Opcje: `--version 0.3.0`, `--dir <ścieżka>`, `--lang pl-PL`.
+
+## Istniejący obraz wzorcowy (tryb `adopt`)
+
+Jeśli obraz był budowany bez tego narzędzia, zacznij od `adopt`:
+
+```bash
+sudo ./vdi-imagemaint.sh adopt
+```
+
+1. **Wykrywa** obecny stan:
+   - sesje pulpitu i menedżer logowania;
+   - sposób dołączenia do domeny (SSSD lub winbind/Samba) i keytab maszyny;
+   - montowanie katalogów domowych (fstab, autofs lub lokalne);
+   - agenta Horizon: jego konfigurację, `OfflineJoinDomain`, `RunOnceScript` i składniki USB.
+2. **Pokazuje podgląd** tego, co zmieniłyby `prepare`, `domain`, `nfs` i konfiguracja agenta: `diff` każdego
+   pliku z zamaskowanymi hasłami. Nic nie jest zapisywane.
+3. **Pyta**, które kroki zachować. Zachowany krok dostaje oznaczenie *adopted*: `prepare`/`domain`/`nfs`
+   nie wykonają się na nim ponownie, także po aktualizacji narzędzia, chyba że użyjesz `--force`.
+   `-y` zachowuje wszystkie wykryte kroki.
+4. **Zapisuje wersję agenta** bez reinstalacji. Omnissa nie dokumentuje pliku z wersją, więc narzędzie pyta
+   o wersję (YYMM-y.y.y-build) albo bierze ją z `ADOPT_AGENT_VERSION`. Pyta też, czy agent był instalowany
+   z opcjami obecnej konfiguracji. Jeśli nie, następne uruchomienie `agent` z tą samą wersją raz uruchomi
+   instalator z opcjami z konfiguracji.
+5. **Zachowuje dotychczasowe dołączenie do domeny i skrypt klona**:
+   - Przy dołączeniu przez winbind/Sambę `OfflineJoinDomain` zostaje bez zmian.
+   - Istniejący `RunOnceScript` (np. ponowne dołączenie przez `net ads join`) jest wywoływany przez
+     `/etc/vdi-imagemaint/runonce.local`, przed restartem SSSD/NFS.
+   - `check` akceptuje przejęty pulpit, sposób dołączenia i katalogi domowe.
+
+Po `adopt` używaj `check`, potem `agent` (aktualizacja), `recording`, `apps`, `optimize`, `collab` i `seal` jak zwykle.
+Dokumentacja zaleca budowę obrazu ze świeżej instalacji, nigdy z klona.
+
 ## Wersje i ponowne uruchomienia
 
 - Każdy krok budowy (`prepare`, `domain`, `nfs`) jest zapisywany w `build-state.json` razem z wersją

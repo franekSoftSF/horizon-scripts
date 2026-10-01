@@ -2,7 +2,7 @@
 # VDI-ImageMaint for Linux - shared helpers: config, i18n, logging, state, tracked changes.
 # Sourced by vdi-imagemaint.sh; expects VDI_ROOT to be set.
 
-VDI_VERSION="0.2.0"
+VDI_VERSION="0.3.0"
 STATE_DIR="/var/lib/vdi-imagemaint"
 LOG_DIR="/var/log/vdi-imagemaint"
 LOG_FILE="${LOG_DIR}/vdi-imagemaint-$(date +%Y%m%d).log"
@@ -198,6 +198,10 @@ run_step() {
     done_ver=$(state_get build '.steps[$m].version // empty' --arg m "$mode")
     done_fp=$(state_get build '.steps[$m].config // empty' --arg m "$mode")
     done_at=$(state_get build '.steps[$m].at // empty' --arg m "$mode")
+    if [[ $(state_get build '.steps[$m].adopted // false' --arg m "$mode") == true && ${FORCE:-0} != 1 ]]; then
+        logt OK step_adopted "$mode" "$done_at"
+        return 0
+    fi
     if [[ $done_ver == "$VDI_VERSION" && $done_fp == "$fp" && ${FORCE:-0} != 1 ]]; then
         logt OK step_already_done "$mode" "$done_ver" "$done_at"
         return 0
@@ -206,6 +210,10 @@ run_step() {
     "$fn"
     state_update build '.steps[$m] = {version: $v, config: $c, at: $d}' \
         --arg m "$mode" --arg v "$VDI_VERSION" --arg c "$fp" --arg d "$(date -Is)"
+}
+
+step_adopted() {
+    [[ $(state_get build '.steps[$m].adopted // false' --arg m "$1") == true ]]
 }
 
 is_sealed() {
@@ -273,6 +281,10 @@ file_track() {
 # write_file SECTION PATH MODE < content - atomic write, original tracked, unchanged files untouched.
 write_file() {
     local section=$1 path=$2 mode=$3 tmp
+    if [[ ${PREVIEW:-0} == 1 ]]; then
+        preview_file "$path"
+        return 0
+    fi
     install -d "$(dirname "$path")"
     tmp=$(mktemp "${path}.vdi.XXXXXX")
     cat >"$tmp"
@@ -287,13 +299,40 @@ write_file() {
     logt OK file_written "$path"
 }
 
+# preview_file PATH < content - show what write_file would change, write nothing.
+# Values of password/secret/authtok keys are masked in the diff.
+preview_file() {
+    local path=$1 tmp
+    tmp=$(mktemp)
+    cat >"$tmp"
+    if [[ -f $path ]] && cmp -s "$tmp" "$path"; then
+        logt OK preview_same "$path"
+    else
+        logt WARN preview_change "$path"
+        diff -u --label "${path} (now)" --label "${path} (tool)" \
+            "$([[ -f $path ]] && echo "$path" || echo /dev/null)" "$tmp" |
+            sed -E -e 's/^([-+ ][^=]*(pass|secret|authtok)[^=]*=).*/\1 ********/I' -e 's/^/    /' >&2 || true
+    fi
+    rm -f "$tmp"
+}
+
 # set_kv FILE KEY VALUE [SEP] - set "KEY<SEP>VALUE" in a flat conf file, replacing the
 # first live or commented "KEY =" line. SEP is what gets written ("=" or " = ").
 set_kv() {
-    local file=$1 key=$2 value=$3 sep=${4:-=} section=${KV_SECTION:-build} kre line
+    local file=$1 key=$2 value=$3 sep=${4:-=} section=${KV_SECTION:-build} kre line cur
+    kre=$(printf '%s' "$key" | sed -e 's/[][\.*^$+?(){}|/]/\\&/g')
+    if [[ ${PREVIEW:-0} == 1 ]]; then
+        cur=$(grep -E "^[[:space:]]*${kre}[[:space:]]*=" "$file" 2>/dev/null | tail -n1 |
+            sed -E 's/^[^=]*=[[:space:]]*//') || true
+        if [[ $cur == "$value" ]]; then
+            logt OK preview_kv_same "$file" "$key" "$value"
+        else
+            logt WARN preview_kv_change "$file" "$key" "${cur:-<unset>}" "$value"
+        fi
+        return 0
+    fi
     file_track "$section" "$file"
     touch "$file"
-    kre=$(printf '%s' "$key" | sed -e 's/[][\.*^$+?(){}|/]/\\&/g')
     line=$(printf '%s%s%s' "$key" "$sep" "$value" | sed -e 's/[\/&|]/\\&/g')
     if grep -Eq "^[#[:space:]]*${kre}[[:space:]]*=" "$file"; then
         sed -i -E "0,/^[#[:space:]]*${kre}[[:space:]]*=.*/s|^[#[:space:]]*${kre}[[:space:]]*=.*|${line}|" "$file"

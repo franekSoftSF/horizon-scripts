@@ -1,5 +1,11 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.3.0 – 2026-10-01
+- New mode `adopt` for existing golden images: detects desktop/display manager, join method (SSSD / winbind), home directories and the Horizon agent; previews prepare/domain/nfs/agent changes as diffs (secrets masked, nothing written); marks kept steps as adopted (never rerun, also after tool upgrades, unless --force); records the agent version without reinstalling; keeps a non-SSSD OfflineJoinDomain and chains an existing RunOnceScript.
+- `check` accepts adopted desktop, join service (sssd / winbind) and home directories.
+- `write_file` / `set_kv` preview mode; RunOnce site hook runs before the SSSD/NFS restart (90 s).
+- `get-vdi-imagemaint.sh`: download the newest linux-v* GitHub release, verify SHA-256, install or upgrade in place keeping local files.
+
 ## 0.2.0 – 2026-10-01
 - Version awareness: build steps (prepare, domain, nfs) skipped when done by the same tool version with the same configuration (`--force` reruns); `status` lists steps and installed versions.
 - Agent: version from the archive name, skip / reconfigure / upgrade / refuse downgrade; upgrade only without a running BlastServer; reboot tracked for check/seal.

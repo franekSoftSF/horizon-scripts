@@ -37,9 +37,11 @@ MSG[menu_step_failed]='Krok "%s" nie zakończył się - zobacz log.'
 MSG[usage_text]='Użycie: sudo %s <tryb> [opcje]
 
 Budowa (raz):   prepare -> domain -> nfs -> agent -> restart -> recording -> apps -> optimize -> collab -> check -> seal
+Istniejący obraz: adopt -> agent/recording/apps -> optimize -> collab -> check -> seal
 Co miesiąc:     update --then-seal       Cofnięcie zamknięcia: unlock
 
 Tryby:
+  adopt      istniejący obraz: wykrycie, podgląd (diff), zachowanie kroków, zapis wersji agenta
   prepare    pakiety bazowe, MATE + LightDM, locale, klawiatura, strefa czasowa, NTP
   domain     krb5.conf, SSSD, realm join obrazu, sudo, True SSO / karta
   nfs        katalogi domowe NFSv4 z Kerberosem (autofs, rpc.gssd, idmapd)
@@ -91,7 +93,7 @@ MSG[agent_installing]='Instaluję %s z parametrami: %s'
 MSG[agent_installer_missing]='Nie znaleziono install_viewagent.sh w %s.'
 MSG[agent_install_failed]='Instalacja Horizon Linux Agent nie powiodła się.'
 MSG[agent_conf_missing]='Nie znaleziono katalogu konfiguracji agenta (/etc/omnissa ani /etc/vmware).'
-MSG[agent_configured]='Agent skonfigurowany dla Instant Clone (OfflineJoinDomain=sssd, RunOnceScript): %s'
+MSG[agent_configured]='Agent skonfigurowany dla Instant Clone (OfflineJoinDomain, SSO, RunOnceScript): %s'
 MSG[agent_done]='Horizon Linux Agent %s gotowy.'
 
 # --- optimize ---
@@ -251,3 +253,40 @@ MSG[chk_cs_bad]='Connection Server %s nie rozwiązuje się - agent nie połączy
 MSG[menu_recording]='Horizon Recording Agent (pyta o hasło do serwera)'
 MSG[update_agent_newer]='Nowszy agent Horizon w Horizon/: %s -> %s - aktualizuję.'
 MSG[update_rec_newer]='Nowszy Horizon Recording Agent w Horizon/: %s -> %s - aktualizuję.'
+
+# --- 0.3.0: adopt ---
+MSG[step_adopt]='ADOPT - przejęcie istniejącego obrazu wzorcowego'
+MSG[adopt_sealed]='Obraz jest zamknięty - najpierw wykonaj unlock.'
+MSG[adopt_os_untested]='To nie Debian 12 - wykrywanie i podgląd działają; bez Twojej odpowiedzi nic się nie zmieni.'
+MSG[adopt_desktop]='Sesje pulpitu: %s; menedżer logowania: %s; domyślny cel: %s'
+MSG[adopt_domain]='Dołączenie do domeny: %s; realm: %s; keytab maszyny: %s'
+MSG[adopt_homes]='Katalogi domowe: %s; ustawienie SSSD: %s'
+MSG[adopt_agent]='Agent Horizon zainstalowany: %s; konfiguracja: %s; OfflineJoinDomain: %s; RunOnceScript: %s; składniki USB: %s'
+MSG[adopt_preview_title]='PODGLĄD - co zmieniłyby kroki budowy (nic nie jest zapisywane)'
+MSG[adopt_preview_step]='--- krok %s'
+MSG[adopt_preview_dm]='prepare przestawiłby menedżer logowania z %s na lightdm.'
+MSG[adopt_preview_mate]='prepare zainstalowałby pulpit MATE (nie znaleziono sesji MATE).'
+MSG[adopt_preview_locale]='prepare zmieniłby locale systemu z %s na %s.'
+MSG[adopt_preview_tz]='prepare zmieniłby strefę czasową z %s na %s.'
+MSG[preview_same]='bez zmian: %s'
+MSG[preview_change]='zmieniłby: %s'
+MSG[preview_kv_same]='bez zmian: %s %s=%s'
+MSG[preview_kv_change]='zmieniłby: %s %s: %s -> %s'
+MSG[adopt_decide_title]='DECYZJA - przejęte kroki zostają bez zmian i narzędzie ich nie wykonuje (tylko z --force)'
+MSG[adopt_q_step]='Zachować obecną konfigurację kroku %s (wykryto: %s)?'
+MSG[adopt_step_marked]='Krok %s przejęty - narzędzie go nie nadpisze.'
+MSG[adopt_agent_known]='Wersja agenta %s jest już zapisana.'
+MSG[adopt_q_agent_version]='Zainstalowana wersja agenta Horizon (YYMM-y.y.y-build) [%s]:'
+MSG[adopt_agent_version_unknown]='Wersja agenta nie została zapisana - tryb agent uruchomi instalator jako aktualizację.'
+MSG[adopt_q_agent_args]='Czy agent był instalowany z opcjami obecnej konfiguracji (%s)?'
+MSG[adopt_agent_recorded]='Agent zapisany jako %s (opcje: %s) - bez reinstalacji.'
+MSG[adopt_runonce_chained]='Zachowano istniejący RunOnceScript %s: wywołuje go skrypt klona narzędzia.'
+MSG[adopt_done]='Obraz przejęty. Zachowane kroki: %s. Dalej: check, potem w razie potrzeby optimize / collab / seal.'
+MSG[agent_offlinejoin_kept]='OfflineJoinDomain bez zmian (przejęty obraz dołączony przez %s).'
+MSG[step_adopted]='Krok %s przejęty z istniejącego obrazu (%s) - pominięto (--force zastosuje ustawienia narzędzia).'
+MSG[chk_offlinejoin_adopted]='OfflineJoinDomain ustawione (przejęty obraz, metoda dołączenia %s).'
+MSG[chk_join_service_ok]='%s działa.'
+MSG[chk_join_service_bad]='%s nie działa.'
+MSG[chk_desktop_adopted]='Przejęty pulpit z menedżerem logowania %s (nie testowane LightDM + MATE).'
+MSG[chk_nfs_adopted]='Katalogi domowe przejęte z istniejącego obrazu (%s).'
+MSG[menu_adopt]='0. Istniejący obraz: wykryj, pokaż różnice, zachowaj (adopt)'

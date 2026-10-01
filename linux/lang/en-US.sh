@@ -37,9 +37,11 @@ MSG[menu_step_failed]='Step "%s" did not finish - see the log.'
 MSG[usage_text]='Usage: sudo %s <mode> [options]
 
 Build (once):   prepare -> domain -> nfs -> agent -> reboot -> recording -> apps -> optimize -> collab -> check -> seal
+Existing image: adopt -> agent/recording/apps -> optimize -> collab -> check -> seal
 Monthly:        update --then-seal       Reverse a seal: unlock
 
 Modes:
+  adopt      existing image: detect, preview (diff), keep steps, record agent version
   prepare    base packages, MATE + LightDM, locale, keyboard, time zone, NTP
   domain     krb5.conf, SSSD, realm join of the golden image, sudo, True SSO / smart card
   nfs        NFSv4 home directories with Kerberos (autofs, rpc.gssd, idmapd)
@@ -91,7 +93,7 @@ MSG[agent_installing]='Installing %s with: %s'
 MSG[agent_installer_missing]='install_viewagent.sh not found in %s.'
 MSG[agent_install_failed]='Horizon Linux Agent installation failed.'
 MSG[agent_conf_missing]='Agent configuration directory (/etc/omnissa or /etc/vmware) not found.'
-MSG[agent_configured]='Agent configured for Instant Clone (OfflineJoinDomain=sssd, RunOnceScript): %s'
+MSG[agent_configured]='Agent configured for Instant Clone (OfflineJoinDomain, SSO, RunOnceScript): %s'
 MSG[agent_done]='Horizon Linux Agent %s ready.'
 
 # --- optimize ---
@@ -251,3 +253,40 @@ MSG[chk_cs_bad]='Connection Server %s does not resolve - the agent cannot reach 
 MSG[menu_recording]='Horizon Recording Agent (asks for the server password)'
 MSG[update_agent_newer]='Newer Horizon agent in Horizon/: %s -> %s - upgrading.'
 MSG[update_rec_newer]='Newer Horizon Recording Agent in Horizon/: %s -> %s - upgrading.'
+
+# --- 0.3.0: adopt ---
+MSG[step_adopt]='ADOPT - take over an existing golden image'
+MSG[adopt_sealed]='The image is sealed - run unlock first.'
+MSG[adopt_os_untested]='This OS is not Debian 12 - detection and preview still run; nothing is changed without your answer.'
+MSG[adopt_desktop]='Desktop sessions: %s; display manager: %s; default target: %s'
+MSG[adopt_domain]='Domain join: %s; realm: %s; machine keytab: %s'
+MSG[adopt_homes]='Home directories: %s; SSSD home setting: %s'
+MSG[adopt_agent]='Horizon agent installed: %s; config: %s; OfflineJoinDomain: %s; RunOnceScript: %s; USB components: %s'
+MSG[adopt_preview_title]='PREVIEW - what the build steps would change (nothing is written)'
+MSG[adopt_preview_step]='--- step %s'
+MSG[adopt_preview_dm]='prepare would switch the display manager from %s to lightdm.'
+MSG[adopt_preview_mate]='prepare would install the MATE desktop (no MATE session found).'
+MSG[adopt_preview_locale]='prepare would change the system locale from %s to %s.'
+MSG[adopt_preview_tz]='prepare would change the time zone from %s to %s.'
+MSG[preview_same]='unchanged: %s'
+MSG[preview_change]='would change: %s'
+MSG[preview_kv_same]='unchanged: %s %s=%s'
+MSG[preview_kv_change]='would change: %s %s: %s -> %s'
+MSG[adopt_decide_title]='DECIDE - adopted steps are kept as they are and never run by the tool (only with --force)'
+MSG[adopt_q_step]='Keep the existing configuration for step %s (found: %s)?'
+MSG[adopt_step_marked]='Step %s adopted - the tool will not overwrite it.'
+MSG[adopt_agent_known]='Agent version %s already recorded.'
+MSG[adopt_q_agent_version]='Installed Horizon agent version (YYMM-y.y.y-build) [%s]:'
+MSG[adopt_agent_version_unknown]='Agent version not recorded - mode agent will run the installer as an upgrade.'
+MSG[adopt_q_agent_args]='Was the agent installed with the options of the current configuration (%s)?'
+MSG[adopt_agent_recorded]='Agent recorded as %s (options: %s) - not reinstalled.'
+MSG[adopt_runonce_chained]='Existing RunOnceScript %s kept: called from the tool per-clone script.'
+MSG[adopt_done]='Image adopted. Kept steps: %s. Next: check, then optimize / collab / seal as needed.'
+MSG[agent_offlinejoin_kept]='OfflineJoinDomain left unchanged (adopted image joined with %s).'
+MSG[step_adopted]='Step %s was adopted from the existing image (%s) - skipped (--force applies the tool settings).'
+MSG[chk_offlinejoin_adopted]='OfflineJoinDomain set (adopted image, join method %s).'
+MSG[chk_join_service_ok]='%s running.'
+MSG[chk_join_service_bad]='%s not running.'
+MSG[chk_desktop_adopted]='Adopted desktop with display manager %s (not the tested LightDM + MATE).'
+MSG[chk_nfs_adopted]='Home directories adopted from the existing image (%s).'
+MSG[menu_adopt]='0. Existing image: detect, preview, keep (adopt)'

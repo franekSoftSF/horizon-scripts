@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-01",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",
@@ -20,6 +20,7 @@
     "business"
   ],
   "modes": [
+    "adopt",
     "prepare",
     "domain",
     "nfs",
@@ -49,7 +50,7 @@
   "checks": {
     "unitTests": {
       "status": "pass",
-      "passed": 27,
+      "passed": 29,
       "failed": 0,
       "where": "debian:12 container"
     },
@@ -73,6 +74,16 @@
       "status": "pass",
       "where": "debian:12 container, fake archives",
       "detail": "install, skip, upgrade, refuse downgrade, refuse with BlastServer running"
+    },
+    "adopt": {
+      "status": "pass",
+      "where": "debian:12 container, simulated GNOME/winbind/fstab image",
+      "detail": "preview writes nothing; steps adopted; OfflineJoinDomain=samba kept; RunOnceScript chained"
+    },
+    "getScript": {
+      "status": "pass",
+      "where": "debian:12 container against GitHub release linux-v0.2.0",
+      "detail": "SHA-256 verified, local conf and Horizon/ kept"
     }
   },
   "toVerify": [
@@ -84,7 +95,8 @@
     "polkit power rule hides MATE shutdown buttons",
     "VHCI DKMS build with PRE_BUILD hcd.h on a real Debian 12 kernel; Secure Boot signing",
     "gnome-shell-extension-appindicator on a MATE image",
-    "Horizon Recording -t registration on the golden image and on clones"
+    "Horizon Recording -t registration on the golden image and on clones",
+    "adopt on a real existing golden image (agent version detection is best effort)"
   ],
   "plan": [
     "VM test: ISO build -> seal -> Instant Clone pool -> logon, NFS, collaboration via UAG",

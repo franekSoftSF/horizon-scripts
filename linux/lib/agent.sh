@@ -154,7 +154,7 @@ agent_install_runonce() {
 }
 
 agent_configure() {
-    local dir conf kv
+    local dir conf kv oj
     if ! dir=$(agent_conf_dir); then
         logt ERR agent_conf_missing
         exit 1
@@ -163,7 +163,11 @@ agent_configure() {
     domain_defaults
 
     export KV_SECTION=build
-    set_kv "$conf" OfflineJoinDomain sssd
+    if oj=$(adopt_offline_join); then
+        set_kv "$conf" OfflineJoinDomain "$oj"
+    else
+        logt INFO agent_offlinejoin_kept "${ADOPT_PREVIEW_JOIN:-$(state_get build '.adopted.join')}"
+    fi
     set_kv "$conf" RunOnceScript "$RUNONCE_TARGET"
     set_kv "$conf" RunOnceScriptTimeout "$RUNONCE_TIMEOUT"
     set_kv "$conf" SSOEnable "$HORIZON_SSO"
@@ -181,6 +185,7 @@ agent_configure() {
         set_kv "$conf" "${kv%%=*}" "${kv#*=}"
     done
     unset KV_SECTION
+    [[ ${PREVIEW:-0} == 1 ]] && return 0
     chmod 0644 "$conf"
     logt OK agent_configured "$conf"
 }

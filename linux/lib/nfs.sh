@@ -14,10 +14,24 @@ mode_nfs() {
         return 0
     fi
     require_conf NFS_SERVER NFS_EXPORT AD_DOMAIN
-    local idmap=${NFS_IDMAP_DOMAIN:-$AD_DOMAIN}
-
     apt_install nfs-common autofs
+    nfs_write_files
+    if systemctl is-active --quiet sssd.service; then
+        run systemctl restart sssd.service
+    fi
 
+    install -d -m 0755 "$HOME_ROOT"
+    run systemctl enable nfs-client.target autofs.service
+    run systemctl restart nfs-client.target || true
+    run systemctl restart autofs.service
+    [[ -s /etc/krb5.keytab ]] || logt WARN nfs_no_keytab
+    nfs_check_server
+    logt OK nfs_done "${NFS_SERVER}:${NFS_EXPORT}" "$HOME_ROOT" "$NFS_SEC"
+}
+
+# All files of the NFS step (also used by "adopt" in preview mode).
+nfs_write_files() {
+    local idmap=${NFS_IDMAP_DOMAIN:-$AD_DOMAIN}
     write_file build /etc/idmapd.conf 0644 <<EOF
 ${MANAGED_MARK}
 [General]
@@ -54,17 +68,6 @@ ${MANAGED_MARK}
 override_homedir = ${HOME_ROOT}/%u
 krb5_ccname_template = FILE:/tmp/krb5cc_%U
 EOF
-    if systemctl is-active --quiet sssd.service; then
-        run systemctl restart sssd.service
-    fi
-
-    install -d -m 0755 "$HOME_ROOT"
-    run systemctl enable nfs-client.target autofs.service
-    run systemctl restart nfs-client.target || true
-    run systemctl restart autofs.service
-    [[ -s /etc/krb5.keytab ]] || logt WARN nfs_no_keytab
-    nfs_check_server
-    logt OK nfs_done "${NFS_SERVER}:${NFS_EXPORT}" "$HOME_ROOT" "$NFS_SEC"
 }
 
 nfs_check_server() {

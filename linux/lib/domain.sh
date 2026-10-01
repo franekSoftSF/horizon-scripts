@@ -227,7 +227,7 @@ dyndns_refresh_interval = 43200
 dyndns_update_ptr = False
 ${certmap}
 EOF
-    chown root:root /etc/sssd/sssd.conf
+    [[ ${PREVIEW:-0} == 1 ]] || chown root:root /etc/sssd/sssd.conf
 }
 
 domain_write_sudoers() {

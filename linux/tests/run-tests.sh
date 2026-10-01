@@ -161,6 +161,21 @@ if command -v jq >/dev/null 2>&1; then
         run_step prepare step_fn 2>/dev/null
         [[ $STEP_RUNS == 3 ]] || { echo "run_step after config change"; exit 1; }
 
+        # preview: write_file/set_kv change nothing; secrets masked in the diff
+        printf 'old\n' >"$etc/pv.conf"
+        printf 'ldap_default_authtok = s3cret\n' | PREVIEW=1 write_file build "$etc/pv.conf" 0644 2>"$SANDBOX/pv.out"
+        [[ $(cat "$etc/pv.conf") == old ]] || { echo "preview wrote the file"; exit 1; }
+        grep -q 's3cret' "$SANDBOX/pv.out" && { echo "preview leaked a secret"; exit 1; }
+        PREVIEW=1 set_kv "$etc/pv.conf" Key v 2>/dev/null
+        [[ $(cat "$etc/pv.conf") == old ]] || { echo "preview set_kv wrote"; exit 1; }
+        [[ -z $(state_get build '.files[$p] // empty' --arg p "$etc/pv.conf") ]] || { echo "preview tracked a file"; exit 1; }
+
+        state_update build '.steps.nfs = {version: "0.0.1", config: "x", at: "t", adopted: true}'
+        run_step nfs step_fn 2>/dev/null
+        [[ $STEP_RUNS == 3 ]] || { echo "adopted step must be skipped even for another tool version"; exit 1; }
+        FORCE=1 run_step nfs step_fn 2>/dev/null
+        [[ $STEP_RUNS == 4 ]] || { echo "adopted step runs with --force"; exit 1; }
+
         [[ $(printf 'pass=a&b/c*d\nok\n' | rec_redact 'a&b/c*d') == $'pass=********\nok' ]] || { echo "rec_redact"; exit 1; }
     ) 2>"$SANDBOX/err2" && ok "tracked files + state" || fail "tracked files + state: $(cat "$SANDBOX/err2")"
 else

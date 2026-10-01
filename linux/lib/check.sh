@@ -43,7 +43,11 @@ mode_check() {
     fi
 
     if dir=$(agent_conf_dir) && conf="${dir}/viewagent-custom.conf" && [[ -f $conf ]]; then
-        if grep -Eqi '^[[:space:]]*OfflineJoinDomain[[:space:]]*=[[:space:]]*sssd' "$conf"; then
+        local want_oj
+        want_oj=$(adopt_offline_join || true)
+        if [[ -z $want_oj ]] && grep -Eqi '^[[:space:]]*OfflineJoinDomain[[:space:]]*=[[:space:]]*[a-z]+' "$conf"; then
+            check_result OK L05 chk_offlinejoin_adopted "$(state_get build '.adopted.join')"
+        elif grep -Eqi '^[[:space:]]*OfflineJoinDomain[[:space:]]*=[[:space:]]*sssd' "$conf"; then
             check_result OK L05 chk_offlinejoin_ok
         else
             check_result ERR L05 chk_offlinejoin_bad "$conf"
@@ -59,16 +63,18 @@ mode_check() {
         check_result ERR L05 chk_agent_conf_missing
     fi
 
-    if domain_is_joined && [[ -s /etc/krb5.keytab ]]; then
+    local join_svc=sssd.service
+    [[ $(state_get build '.adopted.join // empty') == winbind ]] && step_adopted domain && join_svc=winbind.service
+    if [[ -s /etc/krb5.keytab ]] && { domain_is_joined || step_adopted domain; }; then
         check_result OK L07 chk_joined_ok "$AD_DOMAIN"
     else
         check_result ERR L07 chk_joined_bad "$AD_DOMAIN"
     fi
 
-    if systemctl is-active --quiet sssd.service; then
-        check_result OK L08 chk_sssd_ok
+    if systemctl is-active --quiet "$join_svc"; then
+        check_result OK L08 chk_join_service_ok "$join_svc"
     else
-        check_result ERR L08 chk_sssd_bad
+        check_result ERR L08 chk_join_service_bad "$join_svc"
     fi
 
     if cert_logon_enabled; then
@@ -101,11 +107,16 @@ mode_check() {
 
     if [[ $(cat /etc/X11/default-display-manager 2>/dev/null) == */lightdm && -f /usr/share/xsessions/mate.desktop ]]; then
         check_result OK L11 chk_desktop_ok
+    elif step_adopted prepare && [[ -s /etc/X11/default-display-manager ]] &&
+        [[ -n $(find /usr/share/xsessions -maxdepth 1 -name '*.desktop' 2>/dev/null | head -n1) ]]; then
+        check_result WARN L11 chk_desktop_adopted "$(basename "$(cat /etc/X11/default-display-manager)")"
     else
         check_result ERR L11 chk_desktop_bad
     fi
 
-    if [[ $NFS_ENABLE == yes ]]; then
+    if step_adopted nfs; then
+        check_result OK L12 chk_nfs_adopted "$(state_get build '.adopted.homes // empty')"
+    elif [[ $NFS_ENABLE == yes ]]; then
         if [[ $(unit_enabled_state autofs.service) == enabled && -f /etc/auto.vdi-home ]] &&
             grep -q "^Domain = ${NFS_IDMAP_DOMAIN:-$AD_DOMAIN}\$" /etc/idmapd.conf 2>/dev/null &&
             [[ -f $NFS_SSSD_SNIPPET ]]; then

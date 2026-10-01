@@ -13,7 +13,7 @@ echo "=== $(date '+%F %T') runonce on $(hostname -f 2>/dev/null || hostname)"
 
 step() {
     echo "--- $*"
-    timeout 30 "$@" || echo "WARN: '$*' returned $?"
+    timeout "${STEP_TIMEOUT:-30}" "$@" || echo "WARN: '$*' returned $?"
 }
 
 # SSH host keys were removed at Seal: every clone gets its own.
@@ -22,17 +22,19 @@ if ! ls /etc/ssh/ssh_host_*_key >/dev/null 2>&1; then
     systemctl is-enabled --quiet ssh.service 2>/dev/null && step systemctl restart ssh.service
 fi
 
+# Site hook first - it may create the keytab, e.g. the RunOnceScript an adopted
+# image had before (domain rejoin).
+# Same rules: non-interactive, finish within RunOnceScriptTimeout.
+if [[ -x /etc/vdi-imagemaint/runonce.local ]]; then
+    STEP_TIMEOUT=90 step /etc/vdi-imagemaint/runonce.local
+fi
+
 # New machine keytab from the offline join -> refresh SSSD and NFS Kerberos clients.
 step sss_cache -E
 step systemctl restart sssd.service
 if systemctl is-enabled --quiet autofs.service 2>/dev/null; then
     step systemctl restart rpc-gssd.service
     step systemctl restart autofs.service
-fi
-
-# Optional site hook (same rules: fast, non-interactive).
-if [[ -x /etc/vdi-imagemaint/runonce.local ]]; then
-    step /etc/vdi-imagemaint/runonce.local
 fi
 
 echo "=== done"

@@ -47,6 +47,50 @@ sudo ./vdi-imagemaint.sh seal        # runs check first, then powers off -> snap
 Power on the golden image, then run `sudo ./vdi-imagemaint.sh update --then-seal`. The tool unlocks the
 image, runs `apt full-upgrade`, and seals it again. If a new kernel needs a reboot, reboot and then run `seal`.
 
+## Download from GitHub
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/franekSoftSF/horizon-scripts/main/linux/get-vdi-imagemaint.sh | sudo bash
+```
+
+`get-vdi-imagemaint.sh` does the following:
+- finds the newest `linux-v*` release (the repository also has Windows releases);
+- downloads the release and checks its SHA-256 file;
+- installs it into `/opt/vdi-imagemaint`.
+
+Run the same command again to upgrade. Only the tool's own files are replaced; `vdi-imagemaint.conf`,
+`Horizon/`, `certs/` and `apps/*.conf` stay as they are. Options: `--version 0.3.0`, `--dir <path>`, `--lang pl-PL`.
+
+## Existing golden image (mode `adopt`)
+
+If you have an image that was built without this tool, run `adopt` before anything else:
+
+```bash
+sudo ./vdi-imagemaint.sh adopt
+```
+
+1. **Detects** the current state:
+   - desktop sessions and the display manager;
+   - the domain join method (SSSD or winbind/Samba) and the machine keytab;
+   - how home directories are mounted (fstab, autofs or local);
+   - the Horizon agent: its configuration, `OfflineJoinDomain`, `RunOnceScript` and USB components.
+2. **Previews** what `prepare`, `domain`, `nfs` and the agent configuration would change. For every file
+   it shows a `diff`, with passwords and secrets masked. Nothing is written.
+3. **Asks** which steps to keep. A kept step is marked *adopted*: `prepare`/`domain`/`nfs` never run on it
+   again, not even after a tool upgrade, unless you pass `--force`. `-y` keeps every step it detected.
+4. **Records the agent version** without reinstalling the agent. Omnissa documents no version file, so the
+   tool asks for the version (YYMM-y.y.y-build) or reads `ADOPT_AGENT_VERSION`. It also asks whether the
+   agent was installed with the options of the current configuration. If not, the next `agent` run with the
+   same version reruns the installer once with the configured options.
+5. **Keeps the existing join and per-clone script**:
+   - With a winbind/Samba join, `OfflineJoinDomain` is left unchanged.
+   - An existing `RunOnceScript` (for example a `net ads join` rejoin) is chained through
+     `/etc/vdi-imagemaint/runonce.local`. It runs before the SSSD/NFS restart.
+   - `check` accepts the adopted desktop, join method and home directories.
+
+After `adopt`, use `check`, then `agent` (upgrade), `recording`, `apps`, `optimize`, `collab` and `seal` as usual.
+The docs recommend building golden images from a fresh installation and never from a cloned system.
+
 ## Versions and re-runs
 
 - Each build step (`prepare`, `domain`, `nfs`) is recorded in `build-state.json` with the tool version,
