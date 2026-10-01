@@ -61,6 +61,17 @@ curl -fsSL https://raw.githubusercontent.com/franekSoftSF/horizon-scripts/main/l
 Run the same command again to upgrade. Only the tool's own files are replaced; `vdi-imagemaint.conf`,
 `Horizon/`, `certs/` and `apps/*.conf` stay as they are. Options: `--version 0.3.0`, `--dir <path>`, `--lang pl-PL`.
 
+### Automatic upgrade
+
+At the start of every run, the tool checks GitHub for a newer `linux-v*` release. If it finds one, it
+installs the release in place (SHA-256 checked, local files kept) and starts the same command again with
+the new version. It also refreshes the installed per-clone script. If GitHub cannot be reached, the run
+continues with the installed version.
+
+- `AUTO_UPGRADE="yes"` (default), `"ask"` or `"no"` in `vdi-imagemaint.conf`;
+- `--no-upgrade` skips the upgrade for one run;
+- `self-update` checks GitHub now, also when `AUTO_UPGRADE="no"`.
+
 ## Existing golden image (mode `adopt`)
 
 If you have an image that was built without this tool, run `adopt` before anything else:

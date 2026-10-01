@@ -57,6 +57,7 @@ Tryby:
   update     odblokowanie (jeśli zamknięty), apt full-upgrade, autoremove
   fido       test przekierowania FIDO2 w sesji na klonie
   status     wersja, profil, zapisane zmiany
+  self-update  sprawdź GitHub teraz i zaktualizuj narzędzie (także przy AUTO_UPGRADE=no)
 
 Opcje:
   --config PLIK   plik konfiguracji (domyślnie: vdi-imagemaint.conf obok narzędzia)
@@ -65,6 +66,7 @@ Opcje:
   --then-seal     z update: zamknij obraz, jeśli nie trzeba restartu
   --force         seal mimo błędów kontroli; ponowne wykonanie kroku; reinstalacja lub obniżenie wersji agentów
   -y, --yes       odpowiadaj "tak" na pytania
+  --no-upgrade    pomiń automatyczną aktualizację narzędzia w tym uruchomieniu
 '
 
 # --- prepare ---
@@ -312,3 +314,14 @@ MSG[menu_usb]='Sam sterownik przekierowania USB (VHCI) - także dla przejętego 
 MSG[adopt_runonce_set]='Skrypt klona %s ustawiony jako RunOnceScript w %s (nowe klucze SSH i odświeżenie SSSD/NFS na każdym klonie).'
 MSG[chk_conf_example]='W konfiguracji zostały wartości przykładowe:%s - ustaw je w %s.'
 MSG[chk_conf_example_detected]='W konfiguracji zostały wartości przykładowe:%s - wartości wykryte na tym obrazie są w %s (przepisz je).'
+
+# --- 0.4.0: self-update ---
+MSG[selfupdate_unreachable]='GitHub niedostępny - kontynuuję z zainstalowaną wersją.'
+MSG[selfupdate_current]='VDI-ImageMaint %s to najnowsze wydanie.'
+MSG[selfupdate_available]='Nowsze wydanie VDI-ImageMaint: %s -> %s.'
+MSG[selfupdate_q]='Zaktualizować narzędzie do %s teraz?'
+MSG[selfupdate_failed]='Aktualizacja do %s nie powiodła się - kontynuuję z zainstalowaną wersją.'
+MSG[selfupdate_done]='Narzędzie zaktualizowane do %s - uruchamiam polecenie ponownie w nowej wersji.'
+MSG[selfupdate_runonce]='Skrypt klona %s zaktualizowany do tej wersji narzędzia.'
+MSG[step_selfupdate]='SELF-UPDATE - sprawdzenie nowszego wydania na GitHubie'
+MSG[menu_self-update]='Zaktualizuj to narzędzie z GitHuba teraz'

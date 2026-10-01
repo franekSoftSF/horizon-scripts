@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-02",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",
@@ -34,7 +34,8 @@
     "unlock",
     "update",
     "fido",
-    "status"
+    "status",
+    "self-update"
   ],
   "apps": [
     {
