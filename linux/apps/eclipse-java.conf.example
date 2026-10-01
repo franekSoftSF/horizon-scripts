@@ -1,0 +1,29 @@
+# VDI-ImageMaint for Linux - Eclipse + Java component, customer settings.
+# Copy to eclipse-java.conf (git-ignored) next to eclipse-java.sh and set only
+# what differs from the defaults at the top of eclipse-java.sh.
+
+# JDK the course uses. temurin = Adoptium apt repo (any LTS on Debian 12/13),
+# debian = openjdk-N-jdk from Debian (12: 17 only; 13: 21/25).
+JAVA_SOURCE="temurin"
+JAVA_VERSION="25"
+JAVA_EXTRA_PACKAGES=""            # e.g. "maven openjfx"
+
+# Eclipse release train and EPP package (java = "Eclipse IDE for Java Developers").
+ECLIPSE_RELEASE="2026-09"
+ECLIPSE_PACKAGE="java"
+# Offline: put eclipse-java-2026-09-R-linux-gtk-x86_64.tar.gz (+ .sha512) into apps/Apps/.
+ECLIPSE_ARCHIVE=""
+ECLIPSE_XMX="2048m"
+
+# Extra plugins installed into the shared, read-only install (students cannot add them).
+# Example: WindowBuilder
+#ECLIPSE_P2_REPOS="https://download.eclipse.org/windowbuilder/latest/"
+#ECLIPSE_P2_FEATURES="org.eclipse.wb.core.feature.feature.group,org.eclipse.wb.swing.feature.feature.group"
+
+# MATE menu: the entry is always in Applications > Programming.
+# Optional extra submenu, e.g. for everything installed for courses:
+MENU_SUBMENU=""                   # e.g. "Courses"
+MENU_SUBMENU_PL=""                # e.g. "Zajęcia"
+DESKTOP_ICON="no"                 # yes = icon on every user's desktop (created at login)
+
+VDI_LANG=""                       # en-US | pl-PL | empty = from $LANG

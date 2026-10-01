@@ -1,0 +1,5 @@
+# Installers and customer settings stay local
+Apps/
+*.tar.gz
+*.sha512
+eclipse-java.conf

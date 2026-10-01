@@ -13,6 +13,10 @@
   "languages": { "primary": "en-US", "secondary": "pl-PL", "i18nImplemented": true },
   "profiles": ["university", "business"],
   "modes": ["prepare", "domain", "nfs", "agent", "apps", "optimize", "collab", "check", "seal", "unlock", "update", "fido", "status"],
+  "apps": [
+    { "name": "eclipse-java", "script": "apps/eclipse-java.sh", "version": "1.0.0", "jdk": "Temurin 25",
+      "docs": "docs/linux-eclipse-java.md", "tested": "debian:12 container (online + offline archive)", "vm": "not-tested" }
+  ],
   "checks": {
     "unitTests": { "status": "pass", "passed": 25, "failed": 0, "where": "debian:12 container" },
     "shellcheck": { "status": "pass", "findings": 0 },

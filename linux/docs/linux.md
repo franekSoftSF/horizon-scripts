@@ -18,7 +18,7 @@ The repository folder `linux/` is the complete `/opt/vdi-imagemaint` on the VM.
 | `lang/en-US.sh`, `lang/pl-PL.sh` | string tables (English primary) |
 | `files/runonce.sh` | per-clone script, installed as `/usr/local/sbin/vdi-imagemaint-runonce.sh` |
 | `certs/` | CA certificates (PEM) for True SSO / smart card logon (not in git) |
-| `apps/*.sh` | optional application installers (e.g. Eclipse), run by mode `apps` |
+| `apps/*.sh` | optional application installers, run by mode `apps` – e.g. [Eclipse + Java](../../docs/linux-eclipse-java.md) |
 | `Horizon/` | Horizon Linux Agent `*linux*.tar.gz` (not in git) |
 | `tests/run-tests.sh` | offline tests |
 
@@ -77,6 +77,16 @@ image, runs `apt full-upgrade`, and seals it again. If a new kernel needs a rebo
 - **collab** asks for every value; `-y` takes the defaults from the config file. It writes
   `CollaborationEnable` to `viewagent-custom.conf` and `collaboration.serverUrl` (invitation link,
   e.g. the UAG URL), `enableEmail`, `enableControlPassing` and `maxCollabors` to the agent's `config` file.
+
+## Applications (mode `apps`)
+
+`apps` runs every `apps/*.sh --install --yes` and stops at the first failure. Each installer keeps its own
+state and log in `/var/lib/vdi-imagemaint/` and `/var/log/vdi-imagemaint/`. It refuses to run on a
+sealed image, so run `apps` before `seal`.
+
+- **Eclipse + Java** (`apps/eclipse-java.sh`, v1.0.0): Eclipse 2026-09 needs Java 25 to run, so the
+  default JDK is Temurin 25 from the Adoptium apt repository. Files go to `/opt/vdi-apps/`.
+  Details: [docs/linux-eclipse-java.md](../../docs/linux-eclipse-java.md).
 
 ## Known limits
 

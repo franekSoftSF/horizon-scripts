@@ -19,7 +19,7 @@ Katalog `linux/` w repozytorium to kompletny `/opt/vdi-imagemaint` na VM.
 | `lang/en-US.sh`, `lang/pl-PL.sh` | tabele komunikatów (główny jest angielski) |
 | `files/runonce.sh` | skrypt uruchamiany na każdym klonie (`/usr/local/sbin/vdi-imagemaint-runonce.sh`) |
 | `certs/` | certyfikaty CA (PEM) do True SSO / logowania kartą (poza gitem) |
-| `apps/*.sh` | opcjonalne instalatory aplikacji (np. Eclipse), uruchamia je tryb `apps` |
+| `apps/*.sh` | opcjonalne instalatory aplikacji, uruchamia je tryb `apps` – np. [Eclipse + Java](../../../docs/pl/linux-eclipse-java.md) |
 | `Horizon/` | Horizon Linux Agent `*linux*.tar.gz` (poza gitem) |
 
 Na VM logi są w `/var/log/vdi-imagemaint/`, a stan w `/var/lib/vdi-imagemaint/`. Każda sekcja (`build`,
@@ -82,6 +82,16 @@ a potem wykonaj `seal`.
   `viewagent-custom.conf` zapisuje `CollaborationEnable`, a do pliku `config` agenta
   `collaboration.serverUrl` (link w zaproszeniach, np. adres UAG), `enableEmail`, `enableControlPassing`
   i `maxCollabors`.
+
+## Aplikacje (tryb `apps`)
+
+`apps` uruchamia każdy `apps/*.sh --install --yes` i zatrzymuje się na pierwszym błędzie. Każdy instalator
+ma własny stan i log w `/var/lib/vdi-imagemaint/` i `/var/log/vdi-imagemaint/`. Na zamkniętym obrazie
+instalator odmawia pracy, więc `apps` uruchamiaj przed `seal`.
+
+- **Eclipse + Java** (`apps/eclipse-java.sh`, v1.0.0): Eclipse 2026-09 wymaga do działania Javy 25,
+  dlatego domyślny JDK to Temurin 25 z repozytorium Adoptium. Pliki trafiają do `/opt/vdi-apps/`.
+  Szczegóły: [docs/pl/linux-eclipse-java.md](../../../docs/pl/linux-eclipse-java.md).
 
 ## Ograniczenia
 

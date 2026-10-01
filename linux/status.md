@@ -8,7 +8,7 @@ _Aktualizacja: 2026-10-01_ · wersja **0.1.0** · Debian 12 + MATE · Horizon 25
 - [x] `prepare`: pakiety, MATE + LightDM, locale, klawiatura, strefa, NTP z AD, open-vm-tools, opcjonalnie Edge
 - [x] `nfs`: autofs, NFSv4 sec=krb5p, idmapd, fragment SSSD (homedir + FILE ccache)
 - [x] `agent`: instalacja z `Horizon/`, OfflineJoinDomain=sssd, RunOnceScript, SSO
-- [x] `optimize` (odwracalny), `collab` (pyta o każde ustawienie, link UAG), `apps` (Eclipse z innej sesji)
+- [x] `optimize` (odwracalny), `collab` (pyta o każde ustawienie, link UAG), `apps` – uruchamia `apps/*.sh`; **Eclipse + Java 1.0.0** gotowy (osobna sesja, [opis](../docs/pl/linux-eclipse-java.md), test w kontenerze debian:12, bez VM)
 - [x] `seal`: blokada pakietów (apt/dpkg/PackageKit), brak okienek dla użytkowników, sprzątanie, klucze SSH; `unlock`; `update --then-seal`; `check` (L01–L17)
 - [x] `domain` (SSSD, krb5, realm join, sudo dla grup AD) – przywrócony: wymagany pod offline join oraz True SSO + logowanie kartą
 - [x] True SSO / karta: pcscd, OpenSC, krb5-pkinit, CA z `certs/` → SSSD, `pam_cert_auth`, `pkinit_anchors`, parametry agenta `-T`/`-m`
