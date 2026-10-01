@@ -4,6 +4,24 @@ Komponent: `linux/apps/eclipse-java.sh` (samodzielny, idempotentny, komunikaty E
 Środowisko: Debian 12/13 amd64, MATE + LightDM, Horizon Linux Agent, Instant Clone,
 logowanie AD (SSSD), katalogi domowe na **NFSv4 z `sec=krb5*`** (autofs).
 
+## Pobranie
+
+Komponent jest częścią pełnego narzędzia Linux (`apps/`, uruchamia go tryb `apps`). Dla złotych obrazów,
+które nie korzystają z narzędzia, w [Releases](https://github.com/franekSoftSF/horizon-scripts/releases)
+jest osobna paczka:
+
+```bash
+cd /tmp
+V=1.0.0; R=https://github.com/franekSoftSF/horizon-scripts/releases/download/linux-eclipse-java-v$V
+curl -fsSLO $R/vdi-eclipse-java-$V.tar.gz
+curl -fsSLO $R/vdi-eclipse-java-$V.tar.gz.sha256
+sha256sum -c vdi-eclipse-java-$V.tar.gz.sha256
+sudo tar -xzf vdi-eclipse-java-$V.tar.gz -C /opt
+cd /opt/vdi-eclipse-java
+sudo cp eclipse-java.conf.example eclipse-java.conf && sudo nano eclipse-java.conf   # opcjonalnie
+sudo ./eclipse-java.sh
+```
+
 ## Co instaluje
 
 | Element | Gdzie | Uwagi |

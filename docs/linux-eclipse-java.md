@@ -4,6 +4,24 @@ Component: `linux/apps/eclipse-java.sh` (standalone, idempotent, EN/PL messages)
 Target: Debian 12/13 amd64, MATE + LightDM, Horizon Linux Agent, Instant Clone,
 AD (SSSD) login, home directories on **NFSv4 with `sec=krb5*`** (autofs).
 
+## Download
+
+The component is part of the full Linux tool (`apps/`, run by mode `apps`). For golden images that
+do not use the tool, a standalone package is published under
+[Releases](https://github.com/franekSoftSF/horizon-scripts/releases):
+
+```bash
+cd /tmp
+V=1.0.0; R=https://github.com/franekSoftSF/horizon-scripts/releases/download/linux-eclipse-java-v$V
+curl -fsSLO $R/vdi-eclipse-java-$V.tar.gz
+curl -fsSLO $R/vdi-eclipse-java-$V.tar.gz.sha256
+sha256sum -c vdi-eclipse-java-$V.tar.gz.sha256
+sudo tar -xzf vdi-eclipse-java-$V.tar.gz -C /opt
+cd /opt/vdi-eclipse-java
+sudo cp eclipse-java.conf.example eclipse-java.conf && sudo nano eclipse-java.conf   # optional
+sudo ./eclipse-java.sh
+```
+
 ## What it does
 
 | Part | Where | Notes |
