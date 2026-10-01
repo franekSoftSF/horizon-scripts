@@ -1,8 +1,30 @@
 # Pobieranie – co wgrać do `C:\install` i skąd to wziąć
 
-Instalatorów **nie trzymamy** w git (`.gitignore`). Pobierasz je sam i sprawdzasz podpis cyfrowy:
+Instalatorów **nie trzymamy** w git (`.gitignore`).
+
+## Automatycznie: `-Mode Download` (START.cmd, opcja 2)
+
+Te pakiety pobierają się same do właściwych folderów. Narzędzie sprawdza podpis wydawcy, rozpakowuje
+archiwa ZIP, nie rusza plików bez zmian i usuwa starsze wersje:
+
+| Pakiet | Folder | Kontrola podpisu |
+|---|---|---|
+| Office Deployment Tool `setup.exe` | `Office\` | Microsoft |
+| Bootstrapper nowego Teams + `MSTeams-x64.msix` (instalacja offline) | `Teams\` | Microsoft (MSIX: sprawdza Windows przy instalacji) |
+| FSLogix ZIP (najnowszy) | `FSLogix\` | Microsoft, każdy EXE w archiwum |
+| OneDrive `OneDriveSetup.exe` (dla całej maszyny) | `Apps\` | Microsoft |
+| `LGPO.exe` (wypakowany z LGPO.zip) | `OSOT\` | Microsoft |
+| `sdelete64.exe` (wypakowany z SDelete.zip) | `OSOT\` | Microsoft |
+| VMware Tools x64 (najnowsze) | `Horizon\` | VMware / Broadcom |
+
+Lista jest w `Modules\VDI-ImageMaint\Templates\downloads.json`. Żeby ją zmienić, skopiuj plik do
+`C:\install\downloads.json`. Opcja 8 w menu (cykl miesięczny) najpierw pobiera świeże pakiety.
+
+## Ręcznie
+
+Reszta wymaga logowania albo wyboru wersji. Pobierasz ją sam i sprawdzasz podpis cyfrowy:
 `Get-AuthenticodeSignature <plik>` ma zwrócić `Valid`, a wydawcą ma być Microsoft, Omnissa albo Broadcom.
-Potem kopiujesz plik do folderu z tabeli.
+Potem kopiujesz plik do folderu z tabeli. `-Mode Download` wypisuje tę listę na końcu.
 
 > English version: [../downloads.md](../downloads.md)
 

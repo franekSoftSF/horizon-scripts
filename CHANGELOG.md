@@ -2,6 +2,16 @@
 
 ## VDI-ImageMaint 2.0.0 – in progress
 
+### Added
+- `-Mode Download`: Office Deployment Tool, Teams bootstrapper + MSIX, FSLogix ZIP, OneDrive, LGPO.exe, sdelete64.exe and
+  VMware Tools are downloaded into the right folders - Authenticode publisher check (every EXE inside the FSLogix ZIP),
+  ZIP extraction, SHA-256 compare (unchanged files kept), older versions removed; manual items listed at the end.
+  Catalog `Templates\downloads.json`, override `C:\install\downloads.json`.
+- OSOT Finalize copies `LGPO.exe` (step 8) / `sdelete64.exe` (step 7) to System32 when needed (signature checked).
+- Update-Teams provisions offline (`teamsbootstrapper -p -o MSTeams-x64.msix`) when the MSIX is in `Teams\`.
+- START menu: option 2 = download; numbering follows the work order (1-3 setup, 4-7 build, 8-9 monthly);
+  option 8 downloads fresh packages before the monthly cycle; the menu passes its folder (`-InstallDir`) to the tool.
+
 ### Changed
 - Split into the module `Modules\VDI-ImageMaint` (Private per area, Public `Invoke-VdiImageMaint`);
   `VDI-ImageMaint.ps1` is a thin entry point with the same parameters.

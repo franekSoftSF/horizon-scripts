@@ -152,8 +152,13 @@ function Update-Teams {
         return
     }
 
+    # Offline provisioning when the MSIX lies next to the bootstrapper (-Mode Download puts both in Teams\)
+    $bsArgs = @('-p')
+    $msix = Join-Path (Split-Path $bs) 'MSTeams-x64.msix'
+    if (Test-Path $msix) { $bsArgs += @('-o', $msix); Write-Log (T 'teams.offline' $msix) }
+
     $ErrorActionPreference = 'Continue'
-    $out = & $bs -p 2>&1 | Out-String
+    $out = & $bs @bsArgs 2>&1 | Out-String
     $rc  = $LASTEXITCODE
     Write-Log (T 'teams.result' $rc (($out -replace '\s+', ' ').Trim()))
 

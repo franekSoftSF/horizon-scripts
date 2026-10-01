@@ -36,22 +36,24 @@ $Strings = @{
         'sec.month'  = 'MONTHLY UPDATE (existing image)'
         'sec.tools'  = 'TOOLS'
         'm1' = 'Configuration wizard (profile, Office, FSLogix, OSOT, apps)'
-        'm2' = 'Plan - what will be installed (changes nothing)'
-        'm3' = 'Updates and packages (automatic reboots)'
-        'm4' = 'OSOT optimization (then reboot)'
-        'm5' = 'Sysprep readiness check'
-        'm6' = 'Generalize (Sysprep) and finish the build automatically'
-        'm7' = 'Everything automatically: update, reboots, seal, shut down'
-        'm8' = 'Seal only (block updates, finalize) - after manual changes'
+        'm2' = 'Download the free packages (Office, Teams, FSLogix, OneDrive, VMware Tools...)'
+        'm3' = 'Plan - what will be installed (changes nothing)'
+        'm4' = 'Updates and packages (automatic reboots)'
+        'm5' = 'OSOT optimization (then reboot)'
+        'm6' = 'Sysprep readiness check'
+        'm7' = 'Generalize (Sysprep) and finish the build automatically'
+        'm8' = 'Everything automatically: download, update, reboots, seal, shut down'
+        'm9' = 'Seal only (block updates, finalize) - after manual changes'
         'mS' = 'Status'; 'mU' = 'Unlock'; 'mI' = 'Inventory'; 'mL' = 'Open logs'; 'mQ' = 'Quit'
         'choice'     = 'Select a step and press Enter'
         'i1' = 'Answer the questions. Enter accepts the default in brackets. Every file is backed up first.'
-        'i3' = 'Installs packages, Office, Teams, winget apps and Windows updates. The VM reboots by itself and continues after logon (a new window opens).'
-        'i4' = 'OSOT optimizes the image with OSOT\Optimize.json. Reboot before step 5.'
-        'i5' = 'Checks every known cause of Sysprep failures. Nothing is changed.'
-        'i6' = 'Runs Sysprep. After OOBE the VM logs on automatically, installs the Horizon agents, reboots as needed, seals and finalizes. You will be asked for the administrator password.'
-        'i7' = 'Unlock, updates with automatic reboots, then seal as SYSTEM, OSOT finalize and shut down. Afterwards: snapshot and Push Image in Horizon Console.'
-        'i8' = 'Blocks automatic updates, runs OSOT optimize and finalize. Afterwards: snapshot and Push Image in Horizon Console.'
+        'i2' = 'Downloads the packages that need no login into the right folders, checks their signatures and extracts the archives. Packages that need a login (OSOT, Horizon agents) are listed at the end.'
+        'i4' = 'Installs packages, Office, Teams, winget apps and Windows updates. The VM reboots by itself and continues after logon (a new window opens).'
+        'i5' = 'OSOT optimizes the image with OSOT\Optimize.json. Reboot before step 6.'
+        'i6' = 'Checks every known cause of Sysprep failures. Nothing is changed.'
+        'i7' = 'Runs Sysprep. After OOBE the VM logs on automatically, installs the Horizon agents, reboots as needed, seals and finalizes. You will be asked for the administrator password.'
+        'i8' = 'Downloads fresh packages, unlocks, updates with automatic reboots, then seals as SYSTEM, runs OSOT finalize and shuts down. Afterwards: snapshot and Push Image in Horizon Console.'
+        'i9' = 'Blocks automatic updates, runs OSOT optimize and finalize. Afterwards: snapshot and Push Image in Horizon Console.'
         'iU' = 'Restores the update mechanisms blocked by Seal (needed before manual changes).'
         'q.continue' = 'Continue?'
         'q.snapshot' = 'Did you take a VM snapshot "pre-generalize" in vCenter?'
@@ -59,6 +61,7 @@ $Strings = @{
         'q.shutdown' = 'Shut down the VM at the end?'
         'q.cleanup'  = 'Clean up the image (temp files, update cache, DISM)?'
         'q.reboot'   = 'Reboot now?'
+        'dl.warn'    = 'Some downloads failed - the update continues with the files already in C:\install.'
         'yes'        = 'y'; 'yn' = 'Y/n'; 'ny' = 'y/N'
         'ok'         = 'Done - OK.'
         'err'        = 'Finished with errors, exit code {0}. Details in the log.'
@@ -75,22 +78,24 @@ $Strings = @{
         'sec.month'  = 'AKTUALIZACJA MIESIĘCZNA (istniejący obraz)'
         'sec.tools'  = 'NARZĘDZIA'
         'm1' = 'Kreator konfiguracji (profil, Office, FSLogix, OSOT, aplikacje)'
-        'm2' = 'Plan - co zostanie zainstalowane (niczego nie zmienia)'
-        'm3' = 'Aktualizacje i pakiety (automatyczne restarty)'
-        'm4' = 'Optymalizacja OSOT (potem restart)'
-        'm5' = 'Kontrola gotowości do Sysprep'
-        'm6' = 'Generalize (Sysprep) i automatyczne dokończenie budowy'
-        'm7' = 'Wszystko automatycznie: aktualizacja, restarty, zamknięcie, wyłączenie'
-        'm8' = 'Tylko zamknięcie obrazu (Seal) - po ręcznych zmianach'
+        'm2' = 'Pobierz darmowe pakiety (Office, Teams, FSLogix, OneDrive, VMware Tools...)'
+        'm3' = 'Plan - co zostanie zainstalowane (niczego nie zmienia)'
+        'm4' = 'Aktualizacje i pakiety (automatyczne restarty)'
+        'm5' = 'Optymalizacja OSOT (potem restart)'
+        'm6' = 'Kontrola gotowości do Sysprep'
+        'm7' = 'Generalize (Sysprep) i automatyczne dokończenie budowy'
+        'm8' = 'Wszystko automatycznie: pobranie, aktualizacja, restarty, zamknięcie, wyłączenie'
+        'm9' = 'Tylko zamknięcie obrazu (Seal) - po ręcznych zmianach'
         'mS' = 'Stan'; 'mU' = 'Odblokuj'; 'mI' = 'Spis pakietów'; 'mL' = 'Otwórz logi'; 'mQ' = 'Wyjście'
         'choice'     = 'Wybierz krok i naciśnij Enter'
         'i1' = 'Odpowiadaj na pytania. Enter przyjmuje wartość domyślną w nawiasie. Przed zmianą każdego pliku powstaje kopia.'
-        'i3' = 'Instaluje pakiety, Office, Teams, aplikacje winget i aktualizacje Windows. VM sama się restartuje i kontynuuje po zalogowaniu (otworzy się nowe okno).'
-        'i4' = 'OSOT optymalizuje obraz według OSOT\Optimize.json. Przed krokiem 5 zrestartuj VM.'
-        'i5' = 'Sprawdza wszystkie znane przyczyny błędów Sysprep. Niczego nie zmienia.'
-        'i6' = 'Uruchamia Sysprep. Po OOBE VM sama się zaloguje, zainstaluje agenty Horizon, zrestartuje się w razie potrzeby, zamknie obraz i sfinalizuje. Skrypt zapyta o hasło administratora.'
-        'i7' = 'Odblokowanie, aktualizacje z automatycznymi restartami, zamknięcie obrazu jako SYSTEM, OSOT Finalize i wyłączenie. Potem: snapshot i Push Image w Horizon Console.'
-        'i8' = 'Blokuje automatyczne aktualizacje, uruchamia OSOT Optimize i Finalize. Potem: snapshot i Push Image w Horizon Console.'
+        'i2' = 'Pobiera pakiety niewymagające logowania do właściwych folderów, sprawdza podpisy i rozpakowuje archiwa. Pakiety wymagające logowania (OSOT, agenty Horizon) zostaną wypisane na końcu.'
+        'i4' = 'Instaluje pakiety, Office, Teams, aplikacje winget i aktualizacje Windows. VM sama się restartuje i kontynuuje po zalogowaniu (otworzy się nowe okno).'
+        'i5' = 'OSOT optymalizuje obraz według OSOT\Optimize.json. Przed krokiem 6 zrestartuj VM.'
+        'i6' = 'Sprawdza wszystkie znane przyczyny błędów Sysprep. Niczego nie zmienia.'
+        'i7' = 'Uruchamia Sysprep. Po OOBE VM sama się zaloguje, zainstaluje agenty Horizon, zrestartuje się w razie potrzeby, zamknie obraz i sfinalizuje. Skrypt zapyta o hasło administratora.'
+        'i8' = 'Pobiera świeże pakiety, odblokowuje, aktualizuje z automatycznymi restartami, zamyka obraz jako SYSTEM, uruchamia OSOT Finalize i wyłącza VM. Potem: snapshot i Push Image w Horizon Console.'
+        'i9' = 'Blokuje automatyczne aktualizacje, uruchamia OSOT Optimize i Finalize. Potem: snapshot i Push Image w Horizon Console.'
         'iU' = 'Przywraca mechanizmy aktualizacji zablokowane przez Seal (potrzebne przed ręcznymi zmianami).'
         'q.continue' = 'Kontynuować?'
         'q.snapshot' = 'Czy zrobiłeś snapshot VM "pre-generalize" w vCenter?'
@@ -98,6 +103,7 @@ $Strings = @{
         'q.shutdown' = 'Wyłączyć VM na końcu?'
         'q.cleanup'  = 'Wyczyścić obraz (pliki tymczasowe, pamięć aktualizacji, DISM)?'
         'q.reboot'   = 'Zrestartować teraz?'
+        'dl.warn'    = 'Część pobrań się nie udała - aktualizacja kontynuuje z plikami, które już są w C:\install.'
         'yes'        = 't'; 'yn' = 'T/n'; 'ny' = 't/N'
         'ok'         = 'Zakończono - OK.'
         'err'        = 'Zakończono z błędami, kod {0}. Szczegóły w logu.'
@@ -142,21 +148,28 @@ function Read-YesNo {
 function Wait-Return { [void](Read-Host (T 'press')) }
 
 function Invoke-Tool {
-    # Separate Windows PowerShell process: the tool uses exit codes, transcripts and may reboot the VM
-    param([string]$Script, [string[]]$Arguments)
-    if (-not (Test-Path -LiteralPath $Script)) { Write-Host (T 'missing' @($Script)) -ForegroundColor Red; Wait-Return; return }
+    # Separate Windows PowerShell process: the tool uses exit codes, transcripts and may reboot the VM.
+    # -NoWait: return the exit code without the result message (used when another step follows).
+    param([string]$Script, [string[]]$Arguments, [switch]$NoWait)
+    if (-not (Test-Path -LiteralPath $Script)) { Write-Host (T 'missing' @($Script)) -ForegroundColor Red; Wait-Return; return 1 }
     Write-Host ''
     Write-Host (T 'running' @(((Split-Path $Script -Leaf), ($Arguments -join ' ')) -join ' ')) -ForegroundColor DarkGray
     $ps = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-    # the tools speak the same language as the menu
-    & $ps -NoProfile -ExecutionPolicy Bypass -File $Script @Arguments -Language $Lang
-    $rc = $LASTEXITCODE
+    # Start-Process -NoNewWindow: the tool writes straight to this console (live output, prompts) instead of
+    # into the pipeline; the tools speak the same language as the menu
+    $argList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $Script) + @($Arguments) + @('-Language', $Lang)
+    # the tool works on the folder the menu lives in (C:\install, or wherever it was copied)
+    if ($Script -eq $Tool) { $argList += @('-InstallDir', $Root) }
+    $argLine = ($argList | ForEach-Object { if ($_ -match '\s') { '"{0}"' -f $_ } else { $_ } }) -join ' '
+    $rc = (Start-Process -FilePath $ps -ArgumentList $argLine -NoNewWindow -Wait -PassThru).ExitCode
+    if ($NoWait) { return $rc }
     Write-Host ''
     if ($rc -eq 0) { Write-Host (T 'ok') -ForegroundColor Green }
     elseif ($rc -eq 1 -and (Split-Path $Script -Leaf) -eq 'Test-SysprepReadiness.ps1') { Write-Host (T 'warn') -ForegroundColor Yellow }
     else { Write-Host (T 'err' @($rc)) -ForegroundColor Red }
     Write-Host (T 'logs' @($LogDir)) -ForegroundColor DarkGray
     Wait-Return
+    return $rc
 }
 
 function Show-Menu {
@@ -166,9 +179,9 @@ function Show-Menu {
     Write-Host ('  ' + (T 'title')) -ForegroundColor Cyan
     Write-Host ('=' * 70) -ForegroundColor Cyan
     $sections = @(
-        @('sec.first', @('1', '2')),
-        @('sec.build', @('3', '4', '5', '6')),
-        @('sec.month', @('7', '8'))
+        @('sec.first', @('1', '2', '3')),
+        @('sec.build', @('4', '5', '6', '7')),
+        @('sec.month', @('8', '9'))
     )
     foreach ($s in $sections) {
         Write-Host ''
@@ -187,38 +200,41 @@ function Show-Menu {
 while ($true) {
     Show-Menu
     $c = [string](Read-Host (T 'choice'))
-    switch ($c.Trim().ToUpper()) {
+    $null = switch ($c.Trim().ToUpper()) {
         '1' { Show-Info (T 'i1'); Invoke-Tool $Tool @('-Mode', 'Configure') }
-        '2' { Invoke-Tool $Tool @('-Mode', 'PackageList') }
-        '3' {
-            Show-Info (T 'i3')
-            if (Read-YesNo (T 'q.continue')) { Invoke-Tool $Tool @('-Mode', 'Update', '-AutoReboot') }
-        }
+        '2' { Show-Info (T 'i2'); Invoke-Tool $Tool @('-Mode', 'Download') }
+        '3' { Invoke-Tool $Tool @('-Mode', 'PackageList') }
         '4' {
             Show-Info (T 'i4')
+            if (Read-YesNo (T 'q.continue')) { Invoke-Tool $Tool @('-Mode', 'Update', '-AutoReboot') }
+        }
+        '5' {
+            Show-Info (T 'i5')
             if (Read-YesNo (T 'q.continue')) {
                 Invoke-Tool $Tool @('-Mode', 'Optimize')
                 if (Read-YesNo (T 'q.reboot')) { Restart-Computer -Force }
             }
         }
-        '5' { Show-Info (T 'i5'); Invoke-Tool $Check @('-InstallDir', $Root) }
-        '6' {
-            Show-Info (T 'i6')
+        '6' { Show-Info (T 'i6'); Invoke-Tool $Check @('-InstallDir', $Root) }
+        '7' {
+            Show-Info (T 'i7')
             if (-not (Read-YesNo (T 'q.snapshot') $false)) { Write-Host (T 'snapshot.no') -ForegroundColor Yellow; Wait-Return; break }
             $a = @('-Mode', 'Generalize', '-SnapshotConfirmed')
             if (Read-YesNo (T 'q.shutdown')) { $a += '-Shutdown' }
             Invoke-Tool $Tool $a
         }
-        '7' {
-            Show-Info (T 'i7')
+        '8' {
+            Show-Info (T 'i8')
             if (Read-YesNo (T 'q.continue')) {
                 $a = @('-Mode', 'Update', '-AutoReboot', '-ThenSeal', '-Shutdown')
                 if (Read-YesNo (T 'q.cleanup') $false) { $a += '-Cleanup' }
+                # fresh Office/Teams/OneDrive/FSLogix first; a failed download does not stop the monthly cycle
+                if ((Invoke-Tool $Tool @('-Mode', 'Download') -NoWait) -ne 0) { Write-Host (T 'dl.warn') -ForegroundColor Yellow }
                 Invoke-Tool $Tool $a
             }
         }
-        '8' {
-            Show-Info (T 'i8')
+        '9' {
+            Show-Info (T 'i9')
             $a = @('-Mode', 'Seal', '-AsSystem')
             if (Read-YesNo (T 'q.cleanup') $false) { $a += '-Cleanup' }
             if (Read-YesNo (T 'q.shutdown')) { $a += '-Shutdown' }

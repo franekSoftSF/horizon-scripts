@@ -97,8 +97,26 @@ function Invoke-OsotSealPre {
     Invoke-Osot -Label $(if ($cfg.Optimize) { 'Optimize' } else { 'DisableUpdates' }) -Arguments $a
 }
 
+function Copy-FinalizeTool {
+    # OSOT Finalize looks for LGPO.exe (step 8) / sdelete64.exe (step 7) in System32 - copy them there from C:\install
+    param([string[]]$Steps)
+    $sys32 = Join-Path $env:SystemRoot 'System32'
+    foreach ($t in @(@('8', 'LGPO.exe'), @('7', 'sdelete64.exe'))) {
+        if ($Steps -notcontains $t[0] -and $Steps -notcontains 'all') { continue }
+        if (Test-Path (Join-Path $sys32 $t[1])) { continue }
+        $src = $null
+        if (Test-Path $InstallDir) { $src = Get-ChildItem -Path $InstallDir -Recurse -File -Filter $t[1] -ErrorAction SilentlyContinue | Select-Object -First 1 }
+        if (-not $src) { Write-Log (T 'osot.toolMissing' $t[0] $t[1]) WARN; continue }
+        if (-not (Test-TrustedFile -Path $src.FullName -SignerPattern 'O=Microsoft Corporation')) { Write-Log (T 'dl.badSig' $src.Name '-' '-') WARN; continue }
+        Copy-Item -Path $src.FullName -Destination $sys32 -Force
+        Write-Log (T 'osot.toolCopied' $t[1] $sys32 $t[0]) OK
+    }
+}
+
 function Invoke-OsotFinalize {
     $cfg = Get-OsotConfig
     if (-not $cfg.Finalize) { Write-Log (T 'osot.finalizeOff'); return }
-    Invoke-Osot -Label 'Finalize' -Arguments (@('-f') + @($cfg.Finalize -split '\s+' | Where-Object { $_ }) + @('-v'))
+    $steps = @($cfg.Finalize -split '\s+' | Where-Object { $_ })
+    if (-not $SkipOsot -and -not $isSystem) { Copy-FinalizeTool -Steps $steps }
+    Invoke-Osot -Label 'Finalize' -Arguments (@('-f') + $steps + @('-v'))
 }

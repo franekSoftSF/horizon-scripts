@@ -1,8 +1,30 @@
 # Downloads – what to put in `C:\install` and where to get it
 
-Installers are **never** stored in git (`.gitignore`). Download them yourself, verify the
-digital signature (`Get-AuthenticodeSignature <file>` → `Valid`, publisher Microsoft / Omnissa /
-Broadcom) and copy them to the folder listed below.
+Installers are **never** stored in git (`.gitignore`).
+
+## Automatic: `-Mode Download` (START.cmd option 2)
+
+These packages are downloaded automatically into the right folders. The publisher signature is checked,
+ZIP archives are extracted, unchanged files are kept and older versions are removed:
+
+| Package | Folder | Signature check |
+|---|---|---|
+| Office Deployment Tool `setup.exe` | `Office\` | Microsoft |
+| New Teams bootstrapper + `MSTeams-x64.msix` (offline provisioning) | `Teams\` | Microsoft (MSIX: checked by Windows at install) |
+| FSLogix ZIP (newest) | `FSLogix\` | Microsoft, every EXE inside the archive |
+| OneDrive `OneDriveSetup.exe` (per machine) | `Apps\` | Microsoft |
+| `LGPO.exe` (extracted from LGPO.zip) | `OSOT\` | Microsoft |
+| `sdelete64.exe` (extracted from SDelete.zip) | `OSOT\` | Microsoft |
+| VMware Tools x64 (newest) | `Horizon\` | VMware / Broadcom |
+
+The list lives in `Modules\VDI-ImageMaint\Templates\downloads.json`; copy it to `C:\install\downloads.json` to
+change it. Option 8 of the menu (monthly cycle) downloads fresh packages first.
+
+## Manual
+
+Everything else needs a login or a version choice. Download it yourself, verify the digital signature
+(`Get-AuthenticodeSignature <file>` → `Valid`, publisher Microsoft / Omnissa / Broadcom) and copy it to the
+folder listed below. `-Mode Download` prints this list at the end.
 
 > Polish version: [pl/downloads.md](pl/downloads.md)
 

@@ -53,6 +53,7 @@
     'teams.download'       = 'Pobieranie teamsbootstrapper.exe...'
     'teams.downloadFailed' = 'Nie udało się pobrać teamsbootstrapper: {0} (podaj -TeamsBootstrapperPath)'
     'teams.badSignature'   = 'teamsbootstrapper: nieprawidłowy podpis - nie uruchamiam {0}'
+    'teams.offline'        = 'Instalacja offline z {0}'
     'teams.result'         = 'teamsbootstrapper -p: kod {0} {1}'
     'teams.current'        = 'Teams: wersja zaprowizjonowana bez zmian (aktualna)'
     'teams.failed'         = 'Teams: aktualizacja nieudana - sprawdź wynik powyżej'

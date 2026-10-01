@@ -13,6 +13,10 @@
                      channel, language, apps) -> Office\Configuration_x64.xml, FSLogix, App Volumes, build locale,
                      OSOT (Teams notifications, OneDrive, visual effects) -> Optimize.json, winget apps (picker)
                      -> packages.json. Every file is backed up (.bak_<date>).
+      Download       Downloads the freely available packages (Office Deployment Tool, Teams bootstrapper + MSIX,
+                     FSLogix, OneDrive, LGPO, SDelete, VMware Tools) into the right C:\install folders: signature
+                     check, ZIP extraction, unchanged files kept, older versions removed. Catalog:
+                     Modules\VDI-ImageMaint\Templates\downloads.json (override: C:\install\downloads.json).
       Status         Report: services, scheduled tasks, policies, pending reboot, seal state.
       WingetList     Dry run: what winget would update and what is skipped.
       Init           Creates the C:\install structure and the default packages.json.
@@ -65,7 +69,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [ValidateSet('Init', 'Configure', 'Discover', 'Status', 'Inventory', 'WingetList', 'PackageList', 'Packages', 'Optimize', 'Finalize', 'Unlock', 'Update', 'Seal', 'Generalize', 'PostGeneralize')]
+    [ValidateSet('Init', 'Configure', 'Download', 'Discover', 'Status', 'Inventory', 'WingetList', 'PackageList', 'Packages', 'Optimize', 'Finalize', 'Unlock', 'Update', 'Seal', 'Generalize', 'PostGeneralize')]
     [string]$Mode,
 
     # --- Messages: auto (Polish Windows -> pl, otherwise en), en, pl ---

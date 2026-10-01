@@ -53,6 +53,7 @@
     'teams.download'       = 'Downloading teamsbootstrapper.exe...'
     'teams.downloadFailed' = 'Could not download teamsbootstrapper: {0} (use -TeamsBootstrapperPath)'
     'teams.badSignature'   = 'teamsbootstrapper: invalid signature - not running {0}'
+    'teams.offline'        = 'Offline provisioning from {0}'
     'teams.result'         = 'teamsbootstrapper -p: code {0} {1}'
     'teams.current'        = 'Teams: provisioned version unchanged (current)'
     'teams.failed'         = 'Teams: update failed - check the output above'

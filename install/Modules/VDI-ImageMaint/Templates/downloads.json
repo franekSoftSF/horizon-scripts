@@ -1,0 +1,91 @@
+{
+  "_description": "Freely available packages downloaded by -Mode Download. Copy this file to C:\\install\\downloads.json to change it. Kind: file = save as is; html-index = newest file from a folder listing (IndexPattern); zip-keep = keep the archive (signatures of the files inside are checked); zip-extract = take only the Extract files. FileName '*' = name from the final URL. Signer = regex on the certificate subject ('' = no Authenticode check, e.g. MSIX - Windows verifies it at install). ReplacePattern = older versions to delete after a new download.",
+  "Packages": [
+    {
+      "Id": "ODT",
+      "Name": "Office Deployment Tool (setup.exe)",
+      "Enabled": true,
+      "Kind": "file",
+      "Url": "https://officecdn.microsoft.com/pr/wsus/setup.exe",
+      "Target": "Office",
+      "FileName": "setup.exe",
+      "Signer": "O=Microsoft Corporation"
+    },
+    {
+      "Id": "TeamsBootstrapper",
+      "Name": "New Teams bootstrapper",
+      "Enabled": true,
+      "Kind": "file",
+      "Url": "https://go.microsoft.com/fwlink/?linkid=2243204&clcid=0x409",
+      "Target": "Teams",
+      "FileName": "teamsbootstrapper.exe",
+      "Signer": "O=Microsoft Corporation"
+    },
+    {
+      "Id": "TeamsMsix",
+      "Name": "New Teams MSIX x64 (offline provisioning)",
+      "Enabled": true,
+      "Kind": "file",
+      "Url": "https://go.microsoft.com/fwlink/?linkid=2196106",
+      "Target": "Teams",
+      "FileName": "MSTeams-x64.msix",
+      "Signer": ""
+    },
+    {
+      "Id": "FSLogix",
+      "Name": "Microsoft FSLogix (ZIP)",
+      "Enabled": true,
+      "Kind": "zip-keep",
+      "Url": "https://aka.ms/fslogix_download",
+      "Target": "FSLogix",
+      "FileName": "*",
+      "Signer": "O=Microsoft Corporation",
+      "SignedFiles": "*.exe",
+      "ReplacePattern": "FSLogix*.zip"
+    },
+    {
+      "Id": "OneDrive",
+      "Name": "Microsoft OneDrive (OneDriveSetup.exe, per machine)",
+      "Enabled": true,
+      "Kind": "file",
+      "Url": "https://go.microsoft.com/fwlink/?linkid=844652",
+      "Target": "Apps",
+      "FileName": "OneDriveSetup.exe",
+      "Signer": "O=Microsoft Corporation"
+    },
+    {
+      "Id": "LGPO",
+      "Name": "LGPO.exe (Security Compliance Toolkit) - OSOT Finalize 8",
+      "Enabled": true,
+      "Kind": "zip-extract",
+      "Url": "https://download.microsoft.com/download/8/5/C/85C25433-A1B0-4FFA-9429-7E023E7DA8D8/LGPO.zip",
+      "Signer": "O=Microsoft Corporation",
+      "Extract": [
+        { "Pattern": "LGPO.exe", "Target": "OSOT" }
+      ]
+    },
+    {
+      "Id": "SDelete",
+      "Name": "Sysinternals SDelete (sdelete64.exe) - OSOT Finalize 7",
+      "Enabled": true,
+      "Kind": "zip-extract",
+      "Url": "https://download.sysinternals.com/files/SDelete.zip",
+      "Signer": "O=Microsoft Corporation",
+      "Extract": [
+        { "Pattern": "sdelete64.exe", "Target": "OSOT" }
+      ]
+    },
+    {
+      "Id": "VMwareTools",
+      "Name": "VMware Tools x64 (latest)",
+      "Enabled": true,
+      "Kind": "html-index",
+      "Url": "https://packages.vmware.com/tools/releases/latest/windows/x64/",
+      "IndexPattern": "VMware-tools-[\\d.]+-\\d+-(x64|x86_64)\\.exe",
+      "Target": "Horizon",
+      "FileName": "*",
+      "Signer": "VMware|Broadcom",
+      "ReplacePattern": "VMware-tools-*.exe"
+    }
+  ]
+}

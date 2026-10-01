@@ -255,7 +255,8 @@
     "install/Scripts/Test-SysprepReadiness.ps1 v0.1 (20 checks, EN/PL, read-only) - parse PS5.1 OK, PSSA OK, smoke-run non-admin; C09/C10 need admin run on VM",
     "START.cmd + Start-Menu.ps1 (EN/PL), Update -ThenSeal",
     "Graphics profile, OneDrive per-machine, docs/profiles-gpo.md",
-    "Module split (install/Modules/VDI-ImageMaint) + English primary / Polish secondary, 407 keys, -Language"
+    "Module split (install/Modules/VDI-ImageMaint) + English primary / Polish secondary, 407 keys, -Language",
+    "-Mode Download: ODT, Teams bootstrapper+MSIX, FSLogix, OneDrive, LGPO, SDelete, VMware Tools (signature check, unzip, hash compare) - tested with real downloads"
   ],
   "osotFindings": [
     "Generalize requires audit mode; cannot be combined with Finalize; reboot required after",

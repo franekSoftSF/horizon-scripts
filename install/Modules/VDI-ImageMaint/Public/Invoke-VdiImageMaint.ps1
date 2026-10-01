@@ -56,6 +56,7 @@
                 'WingetList'     { Show-WingetList }
                 'PackageList'    { Invoke-PackagePlatform -DryRun; Install-WingetApps -DryRun; Write-Log 'OSOT' STEP; Show-OsotConfig }
                 'Configure'      { Invoke-Configure }
+                'Download'       { Invoke-Download }
                 'Init'           { Invoke-Init }
                 'Discover'       { Invoke-Discover }
                 'Optimize'       { Show-OsotConfig; Save-SealBaseline; Invoke-OsotSealPre }

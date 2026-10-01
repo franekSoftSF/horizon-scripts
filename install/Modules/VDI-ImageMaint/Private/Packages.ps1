@@ -397,8 +397,8 @@ function Get-UnassignedFiles {
     }
     foreach ($o in @(Get-ChildItem -Path $InstallDir -Recurse -File -Include '*OS*Optimization*Tool*.exe', '*OSOT*.exe' -ErrorAction SilentlyContinue)) { $assigned[$o.FullName] = $true }
     if ($script:EntryScript) { $assigned[$script:EntryScript] = $true }
-    # the tool's own files and the OSOT Finalize helpers are not packages
-    $toolFiles = '^(Modules\\|Scripts\\(Start-Menu|Test-SysprepReadiness)\.ps1$|OSOT\\(LGPO|sdelete64|sdelete)\.exe$)'
+    # the tool's own files, the OSOT Finalize helpers and the Teams files (used by Update-Teams) are not packages
+    $toolFiles = '^(Modules\\|Scripts\\(Start-Menu|Test-SysprepReadiness)\.ps1$|OSOT\\(LGPO|sdelete64|sdelete)\.exe$|Teams\\(teamsbootstrapper\.exe|MSTeams-x64\.msix)$)'
     $ignore = @(Get-PV $ManifestObj 'Ignore' @())
     $exts = @('.exe', '.msi', '.msp', '.msu', '.cab', '.msix', '.msixbundle', '.appx', '.appxbundle', '.zip', '.ps1')
     Get-ChildItem -Path $InstallDir -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
