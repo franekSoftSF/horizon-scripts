@@ -16,6 +16,8 @@ ZIP archives are extracted, unchanged files are kept and older versions are remo
 | `LGPO.exe` (extracted from LGPO.zip) | `OSOT\` | Microsoft |
 | `sdelete64.exe` (extracted from SDelete.zip) | `OSOT\` | Microsoft |
 | VMware Tools x64 (newest) | `Horizon\` | VMware / Broadcom |
+| Eclipse Temurin JDK 21 and 25 LTS (MSI x64, newest) | `Apps\Java\` | Eclipse Foundation |
+| Eclipse IDE for Java Developers (ZIP, current release from `release.xml`) | `Apps\Eclipse\` | Eclipse Foundation (`eclipse.exe` inside) |
 
 The list lives in `Modules\VDI-ImageMaint\Templates\downloads.json`; copy it to `C:\install\downloads.json` to
 change it. Option 8 of the menu (monthly cycle) downloads fresh packages first.
@@ -67,6 +69,13 @@ folder listed below. `-Mode Download` prints this list at the end.
 | OneDrive per-machine (`OneDriveSetup.exe`) | `Apps\` | <https://go.microsoft.com/fwlink/?linkid=844652> | Installed with `/allusers` (package `OneDrive`). Refresh every month - Seal blocks the OneDrive updater on clones |
 | NVIDIA vGPU guest driver + license token | – (before Generalize) | NVIDIA Licensing Portal (matching the host vGPU manager) | Graphics profile only |
 | App Installer / winget | – | <https://aka.ms/getwinget> | OSOT and LTSC often remove it; needed for `-Mode Update` |
+
+## Java development (Eclipse)
+
+| Item | Folder | Source | Notes |
+|---|---|---|---|
+| Eclipse Temurin JDK 21 / 25 LTS (`OpenJDK21U-jdk_x64_windows_hotspot_*.msi`, `OpenJDK25U-...`) | `Apps\Java\` | <https://adoptium.net/temurin/releases/> (Windows, x64, JDK, .msi) | Packages `TemurinJDK21` / `TemurinJDK25`, fixed folders `jdk-21` / `jdk-25`. New builds every quarter |
+| Eclipse IDE for Java Developers (`eclipse-java-<YYYY-MM>-R-win32-x86_64.zip`) | `Apps\Eclipse\` | <https://www.eclipse.org/downloads/packages/> (Windows x86_64) | Package `EclipseJava` (`Scripts\Install-Eclipse.ps1`). Do not unpack. New release in March, June, September and December. Design: [eclipse-java.md](eclipse-java.md) |
 
 ## Optional
 

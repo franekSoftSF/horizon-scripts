@@ -79,6 +79,7 @@ Describe 'Inline EN/PL tables of standalone scripts' -ForEach @(
     @{ File = 'Scripts\Start-Menu.ps1' }
     @{ File = 'Scripts\Test-SysprepReadiness.ps1' }
     @{ File = 'Scripts\Set-FSLogixConfig.ps1' }
+    @{ File = 'Scripts\Install-Eclipse.ps1' }
 ) {
     It '<File>: en and pl have the same keys' {
         $ast = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $Install $File), [ref]$null, [ref]$null)

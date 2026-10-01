@@ -316,6 +316,17 @@ Describe 'Download helpers' {
                 Should -Be 'https://example.test/x64/VMware-tools-13.1.5-2-x64.exe'
         }
     }
+    It 'Resolve-ReleaseUrl puts the current release into {Release}; Url without ReleaseUrl stays as is' {
+        InModuleScope VDI-ImageMaint {
+            Mock Invoke-WebRequest { [pscustomobject]@{ Content = '<packages><past>2026-06/R</past><present>2026-09/R</present></packages>' } }
+            $d = '{"Url":"https://example.test/release/{Release}/R/eclipse-java-{Release}-R-win32-x86_64.zip","ReleaseUrl":"https://example.test/release.xml","ReleasePattern":"<present>(\\d{4}-\\d{2})/R</present>"}' | ConvertFrom-Json
+            Resolve-ReleaseUrl $d | Should -Be 'https://example.test/release/2026-09/R/eclipse-java-2026-09-R-win32-x86_64.zip'
+            Resolve-ReleaseUrl ('{"Url":"https://example.test/a.exe"}' | ConvertFrom-Json) | Should -Be 'https://example.test/a.exe'
+            Should -Invoke Invoke-WebRequest -Times 1 -Exactly
+            Mock Invoke-WebRequest { [pscustomobject]@{ Content = '<packages></packages>' } }
+            { Resolve-ReleaseUrl $d } | Should -Throw
+        }
+    }
     It 'Assert-Signature accepts the expected publisher and rejects anything else' {
         InModuleScope VDI-ImageMaint {
             Mock Get-AuthenticodeSignature { [pscustomobject]@{ Status = 'Valid'; SignerCertificate = [pscustomobject]@{ Subject = 'CN=Microsoft Corporation, O=Microsoft Corporation' } } }

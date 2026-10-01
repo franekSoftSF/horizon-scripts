@@ -3,6 +3,14 @@
 ## VDI-ImageMaint 2.0.0 – in progress
 
 ### Added
+- Java development: packages `TemurinJDK21` (JAVA_HOME, PATH, .jar) and `TemurinJDK25` (Temurin MSI, fixed `INSTALLDIR`
+  `jdk-21` / `jdk-25`, so monthly upgrades keep the path) and `EclipseJava` - new `Scripts\Install-Eclipse.ps1` 1.0 (EN/PL,
+  -WhatIf): extracts the newest EPP ZIP to `%ProgramFiles%\Eclipse\java` (eclipse.exe signature checked), re-applies only the
+  configuration when the release is current, sets the workspace in the FSLogix container, `plugin_customization.ini`
+  (update check and Oomph startup tasks off, JDK detection at startup on), Start menu shortcut, Uninstall entry, `-Uninstall`.
+  `-Mode Download` fetches the three (Adoptium API; Eclipse release read from `release.xml` - new catalog fields
+  `ReleaseUrl`/`ReleasePattern` fill `{Release}` in `Url`). Docs `docs/eclipse-java.md` (+pl): FSLogix workspace, DEM folder
+  redirection of Documents/Desktop to UNC, checks on a clone.
 - `-Mode Validate` (+ START menu V): types, allowed values, unique Ids, regexes, Detect fields, `{Variables}`, files,
   OSOT Finalize steps (2/7 warnings for Instant Clone), OSOT removing Teams, FSLogixConfig without a share, Build Ids;
   typo suggestions for field names. Runs automatically: PackageList shows the findings, Packages/Update/PostGeneralize

@@ -1,5 +1,5 @@
 {
-  "_description": "Freely available packages downloaded by -Mode Download. Copy this file to C:\\install\\downloads.json to change it. Kind: file = save as is; html-index = newest file from a folder listing (IndexPattern); zip-keep = keep the archive (signatures of the files inside are checked); zip-extract = take only the Extract files. FileName '*' = name from the final URL. Signer = regex on the certificate subject ('' = no Authenticode check, e.g. MSIX - Windows verifies it at install). ReplacePattern = older versions to delete after a new download.",
+  "_description": "Freely available packages downloaded by -Mode Download. Copy this file to C:\\install\\downloads.json to change it. Kind: file = save as is; html-index = newest file from a folder listing (IndexPattern); zip-keep = keep the archive (signatures of the files inside are checked); zip-extract = take only the Extract files. FileName '*' = name from the final URL. Signer = regex on the certificate subject ('' = no Authenticode check, e.g. MSIX - Windows verifies it at install). ReplacePattern = older versions to delete after a new download. ReleaseUrl + ReleasePattern = read the current release (first regex group) and put it into {Release} in Url (Eclipse EPP).",
   "Packages": [
     {
       "Id": "ODT",
@@ -86,6 +86,40 @@
       "FileName": "*",
       "Signer": "VMware|Broadcom",
       "ReplacePattern": "VMware-tools-*.exe"
+    },
+    {
+      "Id": "TemurinJDK21",
+      "Name": "Eclipse Temurin JDK 21 LTS (MSI x64, latest)",
+      "Enabled": true,
+      "Kind": "file",
+      "Url": "https://api.adoptium.net/v3/installer/latest/21/ga/windows/x64/jdk/hotspot/normal/eclipse",
+      "Target": "Apps\\Java",
+      "FileName": "OpenJDK21U-jdk_x64_windows_hotspot_latest.msi",
+      "Signer": "O=Eclipse"
+    },
+    {
+      "Id": "TemurinJDK25",
+      "Name": "Eclipse Temurin JDK 25 LTS (MSI x64, latest)",
+      "Enabled": true,
+      "Kind": "file",
+      "Url": "https://api.adoptium.net/v3/installer/latest/25/ga/windows/x64/jdk/hotspot/normal/eclipse",
+      "Target": "Apps\\Java",
+      "FileName": "OpenJDK25U-jdk_x64_windows_hotspot_latest.msi",
+      "Signer": "O=Eclipse"
+    },
+    {
+      "Id": "EclipseJava",
+      "Name": "Eclipse IDE for Java Developers (ZIP, current release, ~380 MB)",
+      "Enabled": true,
+      "Kind": "zip-keep",
+      "ReleaseUrl": "https://download.eclipse.org/technology/epp/downloads/release/release.xml",
+      "ReleasePattern": "<present>(\\d{4}-\\d{2})/R</present>",
+      "Url": "https://download.eclipse.org/technology/epp/downloads/release/{Release}/R/eclipse-java-{Release}-R-win32-x86_64.zip",
+      "Target": "Apps\\Eclipse",
+      "FileName": "*",
+      "Signer": "O=\"?Eclipse",
+      "SignedFiles": "eclipse.exe",
+      "ReplacePattern": "eclipse-java-*-win32-x86_64.zip"
     }
   ]
 }

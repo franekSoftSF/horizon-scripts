@@ -1,5 +1,5 @@
 ﻿@{
-    'dl.step'           = 'DOWNLOAD - freely available packages (Microsoft, VMware) into C:\install'
+    'dl.step'           = 'DOWNLOAD - freely available packages (Microsoft, VMware, Eclipse) into C:\install'
     'dl.catalog'        = 'Catalog: {0}'
     'dl.indexEmpty'     = 'No matching file in the listing {0}'
     'dl.from'           = 'Source: {0}'
@@ -19,6 +19,8 @@
     'dl.manual.patches' = 'Windows cumulative updates (MSU) from the Microsoft Update Catalog -> Patches\'
     'dl.manual.nvidia'  = 'NVIDIA vGPU guest driver and license token (Graphics profile only)'
     'dl.someFailed'     = '{0} download(s) failed - check the warnings above'
+    'dl.release'        = 'Current release: {0}'
+    'dl.noRelease'      = 'Cannot read the current release from {0}'
 
     'osot.toolCopied'   = '{0} copied to {1} (required by OSOT Finalize {2})'
     'osot.toolMissing'  = 'OSOT Finalize {0} needs {1} - not found (run -Mode Download)'

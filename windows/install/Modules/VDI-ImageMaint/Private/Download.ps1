@@ -1,4 +1,4 @@
-﻿# -Mode Download: freely available packages (Microsoft, VMware) straight into the C:\install folders.
+﻿# -Mode Download: freely available packages (Microsoft, VMware, Eclipse Adoptium/IDE) straight into the C:\install folders.
 # Every file is checked (Authenticode signer) before it replaces anything; unchanged files (SHA-256) stay as they are.
 
 function Get-DownloadCatalog {
@@ -20,6 +20,22 @@ function Resolve-DownloadUrl {
         $resp = $req.GetResponse()
         try { return $resp.ResponseUri.AbsoluteUri } finally { $resp.Close() }
     } catch { return $Url }
+}
+
+function Resolve-ReleaseUrl {
+    # Url with {Release}: the release is read from ReleaseUrl (first group of ReleasePattern),
+    # e.g. Eclipse EPP release.xml <present>2026-09/R</present>; without ReleaseUrl the Url is returned as is
+    param($Def)
+    $url = [string](Get-PV $Def 'Url' '')
+    $relUrl = [string](Get-PV $Def 'ReleaseUrl' '')
+    if (-not $relUrl) { return $url }
+    $content = (Invoke-WebRequest -Uri $relUrl -UseBasicParsing -UserAgent 'VDI-ImageMaint').Content
+    if ($content -is [byte[]]) { $content = [Text.Encoding]::UTF8.GetString($content) }
+    $m = [regex]::Match([string]$content, [string](Get-PV $Def 'ReleasePattern' ''))
+    if (-not $m.Success) { throw (T 'dl.noRelease' $relUrl) }
+    $rel = $(if ($m.Groups.Count -gt 1) { $m.Groups[1].Value } else { $m.Value })
+    Write-Log (T 'dl.release' $rel)
+    return $url.Replace('{Release}', $rel)
 }
 
 function Get-IndexFileUrl {
@@ -86,7 +102,7 @@ function Invoke-Download {
             try {
                 $kind   = [string](Get-PV $d 'Kind' 'file')
                 $signer = [string](Get-PV $d 'Signer' '')
-                $url    = [string](Get-PV $d 'Url' '')
+                $url    = Resolve-ReleaseUrl $d
                 $final  = $(if ($kind -eq 'html-index') { Get-IndexFileUrl -Url $url -Pattern ([string](Get-PV $d 'IndexPattern' '')) } else { Resolve-DownloadUrl $url })
                 $name   = [string](Get-PV $d 'FileName' '*')
                 if (-not $name -or $name -eq '*') { $name = [Uri]::UnescapeDataString([IO.Path]::GetFileName(([Uri]$final).AbsolutePath)) }

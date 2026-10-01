@@ -16,6 +16,8 @@ archiwa ZIP, nie rusza plików bez zmian i usuwa starsze wersje:
 | `LGPO.exe` (wypakowany z LGPO.zip) | `OSOT\` | Microsoft |
 | `sdelete64.exe` (wypakowany z SDelete.zip) | `OSOT\` | Microsoft |
 | VMware Tools x64 (najnowsze) | `Horizon\` | VMware / Broadcom |
+| Eclipse Temurin JDK 21 i 25 LTS (MSI x64, najnowsze) | `Apps\Java\` | Eclipse Foundation |
+| Eclipse IDE for Java Developers (ZIP, bieżące wydanie z `release.xml`) | `Apps\Eclipse\` | Eclipse Foundation (`eclipse.exe` w środku) |
 
 Lista jest w `Modules\VDI-ImageMaint\Templates\downloads.json`. Żeby ją zmienić, skopiuj plik do
 `C:\install\downloads.json`. Opcja 8 w menu (cykl miesięczny) najpierw pobiera świeże pakiety.
@@ -67,6 +69,13 @@ Potem kopiujesz plik do folderu z tabeli. `-Mode Download` wypisuje tę listę n
 | OneDrive dla całej maszyny (`OneDriveSetup.exe`) | `Apps\` | <https://go.microsoft.com/fwlink/?linkid=844652> | Instalowany z `/allusers` (pakiet `OneDrive`). Odświeżaj co miesiąc - Seal blokuje aktualizator OneDrive na klonach |
 | Sterownik gościa NVIDIA vGPU + token licencji | – (przed Generalize) | NVIDIA Licensing Portal (zgodny z menedżerem vGPU na hoście) | Tylko profil Grafik |
 | App Installer / winget | – | <https://aka.ms/getwinget> | OSOT i LTSC często go usuwają, a jest potrzebny w `-Mode Update` |
+
+## Programowanie w Javie (Eclipse)
+
+| Element | Folder | Źródło | Uwagi |
+|---|---|---|---|
+| Eclipse Temurin JDK 21 / 25 LTS (`OpenJDK21U-jdk_x64_windows_hotspot_*.msi`, `OpenJDK25U-...`) | `Apps\Java\` | <https://adoptium.net/temurin/releases/> (Windows, x64, JDK, .msi) | Pakiety `TemurinJDK21` / `TemurinJDK25`, stałe foldery `jdk-21` / `jdk-25`. Nowe kompilacje co kwartał |
+| Eclipse IDE for Java Developers (`eclipse-java-<RRRR-MM>-R-win32-x86_64.zip`) | `Apps\Eclipse\` | <https://www.eclipse.org/downloads/packages/> (Windows x86_64) | Pakiet `EclipseJava` (`Scripts\Install-Eclipse.ps1`). Nie rozpakowuj. Nowe wydanie w marcu, czerwcu, wrześniu i grudniu. Założenia: [eclipse-java.md](eclipse-java.md) |
 
 ## Opcjonalne
 

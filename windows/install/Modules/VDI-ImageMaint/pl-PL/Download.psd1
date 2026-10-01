@@ -1,5 +1,5 @@
 ﻿@{
-    'dl.step'           = 'DOWNLOAD - darmowe pakiety (Microsoft, VMware) prosto do C:\install'
+    'dl.step'           = 'DOWNLOAD - darmowe pakiety (Microsoft, VMware, Eclipse) prosto do C:\install'
     'dl.catalog'        = 'Katalog: {0}'
     'dl.indexEmpty'     = 'Brak pasującego pliku na liście {0}'
     'dl.from'           = 'Źródło: {0}'
@@ -19,6 +19,8 @@
     'dl.manual.patches' = 'Aktualizacje zbiorcze Windows (MSU) z Microsoft Update Catalog -> Patches\'
     'dl.manual.nvidia'  = 'Sterownik gościa NVIDIA vGPU i token licencji (tylko profil Grafik)'
     'dl.someFailed'     = 'Nieudane pobieranie: {0} - sprawdź ostrzeżenia powyżej'
+    'dl.release'        = 'Bieżące wydanie: {0}'
+    'dl.noRelease'      = 'Nie można odczytać bieżącego wydania z {0}'
 
     'osot.toolCopied'   = '{0} skopiowany do {1} (wymagany przez OSOT Finalize {2})'
     'osot.toolMissing'  = 'OSOT Finalize {0} wymaga {1} - nie znaleziono (uruchom -Mode Download)'

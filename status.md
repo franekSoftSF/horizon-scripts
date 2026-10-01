@@ -18,6 +18,11 @@ _Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogi
 - [x] `Office\Configuration_x64.xml`: Updates=FALSE, FORCEAPPSHUTDOWN=TRUE, Display=None; `Uninstall.xml` = Remove All
 - [x] `START.cmd` (dwuklik) → menu PL/EN z krokami po kolei; `Update -ThenSeal` = cykl miesięczny jednym krokiem
 - [x] Profil **Grafik** (OSOT quality + GPU, FSLogix 100 GB) i OneDrive dla całej maszyny; `docs/profiles-gpo.md` (GPO, DEM, FSLogix)
+- [x] **Java / Eclipse**: Temurin JDK 21 + 25 (MSI, stały `INSTALLDIR`) i Eclipse IDE (`Scripts\Install-Eclipse.ps1` 1.0, EN/PL) jako
+      pakiety `TemurinJDK21` / `TemurinJDK25` / `EclipseJava`; `-Mode Download` je pobiera; `docs/eclipse-java.md` (+pl):
+      workspace w kontenerze FSLogix, Dokumenty/Pulpit przez przekierowanie folderów DEM na UNC.
+      Test lokalny instalatora na prawdziwym ZIP 2026-09 i prawdziwe pobieranie; **nie testowano na VM**
+      (wykrywanie JDK przy starcie Eclipse, `user.home` przy przekierowaniu DEM)
 
 ## Jak testowano (bez VM)
 - Parser PS 5.1: 0 błędów we wszystkich skryptach; PSScriptAnalyzer: tylko puste bloki catch (celowe)

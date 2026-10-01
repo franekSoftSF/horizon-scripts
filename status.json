@@ -3,7 +3,8 @@
   "versions": {
     "VDI-ImageMaint.ps1": "2.0.0-dev",
     "Set-FSLogixConfig.ps1": "1.1.0",
-    "Test-SysprepReadiness.ps1": "0.1"
+    "Test-SysprepReadiness.ps1": "0.1",
+    "Install-Eclipse.ps1": "1.0"
   },
   "languages": {
     "primary": "en-US",
@@ -250,7 +251,8 @@
     "-Mode Download: ODT, Teams bootstrapper+MSIX, FSLogix, OneDrive, LGPO, SDelete, VMware Tools (signature check, unzip, hash compare) - tested with real downloads",
     "Windows tool moved to windows/; Pester suite 60/60 in PS 5.1 and pwsh 7; PSScriptAnalyzer clean",
     "Set-FSLogixConfig 1.1.0: English + EN/PL messages, -Language",
-    "-Mode Validate + packages.schema.json; Office XML templates (ProPlus/Business Shared x pl, en, de, fr, pl+en)"
+    "-Mode Validate + packages.schema.json; Office XML templates (ProPlus/Business Shared x pl, en, de, fr, pl+en)",
+    "Java development: Temurin JDK 21 + 25 (MSI, fixed INSTALLDIR) + Eclipse IDE (Scripts/Install-Eclipse.ps1 1.0, EN/PL) as packages TemurinJDK21/TemurinJDK25/EclipseJava; -Mode Download fetches them (Adoptium API, EPP release.xml -> {Release}); docs/eclipse-java.md (+pl): workspace in FSLogix, DEM folder redirection to UNC. Installer tested locally with the real 2026-09 ZIP (install, idempotent re-run, -WhatIf, uninstall); downloads tested for real; NOT tested on a VM"
   ],
   "osotFindings": [
     "Generalize requires audit mode; cannot be combined with Finalize; reboot required after",
