@@ -71,6 +71,12 @@ Jeśli obraz był budowany bez tego narzędzia, zacznij od `adopt`:
 sudo ./vdi-imagemaint.sh adopt
 ```
 
+Nie trzeba wcześniej kopiować ani edytować `vdi-imagemaint.conf.example`: `adopt` sam tworzy
+`vdi-imagemaint.conf` z tego, co znajdzie na obrazie. Pyta tylko o profil (university lub business). Plik obejmuje
+locale, strefę czasową, klawiaturę, domenę AD i workgroup, nazwy i mapowanie ID w SSSD, serwer NFS, eksport i `sec=`
+z fstab lub autofs, SSO, USB, kartę, True SSO, Collaboration i Recording. Jeśli `vdi-imagemaint.conf` już istnieje,
+zostaje bez zmian: wykryte wartości trafiają do `vdi-imagemaint.conf.detected`, a różnice są wypisane.
+
 1. **Wykrywa** obecny stan:
    - sesje pulpitu i menedżer logowania;
    - sposób dołączenia do domeny (SSSD lub winbind/Samba) i keytab maszyny;

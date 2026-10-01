@@ -41,7 +41,7 @@ Existing image: adopt -> agent/recording/apps -> optimize -> collab -> check -> 
 Monthly:        update --then-seal       Reverse a seal: unlock
 
 Modes:
-  adopt      existing image: detect, preview (diff), keep steps, record agent version
+  adopt      existing image: detect, create vdi-imagemaint.conf, preview (diff), keep steps, record agent version
   prepare    base packages, MATE + LightDM, locale, keyboard, time zone, NTP
   domain     krb5.conf, SSSD, realm join of the golden image, sudo, True SSO / smart card
   nfs        NFSv4 home directories with Kerberos (autofs, rpc.gssd, idmapd)
@@ -290,3 +290,12 @@ MSG[chk_join_service_bad]='%s not running.'
 MSG[chk_desktop_adopted]='Adopted desktop with display manager %s (not the tested LightDM + MATE).'
 MSG[chk_nfs_adopted]='Home directories adopted from the existing image (%s).'
 MSG[menu_adopt]='0. Existing image: detect, preview, keep (adopt)'
+
+# --- 0.3.1: adopt creates the configuration ---
+MSG[adopt_q_profile]='Profile for this image - university or business [%s]:'
+MSG[adopt_config_title]='CONFIG - settings detected on this image'
+MSG[adopt_config_header]='Created by VDI-ImageMaint %s adopt on %s (%s) from the settings found on this image.'
+MSG[adopt_config_header2]='All other settings use conf/defaults.conf and the profile; add or change values here.'
+MSG[adopt_config_created]='Configuration created from the detected settings: %s'
+MSG[adopt_config_exists]='%s already exists and was not changed - detected values written to %s'
+MSG[adopt_config_diff]='differs: %s: configuration %s, detected %s'

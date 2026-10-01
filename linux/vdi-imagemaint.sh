@@ -16,7 +16,7 @@ VDI_ROOT=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
 
 # shellcheck source=lib/common.sh
 . "${VDI_ROOT}/lib/common.sh"
-for _lib in base domain nfs vhci agent recording adopt collab optimize update seal check; do
+for _lib in base domain nfs vhci agent recording adoptconf adopt collab optimize update seal check; do
     # shellcheck disable=SC1090
     . "${VDI_ROOT}/lib/${_lib}.sh"
 done
