@@ -4,7 +4,13 @@
   "Variables": {
     "AppVolumesManager": "appvolumes.domena.local",
     "AppVolumesPort": "443",
-    "FSLogixShare": "\\\\serwer\\Profiles$"
+    "FSLogixShare": "\\\\serwer\\Profiles$",
+    "HorizonAgentFeatures": "Core,NGVC,RTAV,ClientDriveRedirection,HznVaudio,BlastUDP,PrintRedir,HelpDesk,USB",
+    "HorizonAgentOptions": ""
+  },
+  "Windows": {
+    "_opis": "TargetRelease puste = obraz zostaje na bieżącym wydaniu (Update pomija aktualizacje funkcji). Np. 26H2 = Update instaluje pakiet umożliwiający do 26H2 - najpierw na kopii obrazu i tylko gdy Horizon Agent i OSOT wspierają to wydanie.",
+    "TargetRelease": ""
   },
   "Osot": {
     "_opis": "Seal: optymalizacja wg OSOT\\Optimize.json (Balanced - fonty i cienie zostają), na końcu Finalize bez Compact (2) i zerowania (7).",
@@ -67,8 +73,8 @@
       "Enabled": false,
       "Order": 11,
       "Type": "exe",
-      "File": "*Horizon-Agent-x86_64*.exe",
-      "Arguments": "/s /v\"/qn REBOOT=ReallySuppress\"",
+      "File": "*Horizon-Agent-x86*.exe",
+      "Arguments": "/s /v\"/qn VDM_VC_MANAGED_AGENT=1 ADDLOCAL={HorizonAgentFeatures} {HorizonAgentOptions} REBOOT=ReallySuppress /l*v {Log}\"",
       "Detect": { "Type": "Uninstall", "Name": "Horizon Agent$" },
       "RequireInstalled": true,
       "RebootAfter": true

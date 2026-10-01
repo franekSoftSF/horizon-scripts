@@ -1,0 +1,15 @@
+﻿@{
+    'win.release'       = 'Windows 11 {0} (kompilacja {1}.{2}, {3})'
+    'win.unknown'       = 'Kompilacji Windows {0} nie ma w tabeli wydań tego narzędzia - kontrole mogą nie pasować (zaktualizuj Private\Windows.ps1)'
+    'win.novdi'         = 'Windows 11 {0} jest tylko dla nowych urządzeń i nie jest wspierany jako system VDI - użyj 25H2 lub 26H2'
+    'win.hz.old'        = 'Horizon Agent {0} nie wspiera Windows 11 {1} (wymagany {2} lub nowszy, Omnissa KB 78714) - najpierw zaktualizuj agenta i Connection Server'
+    'win.hz.unlisted'   = 'Windows 11 {0} nie jest jeszcze na liście wspieranych systemów Horizon Agent (KB 78714) - tylko pule testowe i pilotażowe'
+    'win.osot.unlisted' = 'Żadne wydanie OSOT nie wspiera jeszcze oficjalnie Windows 11 {0} - użyj najnowszego OSOT i przetestuj obraz przed produkcją'
+    'win.endSoon'       = 'Windows 11 {0} ({1}) dostaje poprawki bezpieczeństwa tylko do {2} ({3} dni) - zaplanuj kolejne wydanie'
+    'win.endPassed'     = 'Windows 11 {0} ({1}) nie jest wspierany od {2} - brak poprawek bezpieczeństwa'
+    'win.target.policy' = 'Docelowe wydanie Windows Update ustawione na {0} (TargetReleaseVersionInfo)'
+    'win.target.same'   = 'Windows.TargetRelease {0} = bieżące wydanie - aktualizacje funkcji są pomijane'
+    'win.target.up'     = 'Windows.TargetRelease = {0}: aktualizacja funkcji / pakiet umożliwiający do {0} jest dozwolony w tym przebiegu'
+    'win.feature.skip'  = '  - pominięto (zmienia wydanie Windows w obrazie): {0}'
+    'win.feature.hint'  = 'Aktualizacje funkcji są pomijane. Aby przenieść obraz na nowe wydanie, ustaw Windows.TargetRelease = "26H2" w packages.json (najpierw test na kopii złotego obrazu) albo skopiuj pakiet umożliwiający (.msu) do Patches.'
+}

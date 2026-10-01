@@ -175,6 +175,19 @@ function Update-Windows {
         Write-Log (T 'wu.disabled') WARN
         try { Set-ItemProperty -Path $wu -Name Start -Value 3 -ErrorAction Stop } catch { Write-Log (T 'wu.cannotChange') ERR; return }
     }
+    # A feature update / enablement package moves the golden image to another release (Horizon and OSOT
+    # support differ per release) - only with Windows.TargetRelease in the manifest
+    $rel    = Get-WindowsRelease
+    $target = Get-TargetRelease
+    $allowFeature = $false
+    if ($target -and $target -ne $rel.Release) {
+        Write-Log (T 'win.target.up' $target) WARN
+        $tInfo = @($script:WindowsReleases | Where-Object { $_.Release -eq $target }) | Select-Object -First 1
+        if ($tInfo -and -not $tInfo.Vdi) { Write-Log (T 'win.novdi' $target) ERR; return }
+        if ($tInfo -and -not $tInfo.HorizonMin) { Write-Log (T 'win.hz.unlisted' $target) WARN }
+        Set-TargetReleasePolicy $target
+        $allowFeature = $true
+    } elseif ($target) { Write-Log (T 'win.target.same' $target) }
     try {
         $session = New-Object -ComObject Microsoft.Update.Session
         $session.ClientApplicationID = 'VDI-ImageMaint'
@@ -184,11 +197,18 @@ function Update-Windows {
     if ($result.Updates.Count -eq 0) { Write-Log (T 'wu.none') OK; return }
 
     $coll = New-Object -ComObject Microsoft.Update.UpdateColl
+    $skipped = 0
     foreach ($u in $result.Updates) {
+        if ((Test-FeatureUpdate $u) -and -not ($allowFeature -and [string]$u.Title -match [regex]::Escape($target))) {
+            Write-Log (T 'win.feature.skip' $u.Title); $skipped++
+            continue
+        }
         if (-not $u.EulaAccepted) { $u.AcceptEula() }
         [void]$coll.Add($u)
         Write-Log "  + $($u.Title)"
     }
+    if ($skipped -and -not $allowFeature) { Write-Log (T 'win.feature.hint') WARN }
+    if ($coll.Count -eq 0) { Write-Log (T 'wu.none') OK; return }
     $dl = $session.CreateUpdateDownloader(); $dl.Updates = $coll
     Write-Log (T 'wu.downloading'); [void]$dl.Download()
     $ins = $session.CreateUpdateInstaller(); $ins.Updates = $coll
@@ -214,6 +234,7 @@ function Invoke-Update {
     $before = @(Get-InstalledApps)
 
     Write-Log (T 'upd.infra') STEP
+    Write-WindowsReleaseInfo
     $before | Where-Object { $_.Name -match $InfraPattern } | Sort-Object Name |
         ForEach-Object { Write-Log ("{0,-55} {1}" -f $_.Name, $_.Version) }
 

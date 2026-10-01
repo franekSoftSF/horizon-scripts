@@ -326,6 +326,13 @@ function Invoke-Configure {
     Invoke-ConfigureFSLogix -ManifestObj $m -Vars $vars -ImageProfile $prof
 
     Write-Log (T 'cfg.step4') STEP
+    # Horizon Agent ADDLOCAL: profile default unless the manifest already has a list for this profile
+    $hzDefault = $script:HorizonAgentProfileFeatures[$prof]
+    $hzCur = [string](Get-PV $vars 'HorizonAgentFeatures' '')
+    if (-not $hzCur -or $curProfile -ne $prof) { $hzCur = $hzDefault }
+    Write-Host (T 'cfg.hz.help')
+    Set-PV $vars 'HorizonAgentFeatures' (Read-Value (T 'cfg.hz.features') $hzCur)
+    if (-not (Get-PV $vars 'HorizonAgentOptions')) { Set-PV $vars 'HorizonAgentOptions' '' }
     $avm = Read-Value (T 'cfg.av.manager') ([string](Get-PV $vars 'AppVolumesManager' ''))
     if ($avm) { Set-PV $vars 'AppVolumesManager' $avm }
     Set-PV $vars 'AppVolumesPort' (Read-Value (T 'cfg.av.port') ([string](Get-PV $vars 'AppVolumesPort' '443')))

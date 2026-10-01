@@ -90,6 +90,7 @@ function Invoke-Inventory {
 
 function Show-Status {
     Write-Log (T 'status.step') STEP
+    Write-WindowsReleaseInfo
     $startNames = @{ 0 = 'Boot'; 1 = 'System'; 2 = 'Automatic'; 3 = 'Manual'; 4 = 'Disabled' }
     $rows = foreach ($s in @(Resolve-ServiceDefs)) {
         $reg = "HKLM:\SYSTEM\CurrentControlSet\Services\$($s.Name)"

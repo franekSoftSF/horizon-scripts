@@ -52,7 +52,7 @@ folder listed below. `-Mode Download` prints this list at the end.
 | Item | Folder | Source | Notes |
 |---|---|---|---|
 | VMware Tools x64 | `Horizon\` | <https://packages.vmware.com/tools/releases/latest/windows/x64/> | Install first, before everything else |
-| Omnissa Horizon Agent (`Omnissa-Horizon-Agent-x86_64-*.exe`) | `Horizon\` | Omnissa Customer Connect → Horizon 8 → matching version (2506) | Install **after Generalize**. Keep the *Instant Clone* feature. Keep *Media Optimization for Microsoft Teams* |
+| Omnissa Horizon Agent (`Omnissa-Horizon-Agent-x86_64-*.exe`) | `Horizon\` | Omnissa Customer Connect → Horizon 8 → version matching the backend **and** the Windows release (2506 = up to 24H2; 25H2 needs 2512+; 26H2 not listed yet – see image-lifecycle.md §7) | Install **after Generalize**. Parameters: `VDM_VC_MANAGED_AGENT=1`, `ADDLOCAL` with Core + NGVC (Instant Clone); Teams optimization is part of Core |
 | Dynamic Environment Manager agent (`Omnissa Dynamic Environment Manager*x64.msi`) | `Horizon\` | Omnissa Customer Connect → DEM | After Horizon Agent |
 | App Volumes Agent | `Horizon\` | Omnissa Customer Connect → App Volumes (matching the Manager) | Last of the agents; needs the Manager address (`Variables` in `packages.json`) |
 | Horizon GPO bundle (ADMX) | – (domain SYSVOL) | Omnissa Customer Connect → Horizon 8 → *GPO Bundle* | Needed for the Teams optimization and Blast policies |

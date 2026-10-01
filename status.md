@@ -24,6 +24,11 @@ _Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogi
       Test lokalny instalatora na prawdziwym ZIP 2026-09 i prawdziwe pobieranie; **nie testowano na VM**
       (wykrywanie JDK przy starcie Eclipse, `user.home` przy przekierowaniu DEM)
 
+- [x] **Przygotowanie do Windows 11 26H2 i agenta Horizon** (2026-10-01): tabela wydań 24H2/25H2/26H2/26H1 ze wsparciem
+      Horizon Agent (KB 78714), OSOT i końcem wsparcia; Update pomija aktualizacje funkcji, dopóki `Windows.TargetRelease`
+      nie wskaże wydania; readiness: 26H2 WARN, 26H1 FAIL, vTPM (C21). Horizon Agent: `VDM_VC_MANAGED_AGENT=1` +
+      `ADDLOCAL` z Core/NGVC wg profilu (wcześniej brakowało obu), walidacja parametrów. **Nie testowano na VM.**
+
 ## Jak testowano (bez VM)
 - Parser PS 5.1: 0 błędów we wszystkich skryptach; PSScriptAnalyzer: tylko puste bloki catch (celowe)
 - Testy funkcji w izolacji (PS 5.1): unattend.xml (poprawny XML, wszystkie fazy, hasła w formacie WSIM),
@@ -38,12 +43,16 @@ _Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogi
 1. ~~**Licencja i języki Office**~~ ✔ – gotowe szablony w `windows/install/Office/Templates` (ProPlus i Business Shared × PL, EN, DE, FR, PL+EN); wybór w kreatorze.
    Dawny opis: **Licencja Office**: w `Configuration_x64.xml` jest `O365BusinessRetail` (Microsoft 365 Apps for business).
    Uczelnia (A3/A5) zwykle potrzebuje `O365ProPlusRetail`. SCA z `O365BusinessRetail` działa tylko z Business Premium.
-2. **Języki Office**: obecnie `pl-pl` + `en-gb` (pełne pakiety). Kreator proponuje jeden język + opcjonalnie tylko ProofingTools.
+2. ~~**Języki Office**~~ ✔ (szablony + presety w kreatorze). Dawny opis: obecnie `pl-pl` + `en-gb` (pełne pakiety). Kreator proponuje jeden język + opcjonalnie tylko ProofingTools.
    Uruchom `-Mode Configure` albo podaj wybór.
 3. **Teams**: w `Optimize.json` zaznaczone „Turn off notifications from apps and other senders” (synchronizowane do Default User)
    → brak powiadomień Teams o czacie/połączeniach. Kreator odznacza je, jeśli wybierzesz zachowanie powiadomień.
 4. **OneDrive**: `Optimize.json` usuwa OneDrive („Remove OneDriveSync”). Dla Firmy (Known Folder Move) kreator to odznacza.
 5. „Let Windows apps run in the background” (zaznaczone) – do sprawdzenia na klonie, czy nie blokuje Teams w tle.
+6. **Wersja Horizon a wydanie Windows**: Horizon **2506 nie wspiera 25H2** (KB 78714) – obraz produkcyjny na 2506 = **24H2**
+   (Ent/Edu do 2027-10-12; Pro tylko do 2026-10-13). 25H2 wymaga agenta i Connection Servera 2512+ (2512.1/2603/2606).
+   **26H2** (GA 2026-09-29, kompilacja 26300) nie jest jeszcze wspierany przez Horizon ani OSOT → tylko pula pilotażowa.
+   Decyzja: kiedy aktualizować backend Horizon i na które wydanie Windows budować obraz produkcyjny.
 
 ## Otwarte problemy
 | # | Ważność | Problem |
@@ -54,13 +63,13 @@ _Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogi
 | S8 | średnia | MSU checkpoint (24H2+) instalowane pojedynczo |
 | S10 | niska | Dry-run rozpakowuje ZIP-y; brak odświeżania rozpakowanej kopii |
 | S11 | niska | Pomoc skryptu częściowo nieaktualna (np. „FSLogix nie jest aktualizowany”) |
-| – | średnia | Parametry cichej instalacji Horizon Agent (ADDLOCAL, `VDM_VC_MANAGED_AGENT=1`, Teams) – niezweryfikowane |
+| – | średnia | Parametry cichej instalacji Horizon Agent ustawione wg dokumentacji Omnissa 2603 (`VDM_VC_MANAGED_AGENT=1`, ADDLOCAL Core+NGVC) – do sprawdzenia na VM (Teams Media Optimized, Instant Clone) |
 
 ## Plan
 1. ~~Git~~ ✔ · 2. ~~B1–B7~~ ✔ · 2a. ~~Generalize/PostGeneralize~~ ✔ · 2b. ~~Configure + winget~~ ✔
 3. **Test na VM** (budowa od ISO: tryb audytu → Update → Optimize → Generalize → PostGeneralize) i poprawki po teście
 4. ~~Moduł + i18n~~ ✔ (2026-10-01: `install/Modules/VDI-ImageMaint`, 407 komunikatów EN/PL, `-Language`); ~~`-Mode Download`~~ ✔ (7 pakietów, test z prawdziwym pobieraniem); ~~tłumaczenie Set-FSLogixConfig~~ ✔
 5. ~~Pester~~ ✔ (60 testów, PS 5.1 + pwsh 7, PSScriptAnalyzer bez uwag); ~~walidacja manifestu~~ ✔ (`-Mode Validate`, schemat JSON); ~~szablony XML Office~~ ✔ (10 wariantów) (`-Mode Validate`, JSON Schema)
-6. Komponenty Horizon (ADDLOCAL, kolejność, restarty), kontrola jakości klona (Teams Media Optimized, FSLogix, logowanie)
+6. ~~Komponenty Horizon (ADDLOCAL, kolejność)~~ ✔ (restarty – test na VM), kontrola jakości klona (Teams Media Optimized, FSLogix, logowanie)
 7. Raport HTML cyklu, vCenter/Horizon (snapshot, Push Image)
 8. **Linux (Debian/Ubuntu)** – po zakończeniu narzędzia Windows

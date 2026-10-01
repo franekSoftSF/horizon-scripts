@@ -261,6 +261,11 @@ function Get-PackagePlan {
         $plan.Reason  = "ODT $pkgVersion, config: $(Resolve-OdtConfig $Pkg $files[0])"
     }
     $plan.Files = $files
+    # Horizon Agent: the installer must support the running Windows release (KB 78714)
+    if ([string](Get-PV $detect 'Name' '') -match 'Horizon Agent' -and $plan.Action -in 'install', 'update') {
+        $hz = Get-HorizonAgentSupportText -AgentVersion (Get-HorizonAgentVersion "$($files[0].Name) $pkgVersion") -Release (Get-WindowsRelease)
+        if ($hz) { $plan.Reason = (@($plan.Reason, $hz) | Where-Object { $_ }) -join '; '; Write-Log "[$id] $hz" WARN }
+    }
     if (-not $enabled -and $plan.Action -in 'install', 'update') {
         $plan.Reason = T 'plan.reason.disabled' (T "plan.action.$($plan.Action)"); $plan.Action = 'skip'
     } elseif ($PackageIds -and $PackageIds -notcontains $id -and $plan.Action -in 'install', 'update') {

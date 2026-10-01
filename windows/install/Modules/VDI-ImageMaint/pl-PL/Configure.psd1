@@ -60,7 +60,9 @@
     'cfg.fsl.noPkg'       = 'Brak wpisu FSLogixConfig w manifeście - pomijam'
     'cfg.fsl.done'        = 'FSLogixConfig: {0} (włączony)'
 
-    'cfg.step4'           = 'Krok 4/7: App Volumes'
+    'cfg.step4'           = 'Krok 4/7: Horizon Agent i App Volumes'
+    'cfg.hz.help'         = 'Funkcje Horizon Agent (ADDLOCAL): Core i NGVC (Instant Clone) są wymagane; Core zawiera już Blast, PCoIP i Media Optimization for Teams. Opcjonalne: USB, RTAV (kamera/mikrofon), ClientDriveRedirection, ScannerRedirection, SmartCard, SerialPortRedirection, GEOREDIR, PerfTracker, HelpDesk, PrintRedir.'
+    'cfg.hz.features'     = 'Horizon Agent ADDLOCAL (po przecinku; Enter = propozycja dla profilu)'
     'cfg.av.manager'      = 'Adres App Volumes Manager (FQDN; Enter = bez zmian)'
     'cfg.av.port'         = 'Port App Volumes Manager'
 

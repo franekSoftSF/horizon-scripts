@@ -99,3 +99,56 @@ Day-2 `0 1 3 4 5 8 10 11`. Krok 6 dodajemy dopiero, gdy klon testowy go potwierd
 - OSOT `-storeapp … --exclude MSTeams`.
 - Kontrola na klonie (punkt 7 roadmapy): Teams zgłasza *Omnissa/VMware Media Optimized*, połączenia i udostępnianie
   ekranu są przekierowane na klienta, powiadomienia się pokazują.
+
+## 7. Wydania Windows i wsparcie Horizon (24H2, 25H2, 26H2)
+
+Stan na 2026-10-01. Źródła: Microsoft *Windows 11 release information*, Omnissa KB 78714 (systemy wspierane przez
+Horizon Agent), Omnissa *Supported Windows versions for the OSOT components*. Ta sama tabela jest w
+`Modules\VDI-ImageMaint\Private\Windows.ps1` (`$WindowsReleases`). Aktualizuj ją przy każdym nowym wydaniu.
+
+| Wydanie | Kompilacja | Horizon Agent (KB 78714) | OSOT | Wsparcie Ent/Edu | Wsparcie Pro |
+|---|---|---|---|---|---|
+| 24H2 | 26100 | 2406+ (także 2312.2/2312.3 ESB); **2506 obsługuje najwyżej 24H2** | 2503+ | 2027-10-12 | **2026-10-13** |
+| 25H2 | 26200 | **2512+** (2512, 2512.1, 2603, 2606); Horizon **2506 nie wspiera 25H2** | 2603+ (zalecane 2606+) | 2028-10-10 | 2027-10-12 |
+| 26H2 | 26300 | **jeszcze nie ma na liście** (KB 78714 z 2026-09-29) | jeszcze nie ma | 2029-10-09 | 2028-10-10 |
+| 26H1 | 28000 | nie dla VDI (tylko nowe urządzenia, nieoferowane istniejącym) | – | – | – |
+
+Co to oznacza:
+- **Backend Horizon 2506**: obrazy produkcyjne zostają na **24H2** (Enterprise/Education do 2027-10-12).
+  Przed 25H2 lub 26H2 zaktualizuj Connection Servery i agenta (2512.1 / 2603 / 2606). Sprawdź macierz zgodności Omnissa.
+- **26H2 to pakiet umożliwiający** (KB5121794) na 24H2/25H2: ta sama gałąź serwisowa i ta sama miesięczna
+  aktualizacja zbiorcza (np. KB5124010 dla 26100/26200/26300). Obraz 26H2 można zrobić na dwa sposoby:
+  1. **Czysta budowa z ISO 26H2** (zalecane dla produkcji, z Generalize – sekcja 2).
+  2. **Pakiet umożliwiający na istniejącym obrazie 25H2** (jeden restart, bez Generalize, dobre dla puli pilotażowej):
+     ustaw `"Windows": { "TargetRelease": "26H2" }` w `packages.json` i uruchom Update na **kopii** złotego obrazu
+     albo skopiuj plik `.msu` KB5121794 do `Patches\`.
+- Narzędzie chroni obraz przed przypadkową zmianą wydania: `-Mode Update` **pomija aktualizacje funkcji i pakiety
+  umożliwiające**, dopóki `Windows.TargetRelease` nie wskaże wydania. Z ustawionym celem zapisuje politykę Windows Update
+  `TargetReleaseVersion`/`TargetReleaseVersionInfo`, żeby nic nowszego nie było oferowane.
+- `-Mode Status`, `Update` i plan pakietów pokazują wydanie, koniec wsparcia i to, czy instalator Horizon Agent je wspiera.
+  `Test-SysprepReadiness.ps1` ostrzega przy 26H2 (C01, C17), zatrzymuje przy 26H1 i ostrzega, gdy złoty obraz ma
+  vTPM (C21, KB 85960).
+
+### Cicha instalacja Horizon Agent (packages.json)
+
+```
+/s /v"/qn VDM_VC_MANAGED_AGENT=1 ADDLOCAL={HorizonAgentFeatures} {HorizonAgentOptions} REBOOT=ReallySuppress /l*v {Log}"
+```
+
+- `VDM_VC_MANAGED_AGENT=1` jest **wymagany** (pulpit zarządzany przez vCenter).
+- Przy liście funkcji `ADDLOCAL` musi zawierać **Core**. **NGVC** (Instant Clone Agent) **nie** instaluje się domyślnie
+  przy cichej instalacji. Bez niego obrazu nie da się użyć w Instant Clone. Core zawiera już Blast, PCoIP,
+  **Media Optimization for Microsoft Teams**, HTML5 MMR i Browser Redirection.
+- Domyślne zestawy dla profili (`-Mode Configure` krok 4, `Variables.HorizonAgentFeatures`):
+
+| Profil | ADDLOCAL |
+|---|---|
+| Uczelnia | `Core,NGVC,RTAV,ClientDriveRedirection,HznVaudio,BlastUDP,PrintRedir,HelpDesk,USB` |
+| Firma | jak Uczelnia + `ScannerRedirection` |
+| Grafika | jak Uczelnia (USB dla tabletów i myszy 3D) |
+
+- W razie potrzeby dodaj `SmartCard`, `SerialPortRedirection`, `GEOREDIR` lub `PerfTracker`. `V4V` usunięto w 2412.
+- `Variables.HorizonAgentOptions` to dodatkowe właściwości MSI, np. `URL_FILTERING_ENABLED=1`, `ENABLE_UNC_REDIRECTION=1`,
+  `RDP_CHOICE=0`. Nigdy nie wpisuj haseł do manifestu.
+- `-Mode Validate` sprawdza powyższe właściwości i zgłasza nieznane nazwy funkcji.
+- Kolejność agentów: VMware Tools → Horizon Agent → DEM → App Volumes Agent (Order 10–13), wszystkie po Generalize.

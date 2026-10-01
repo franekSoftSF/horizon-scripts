@@ -1,0 +1,15 @@
+﻿@{
+    'win.release'       = 'Windows 11 {0} (build {1}.{2}, {3})'
+    'win.unknown'       = 'Windows build {0} is not in the release table of this tool - checks may not fit (update Private\Windows.ps1)'
+    'win.novdi'         = 'Windows 11 {0} is only for new devices and is not supported as a VDI guest - use 25H2 or 26H2'
+    'win.hz.old'        = 'Horizon Agent {0} does not support Windows 11 {1} (needs {2} or newer, Omnissa KB 78714) - the agent and Connection Server must be upgraded first'
+    'win.hz.unlisted'   = 'Windows 11 {0} is not in the Omnissa Horizon Agent support matrix yet (KB 78714) - lab and pilot pools only'
+    'win.osot.unlisted' = 'No OSOT release lists Windows 11 {0} as supported yet - use the newest OSOT and test the optimized image before production'
+    'win.endSoon'       = 'Windows 11 {0} ({1}) gets security updates only until {2} ({3} days) - plan the next release'
+    'win.endPassed'     = 'Windows 11 {0} ({1}) is out of servicing since {2} - no more security updates'
+    'win.target.policy' = 'Windows Update target release pinned to {0} (TargetReleaseVersionInfo)'
+    'win.target.same'   = 'Windows.TargetRelease {0} = the running release - feature updates are skipped'
+    'win.target.up'     = 'Windows.TargetRelease = {0}: the feature update / enablement package to {0} is allowed in this run'
+    'win.feature.skip'  = '  - skipped (moves the image to another Windows release): {0}'
+    'win.feature.hint'  = 'Feature updates are skipped. To move the image to a new release set Windows.TargetRelease = "26H2" in packages.json (test on a copy of the golden image first) or copy the enablement package (.msu) to Patches.'
+}

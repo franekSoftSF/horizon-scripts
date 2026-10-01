@@ -5,7 +5,13 @@
   "Variables": {
     "AppVolumesManager": "appvolumes.domain.local",
     "AppVolumesPort": "443",
-    "FSLogixShare": ""
+    "FSLogixShare": "",
+    "HorizonAgentFeatures": "Core,NGVC,RTAV,ClientDriveRedirection,HznVaudio,BlastUDP,PrintRedir,HelpDesk,USB",
+    "HorizonAgentOptions": ""
+  },
+  "Windows": {
+    "_description": "TargetRelease empty = the image stays on its current release (Update skips feature updates). E.g. 26H2 = Update installs the enablement package to 26H2 - on a copy of the image first and only when the Horizon Agent and OSOT support that release.",
+    "TargetRelease": ""
   },
   "Osot": {
     "_description": "Seal: optimization (-o) with Windows/Office Update turned off, Finalize (-f) at the end. SettingsFile = 'Export Selections' from the OSOT GUI (optional). Finalize = Day-2 set, FinalizeBuild = image build set (no Compact 2, no zeroing 7 on Instant Clone).",
@@ -100,8 +106,8 @@
       "Enabled": false,
       "Order": 11,
       "Type": "exe",
-      "File": "*Horizon-Agent-x86_64*.exe",
-      "Arguments": "/s /v\"/qn REBOOT=ReallySuppress\"",
+      "File": "*Horizon-Agent-x86*.exe",
+      "Arguments": "/s /v\"/qn VDM_VC_MANAGED_AGENT=1 ADDLOCAL={HorizonAgentFeatures} {HorizonAgentOptions} REBOOT=ReallySuppress /l*v {Log}\"",
       "Detect": {
         "Type": "Uninstall",
         "Name": "Horizon Agent$"

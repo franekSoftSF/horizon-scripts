@@ -35,7 +35,7 @@
     },
     "pester": {
       "status": "pass",
-      "detail": "94 tests in Windows PowerShell 5.1 and PowerShell 7 (windows/tests/Invoke-Tests.ps1)"
+      "detail": "130 tests in Windows PowerShell 5.1 and PowerShell 7 (windows/tests/Invoke-Tests.ps1)"
     }
   },
   "issues": [
@@ -237,7 +237,8 @@
   ],
   "missingInputs": [
     "Office license/language decision (O365BusinessRetail vs O365ProPlusRetail, pl-pl + en-gb)",
-    "VM test of Generalize/PostGeneralize and Configure"
+    "VM test of Generalize/PostGeneralize and Configure",
+    "Horizon backend upgrade plan: 2506 supports only up to 24H2 (25H2 needs 2512+, 26H2 not listed yet)"
   ],
   "done": [
     "git repo main + baseline commit 1.7.3",
@@ -252,7 +253,8 @@
     "Windows tool moved to windows/; Pester suite 60/60 in PS 5.1 and pwsh 7; PSScriptAnalyzer clean",
     "Set-FSLogixConfig 1.1.0: English + EN/PL messages, -Language",
     "-Mode Validate + packages.schema.json; Office XML templates (ProPlus/Business Shared x pl, en, de, fr, pl+en)",
-    "Java development: Temurin JDK 21 + 25 (MSI, fixed INSTALLDIR) + Eclipse IDE (Scripts/Install-Eclipse.ps1 1.0, EN/PL) as packages TemurinJDK21/TemurinJDK25/EclipseJava; -Mode Download fetches them (Adoptium API, EPP release.xml -> {Release}); docs/eclipse-java.md (+pl): workspace in FSLogix, DEM folder redirection to UNC. Installer tested locally with the real 2026-09 ZIP (install, idempotent re-run, -WhatIf, uninstall); downloads tested for real; NOT tested on a VM"
+    "Java development: Temurin JDK 21 + 25 (MSI, fixed INSTALLDIR) + Eclipse IDE (Scripts/Install-Eclipse.ps1 1.0, EN/PL) as packages TemurinJDK21/TemurinJDK25/EclipseJava; -Mode Download fetches them (Adoptium API, EPP release.xml -> {Release}); docs/eclipse-java.md (+pl): workspace in FSLogix, DEM folder redirection to UNC. Installer tested locally with the real 2026-09 ZIP (install, idempotent re-run, -WhatIf, uninstall); downloads tested for real; NOT tested on a VM",
+    "Windows 11 26H2 readiness: release table 24H2/25H2/26H2/26H1 with Horizon Agent (KB 78714), OSOT and servicing end; Update skips feature updates unless Windows.TargetRelease; readiness 26H2 WARN, 26H1 FAIL, C21 vTPM; Horizon Agent silent install with VDM_VC_MANAGED_AGENT=1 + ADDLOCAL Core/NGVC per profile, validated. NOT tested on a VM"
   ],
   "osotFindings": [
     "Generalize requires audit mode; cannot be combined with Finalize; reboot required after",

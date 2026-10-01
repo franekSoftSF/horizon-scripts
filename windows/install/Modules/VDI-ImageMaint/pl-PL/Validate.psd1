@@ -28,4 +28,8 @@
     'val.ok'            = 'Manifest jest poprawny'
     'val.failed'        = 'Manifest zawiera błędy (patrz wyżej)'
     'val.blocked'       = 'Instalacja zatrzymana: manifest zawiera błędy ({0}). Popraw je (-Mode Validate) i uruchom ponownie.'
+    'val.hz.managed'    = 'Horizon Agent: wymagany VDM_VC_MANAGED_AGENT=1 (pulpit zarządzany przez vCenter, Instant Clone)'
+    'val.hz.feature'    = 'Horizon Agent: nieznana opcja ADDLOCAL ''{0}'' (literówka albo usunięta, np. V4V od 2412)'
+    'val.hz.core'       = 'Horizon Agent: ADDLOCAL z listą funkcji musi zawierać Core'
+    'val.hz.ngvc'       = 'Horizon Agent: brak NGVC (Instant Clone Agent) w ADDLOCAL - obrazu nie da się użyć w pulach Instant Clone'
 }

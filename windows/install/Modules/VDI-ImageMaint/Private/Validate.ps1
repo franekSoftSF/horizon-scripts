@@ -5,7 +5,7 @@
 $script:ValidationRules = @{
     Top = @{
         Profile = 'enum:University,Business,Graphics'; Variables = 'object'; Osot = 'object'; Build = 'object'
-        Winget = 'object'; Ignore = 'regex[]'; Packages = 'array'
+        Winget = 'object'; Windows = 'object'; Ignore = 'regex[]'; Packages = 'array'
     }
     Package = @{
         Id = 'string'; Name = 'string'; Enabled = 'bool'; Order = 'int'; Type = 'enum:exe,msi,msp,msu,cab,odt,appx,ps1'
@@ -27,6 +27,7 @@ $script:ValidationRules = @{
         AppxSettleSeconds = 'int'
     }
     Winget = @{ Install = 'string[]' }
+    Windows = @{ TargetRelease = 'string' }
 }
 
 function Add-Finding {
@@ -132,11 +133,12 @@ function Test-ManifestObject {
 
     # --- Variables: strings only ---
     $vars = @{ File = 1; Dir = 1; Log = 1; InstallDir = 1 }
+    $values = @{}
     $mv = Get-PV $Manifest 'Variables'
     if ($mv -is [pscustomobject]) {
         foreach ($p in $mv.PSObject.Properties) {
             if ($p.Name -like '_*') { continue }
-            $vars[$p.Name] = 1
+            $vars[$p.Name] = 1; $values[$p.Name] = [string]$p.Value
             if ($p.Value -isnot [string]) { Add-Finding $List WARN "Variables.$($p.Name)" (T 'val.notString') }
         }
     }
@@ -173,6 +175,17 @@ function Test-ManifestObject {
     # --- Winget ---
     $w = Get-PV $Manifest 'Winget'
     if ($w -is [pscustomobject]) { Test-ObjectFields -Obj $w -Rules $rules.Winget -Path 'Winget' -List $List }
+
+    # --- Windows: target release for feature updates ---
+    $win = Get-PV $Manifest 'Windows'
+    if ($win -is [pscustomobject]) {
+        Test-ObjectFields -Obj $win -Rules $rules.Windows -Path 'Windows' -List $List
+        $tr = Get-PV $win 'TargetRelease' ''
+        $known = @($script:WindowsReleases | Where-Object Vdi | ForEach-Object Release)
+        if ($tr -is [string] -and $tr -and $known -notcontains $tr) {
+            Add-Finding $List ERR 'Windows.TargetRelease' (T 'val.badEnum' $tr ((@("''") + $known) -join ', '))
+        }
+    }
 
     # --- Packages ---
     $seen = @{}
@@ -212,10 +225,30 @@ function Test-ManifestObject {
             $setup = @(Resolve-PackageFiles $p) | Select-Object -First 1
             if ($setup -and -not (Resolve-OdtConfig $p $setup)) { Add-Finding $List ERR $path (T 'plan.reason.noOdtXml') }
         }
+        if ([string](Get-PV $det 'Name' '') -match 'Horizon Agent' -or $id -eq 'HorizonAgent') {
+            Test-HorizonAgentArguments -Text (Expand-PkgString ([string](Get-PV $p 'Arguments' '')) $values) -Path "$path.Arguments" -List $List
+        }
         if ($id -eq 'FSLogixConfig' -and $enabled -and -not [string](Get-PV $mv 'FSLogixShare' '')) {
             Add-Finding $List ERR $path (T 'val.noShare')
         }
     }
+}
+
+function Test-HorizonAgentArguments {
+    # Silent install of the Horizon Agent: VDM_VC_MANAGED_AGENT is required, ADDLOCAL names must exist,
+    # Core is mandatory with a feature list and NGVC (Instant Clone Agent) is needed for Instant Clone pools
+    param([string]$Text, [string]$Path, [System.Collections.Generic.List[object]]$List)
+    if ($Text -notmatch 'VDM_VC_MANAGED_AGENT=[01]\b') { Add-Finding $List ERR $Path (T 'val.hz.managed') }
+    if ($Text -match 'ADDLOCAL=([^\s"\\]+)') {
+        $feat = @($Matches[1] -split ',' | Where-Object { $_ })
+        foreach ($f in $feat) {
+            if ($script:HorizonAgentFeatures -notcontains $f) { Add-Finding $List WARN $Path (T 'val.hz.feature' $f) }
+        }
+        if ($feat -notcontains 'ALL') {
+            if ($feat -notcontains 'Core') { Add-Finding $List ERR $Path (T 'val.hz.core') }
+            if ($feat -notcontains 'NGVC') { Add-Finding $List WARN $Path (T 'val.hz.ngvc') }
+        }
+    } else { Add-Finding $List WARN $Path (T 'val.hz.ngvc') }
 }
 
 function Show-ValidationResult {

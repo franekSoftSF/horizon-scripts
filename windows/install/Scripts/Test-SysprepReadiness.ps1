@@ -2,7 +2,7 @@
 #Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    Read-only readiness check before OSOT Generalize (Sysprep) on a Windows 11 24H2/25H2 golden image.
+    Read-only readiness check before OSOT Generalize (Sysprep) on a Windows 11 24H2/25H2/26H2 golden image.
 
 .DESCRIPTION
     Checks every known cause of Sysprep /generalize failures on recent Windows 11 builds and prints
@@ -18,7 +18,7 @@
       C08 Encryption prevention      C18 Free space on C:
       C09 AppX per user, not         C19 Sysprep already running
           provisioned (0x80073cf2)   C20 In-place upgrade history
-      C10 AppX updated per user
+      C10 AppX updated per user      C21 vTPM in the golden image
 
     Exit code: 0 = all PASS/INFO, 1 = warnings, 2 = at least one FAIL (do not run Generalize).
 
@@ -70,7 +70,11 @@ $Strings = @{
         'report'       = 'Report: {0}'
         'pwsh'         = 'Running in PowerShell 7 - the Appx cmdlets may fail; use Windows PowerShell 5.1.'
         'C01' = 'Windows version';                     'C01.d' = '{0} {1} build {2}.{3} ({4})'
-        'C01.unsup'    = 'build {0} is not 24H2 (26100) or 25H2 (26200) - checks tuned for these'
+        'C01.unsup'    = 'build {0} is not 24H2 (26100), 25H2 (26200) or 26H2 (26300) - checks tuned for these'
+        'C01.h26'      = '26H2 is not in the Omnissa Horizon Agent / OSOT support matrix yet (KB 78714) - pilot pools only'
+        'C01.h26.fix'  = 'Keep production pools on 25H2 (24H2 with Horizon 2506) until Omnissa lists 26H2; test 26H2 on a copy of the golden image.'
+        'C01.h26h1'    = '26H1 (build 28000) is only for new devices and not supported as a VDI guest'
+        'C01.h26h1.fix'= 'Build the golden image from a 25H2 or 26H2 ISO.'
         'C02' = 'Audit mode';                          'C02.yes' = 'audit mode (ImageState={0})'
         'C02.no'       = 'not in audit mode (ImageState={0}). OSOT Generalize requires audit mode'
         'C02.fix'      = 'Build from a clean ISO and press Ctrl+Shift+F3 at the first OOBE screen. On an existing image, generalize a copy of the VM, not the production golden image.'
@@ -117,6 +121,7 @@ $Strings = @{
         'C17' = 'OSOT version';                        'C17.none' = 'OSOT not found in {0}'
         'C17.d'        = '{0} (release {1})'
         'C17.old'      = 'release {0} is too old for 25H2 (needs 2603+)'
+        'C17.h26'      = 'no OSOT release lists 26H2 as supported yet - test the optimized image before production'
         'C17.fix'      = 'Download the current OSOT (2606+ recommended: it turns off device encryption and BitLocker in Optimize) - see docs/downloads.md.'
         'C18' = 'Free space on C:';                    'C18.d' = '{0:N1} GB free'
         'C18.fix'      = 'Free at least 10 GB (Finalize 1/3, remove Office\Data downloads).'
@@ -126,6 +131,9 @@ $Strings = @{
         'C20' = 'In-place upgrade history';            'C20.no' = 'clean install'
         'C20.d'        = '{0} upgrade record(s): {1}'
         'C20.fix'      = 'The image was upgraded in place. Supported, but a common source of Sysprep/OOBE issues - prefer a clean build for each feature release.'
+        'C21' = 'vTPM in the golden image';            'C21.no' = 'no TPM'
+        'C21.d'        = 'TPM present ({0})'
+        'C21.fix'      = 'Shut down the golden image VM and remove the vTPM device before creating the pool - Horizon adds a unique vTPM to every clone when the pool option is set (Omnissa KB 85960).'
     }
     pl = @{
         'hdr'          = 'Gotowość do Sysprep | {0} | {1} | {2}'
@@ -138,7 +146,11 @@ $Strings = @{
         'report'       = 'Raport: {0}'
         'pwsh'         = 'Uruchomiono w PowerShell 7 - polecenia Appx mogą nie działać; użyj Windows PowerShell 5.1.'
         'C01' = 'Wersja Windows';                      'C01.d' = '{0} {1} kompilacja {2}.{3} ({4})'
-        'C01.unsup'    = 'kompilacja {0} to nie 24H2 (26100) ani 25H2 (26200) - kontrole są dostrojone do tych wersji'
+        'C01.unsup'    = 'kompilacja {0} to nie 24H2 (26100), 25H2 (26200) ani 26H2 (26300) - kontrole są dostrojone do tych wersji'
+        'C01.h26'      = '26H2 nie jest jeszcze na liście wspieranych systemów Horizon Agent / OSOT (KB 78714) - tylko pule pilotażowe'
+        'C01.h26.fix'  = 'Pule produkcyjne zostaw na 25H2 (24H2 przy Horizon 2506), dopóki Omnissa nie doda 26H2; 26H2 testuj na kopii złotego obrazu.'
+        'C01.h26h1'    = '26H1 (kompilacja 28000) jest tylko dla nowych urządzeń i nie jest wspierany jako system VDI'
+        'C01.h26h1.fix'= 'Zbuduj złoty obraz z ISO 25H2 lub 26H2.'
         'C02' = 'Tryb audytu';                         'C02.yes' = 'tryb audytu (ImageState={0})'
         'C02.no'       = 'nie jest w trybie audytu (ImageState={0}). OSOT Generalize wymaga trybu audytu'
         'C02.fix'      = 'Zbuduj obraz z czystego ISO i na pierwszym ekranie OOBE naciśnij Ctrl+Shift+F3. Na istniejącym obrazie uogólniaj kopię VM, nie produkcyjny obraz wzorcowy.'
@@ -185,6 +197,7 @@ $Strings = @{
         'C17' = 'Wersja OSOT';                         'C17.none' = 'nie znaleziono OSOT w {0}'
         'C17.d'        = '{0} (wydanie {1})'
         'C17.old'      = 'wydanie {0} jest za stare dla 25H2 (wymagane 2603+)'
+        'C17.h26'      = 'żadne wydanie OSOT nie wspiera jeszcze oficjalnie 26H2 - przetestuj zoptymalizowany obraz przed produkcją'
         'C17.fix'      = 'Pobierz aktualny OSOT (zalecane 2606+: w Optimize wyłącza szyfrowanie urządzenia i BitLocker) - patrz docs/pl/downloads.md.'
         'C18' = 'Wolne miejsce na C:';                 'C18.d' = '{0:N1} GB wolne'
         'C18.fix'      = 'Zwolnij co najmniej 10 GB (Finalize 1/3, usuń pobrane pliki z Office\Data).'
@@ -194,6 +207,9 @@ $Strings = @{
         'C20' = 'Historia aktualizacji in-place';      'C20.no' = 'czysta instalacja'
         'C20.d'        = '{0} wpis(ów) aktualizacji: {1}'
         'C20.fix'      = 'Obraz był aktualizowany in-place. To wspierane, ale często powoduje problemy z Sysprep i OOBE - każde wydanie funkcji najlepiej budować od nowa.'
+        'C21' = 'vTPM w złotym obrazie';               'C21.no' = 'brak TPM'
+        'C21.d'        = 'TPM obecny ({0})'
+        'C21.fix'      = 'Wyłącz VM złotego obrazu i usuń urządzenie vTPM przed utworzeniem puli - Horizon dodaje unikalny vTPM do każdego klona, gdy opcja puli jest włączona (Omnissa KB 85960).'
     }
 }
 
@@ -258,6 +274,8 @@ Invoke-Check 'C01' {
         (Get-RegValue $NtKey 'UBR'), (Get-RegValue $NtKey 'DisplayVersion'))
     # ProductName still says "Windows 10" on Windows 11 - the build number is authoritative
     if ($Build -in 26100, 26200) { Add-Result 'C01' 'INFO' $d }
+    elseif ($Build -eq 26300) { Add-Result 'C01' 'WARN' ("$d; " + (T 'C01.h26')) (T 'C01.h26.fix') }
+    elseif ($Build -eq 28000) { Add-Result 'C01' 'FAIL' ("$d; " + (T 'C01.h26h1')) (T 'C01.h26h1.fix') }
     else { Add-Result 'C01' 'WARN' ("$d; " + (T 'C01.unsup' @($Build))) }
 }
 
@@ -431,6 +449,7 @@ Invoke-Check 'C17' {
     $d = T 'C17.d' @($exe.Name, (Show-Value $rel))
     if (-not $rel) { Add-Result 'C17' 'INFO' $d (T 'C17.fix') }
     elseif ($Build -ge 26200 -and $rel -lt 2603) { Add-Result 'C17' 'FAIL' ("$d; " + (T 'C17.old' @($rel))) (T 'C17.fix') }
+    elseif ($Build -ge 26300) { Add-Result 'C17' 'WARN' ("$d; " + (T 'C17.h26')) (T 'C17.fix') }
     elseif ($rel -lt 2606) { Add-Result 'C17' 'WARN' $d (T 'C17.fix') }
     else { Add-Result 'C17' 'PASS' $d }
 }
@@ -454,6 +473,13 @@ Invoke-Check 'C20' {
         Where-Object { $_.PSChildName -like 'Source OS*' } | ForEach-Object { $_.PSChildName -replace '^Source OS\s*', '' })
     if ($up.Count) { Add-Result 'C20' 'WARN' (T 'C20.d' @($up.Count, ($up -join ', '))) (T 'C20.fix') }
     else { Add-Result 'C20' 'PASS' (T 'C20.no') }
+}
+
+Invoke-Check 'C21' {
+    # The golden image must not carry a vTPM: clones get their own (Omnissa KB 85960)
+    $tpm = Get-CimInstance -Namespace 'root\cimv2\Security\MicrosoftTpm' -ClassName Win32_Tpm -ErrorAction SilentlyContinue
+    if ($tpm) { Add-Result 'C21' 'WARN' (T 'C21.d' @((Show-Value (Get-P $tpm 'ManufacturerVersion')))) (T 'C21.fix') }
+    else { Add-Result 'C21' 'PASS' (T 'C21.no') }
 }
 
 # =====================================================================

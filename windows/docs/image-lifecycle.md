@@ -99,3 +99,56 @@ Day-2 `0 1 3 4 5 8 10 11`. Step 6 is added only after the test clone confirms it
 - OSOT `-storeapp … --exclude MSTeams`.
 - Clone check (roadmap 7): Teams reports *Omnissa/VMware Media Optimized*, calls and screen share are offloaded,
   and notifications show.
+
+## 7. Windows releases and Horizon support (24H2, 25H2, 26H2)
+
+State on 2026-10-01. Sources: Microsoft *Windows 11 release information*, Omnissa KB 78714 (Horizon Agent guest OS
+support), Omnissa *Supported Windows versions for the OSOT components*. The same table is in
+`Modules\VDI-ImageMaint\Private\Windows.ps1` (`$WindowsReleases`). Update it for every new release.
+
+| Release | Build | Horizon Agent (KB 78714) | OSOT | Servicing Ent/Edu | Servicing Pro |
+|---|---|---|---|---|---|
+| 24H2 | 26100 | 2406+ (also 2312.2/2312.3 ESB); **2506 supports up to 24H2 only** | 2503+ | 2027-10-12 | **2026-10-13** |
+| 25H2 | 26200 | **2512+** (2512, 2512.1, 2603, 2606); Horizon **2506 does not support 25H2** | 2603+ (2606+ recommended) | 2028-10-10 | 2027-10-12 |
+| 26H2 | 26300 | **not listed yet** (KB 78714 updated 2026-09-29) | not listed yet | 2029-10-09 | 2028-10-10 |
+| 26H1 | 28000 | not a VDI guest (new devices only, not offered to existing devices) | – | – | – |
+
+What this means:
+- **Horizon 2506 backend**: production images stay on **24H2** (Enterprise/Education until 2027-10-12).
+  Before 25H2 or 26H2, upgrade the Connection Servers and the agent (2512.1 / 2603 / 2606). Check the Omnissa interoperability matrix.
+- **26H2 is an enablement package** (KB5121794) on top of 24H2/25H2: the same servicing branch and monthly
+  cumulative update (e.g. KB5124010 for 26100/26200/26300). A 26H2 image can be built in two ways:
+  1. **Clean build from the 26H2 ISO** (recommended for production, with Generalize – section 2).
+  2. **Enablement package on the existing 25H2 image** (one restart, no Generalize needed, good for a pilot pool):
+     set `"Windows": { "TargetRelease": "26H2" }` in `packages.json` and run Update on a **copy** of the golden image,
+     or copy the KB5121794 `.msu` to `Patches\`.
+- The tool protects the image from an accidental release change: `-Mode Update` **skips feature updates and
+  enablement packages** unless `Windows.TargetRelease` names the release. With a target it sets the Windows Update
+  policy `TargetReleaseVersion`/`TargetReleaseVersionInfo` so that nothing newer is offered.
+- `-Mode Status`, `Update` and the package plan report the release, servicing end, and whether the Horizon Agent
+  installer supports it. `Test-SysprepReadiness.ps1` warns on 26H2 (C01, C17), fails on 26H1, and warns
+  when the golden image has a vTPM (C21, KB 85960).
+
+### Horizon Agent silent install (packages.json)
+
+```
+/s /v"/qn VDM_VC_MANAGED_AGENT=1 ADDLOCAL={HorizonAgentFeatures} {HorizonAgentOptions} REBOOT=ReallySuppress /l*v {Log}"
+```
+
+- `VDM_VC_MANAGED_AGENT=1` is **required** (vCenter-managed desktop).
+- With a feature list, `ADDLOCAL` must contain **Core**. **NGVC** (Instant Clone Agent) is **not** installed by default
+  in a silent install. Without it the image cannot be used for Instant Clone. Core already includes Blast, PCoIP,
+  **Media Optimization for Microsoft Teams**, HTML5 MMR and Browser Redirection.
+- Defaults per profile (`-Mode Configure` step 4, `Variables.HorizonAgentFeatures`):
+
+| Profile | ADDLOCAL |
+|---|---|
+| University | `Core,NGVC,RTAV,ClientDriveRedirection,HznVaudio,BlastUDP,PrintRedir,HelpDesk,USB` |
+| Business | University + `ScannerRedirection` |
+| Graphics | as University (USB for tablets / 3D mice) |
+
+- Add `SmartCard`, `SerialPortRedirection`, `GEOREDIR` or `PerfTracker` as needed. `V4V` was removed in 2412.
+- `Variables.HorizonAgentOptions` holds extra MSI properties, e.g. `URL_FILTERING_ENABLED=1`, `ENABLE_UNC_REDIRECTION=1`,
+  `RDP_CHOICE=0`. Never put passwords in the manifest.
+- `-Mode Validate` checks the properties above and reports unknown feature names.
+- Order of the agents: VMware Tools → Horizon Agent → DEM → App Volumes Agent (Order 10–13), all after Generalize.

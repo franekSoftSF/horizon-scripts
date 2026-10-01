@@ -16,7 +16,8 @@ Current state and next steps: see `status.md` / `status.json` (keep both in sync
 - `windows/install/` = the complete `C:\install` (copy it to the VM):
   - `windows/install/VDI-ImageMaint.ps1` – thin entry point (same parameters + `-Language auto|en|pl`) → `Invoke-VdiImageMaint`
   - `windows/install/Modules/VDI-ImageMaint/` – the module (v2.0.0): `Private/*.ps1` per area (00-Strings, 01-Config, Common,
-    Winget, Seal, Osot, Packages, Discover, Update, Inventory, Configure, Build), `Public/Invoke-VdiImageMaint.ps1`,
+    Winget, Seal, Osot, Packages, Discover, Update, Inventory, Configure, Build, Download, Validate,
+    Windows = release table 24H2/25H2/26H2 + Horizon/OSOT support, update it for every Windows/Horizon release), `Public/Invoke-VdiImageMaint.ps1`,
     `en-US/*.psd1` + `pl-PL/*.psd1` string tables (one file per area), `Templates/packages.default.json`
   - `windows/install/START.cmd` + `windows/install/Scripts/Start-Menu.ps1` – double-click launcher and EN/PL menu
   - `windows/install/Scripts/Set-FSLogixConfig.ps1` – FSLogix registry, redirections.xml, groups, AV exclusions (v1.1.0, EN/PL inline table)

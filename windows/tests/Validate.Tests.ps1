@@ -50,6 +50,12 @@ Describe 'Test-Manifest' {
         @{ Case = 'OSOT removing the new Teams';         Json = '{"Osot":{"CommonOptions":["-storeapp","remove-all"]},"Packages":[]}';      Level = 'WARN'; Path = 'Osot.CommonOptions' }
         @{ Case = 'FSLogixConfig without a share';       Json = '{"Variables":{"FSLogixShare":""},"Packages":[' + '{"Id":"FSLogixConfig","Type":"ps1","File":"x.ps1"}' + ']}'; Level = 'ERR'; Path = 'Packages[0] (FSLogixConfig)' }
         @{ Case = 'an unknown Profile';                  Json = '{"Profile":"School","Packages":[]}';                                       Level = 'ERR';  Path = '$.Profile' }
+        @{ Case = 'an unknown TargetRelease';            Json = '{"Windows":{"TargetRelease":"27H2"},"Packages":[]}';                       Level = 'ERR';  Path = 'Windows.TargetRelease' }
+        @{ Case = 'TargetRelease 26H1 (not for VDI)';    Json = '{"Windows":{"TargetRelease":"26H1"},"Packages":[]}';                       Level = 'ERR';  Path = 'Windows.TargetRelease' }
+        @{ Case = 'Horizon Agent without VDM_VC_MANAGED_AGENT'; Json = '{"Packages":[' + '{"Id":"HorizonAgent","File":"x","Arguments":"/s /v\"/qn ADDLOCAL=Core,NGVC\""}' + ']}'; Level = 'ERR'; Path = 'Packages[0] (HorizonAgent).Arguments' }
+        @{ Case = 'Horizon Agent ADDLOCAL without Core'; Json = '{"Packages":[' + '{"Id":"HorizonAgent","File":"x","Arguments":"/s /v\"/qn VDM_VC_MANAGED_AGENT=1 ADDLOCAL=NGVC,USB\""}' + ']}'; Level = 'ERR'; Path = 'Packages[0] (HorizonAgent).Arguments' }
+        @{ Case = 'Horizon Agent without NGVC';          Json = '{"Packages":[' + '{"Id":"HorizonAgent","File":"x","Arguments":"/s /v\"/qn VDM_VC_MANAGED_AGENT=1 ADDLOCAL=Core\""}' + ']}'; Level = 'WARN'; Path = 'Packages[0] (HorizonAgent).Arguments' }
+        @{ Case = 'a removed Horizon feature (V4V)';     Json = '{"Variables":{"F":"Core,NGVC,V4V"},"Packages":[' + '{"Id":"HorizonAgent","File":"x","Arguments":"/s /v\"/qn VDM_VC_MANAGED_AGENT=1 ADDLOCAL={F}\""}' + ']}'; Level = 'WARN'; Path = 'Packages[0] (HorizonAgent).Arguments' }
     ) {
         $f = @(Get-Findings $Json)
         @($f | Where-Object { $_.Level -eq $Level -and $_.Path -eq $Path }).Count | Should -BeGreaterThan 0 -Because (($f | ForEach-Object { "$($_.Level) $($_.Path): $($_.Message)" }) -join ' | ')
@@ -58,6 +64,12 @@ Describe 'Test-Manifest' {
     It 'keeps --exclude MSTeams quiet' {
         $f = @(Get-Findings '{"Osot":{"CommonOptions":["-storeapp","remove-all","--exclude","Calculator","MSTeams"]},"Packages":[]}')
         @($f | Where-Object Path -eq 'Osot.CommonOptions') | Should -BeNullOrEmpty
+    }
+
+    It 'accepts the Horizon Agent entry with variables from the manifest' {
+        $f = @(Get-Findings ('{"Variables":{"HorizonAgentFeatures":"Core,NGVC,RTAV,USB","HorizonAgentOptions":""},"Windows":{"TargetRelease":"26H2"},"Packages":[' +
+            '{"Id":"HorizonAgent","File":"x","Arguments":"/s /v\"/qn VDM_VC_MANAGED_AGENT=1 ADDLOCAL={HorizonAgentFeatures} {HorizonAgentOptions} REBOOT=ReallySuppress /l*v {Log}\""}' + ']}'))
+        @($f | Where-Object { $_.Path -like '*.Arguments' -or $_.Path -like 'Windows*' }) | Should -BeNullOrEmpty
     }
 
     It 'ignores _comment and $schema fields' {

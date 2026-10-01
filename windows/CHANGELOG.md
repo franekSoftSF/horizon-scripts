@@ -3,6 +3,19 @@
 ## VDI-ImageMaint 2.0.0 – in progress
 
 ### Added
+- **Windows 11 26H2 readiness** (new `Private\Windows.ps1`, EN/PL `Windows.psd1`): release table 24H2 (26100), 25H2 (26200),
+  26H2 (26300), 26H1 (28000, not a VDI guest) with Horizon Agent minimum (KB 78714), OSOT minimum and servicing end.
+  `Status`/`Update` show the release, servicing end and Horizon/OSOT support; the package plan warns when the Horizon
+  Agent installer does not support the running release (e.g. 2506 on 25H2). `Update` **skips feature updates and
+  enablement packages** (category Upgrades) unless the new manifest field `Windows.TargetRelease` names the release;
+  then it pins `TargetReleaseVersion`/`TargetReleaseVersionInfo`. Docs: image-lifecycle.md section 7 (+pl).
+- Test-SysprepReadiness: 26H2 known (C01 WARN: not in the Omnissa matrix yet; C17 OSOT WARN), 26H1 = FAIL, new **C21**
+  vTPM in the golden image (WARN, KB 85960).
+- **Horizon Agent silent install fixed**: `VDM_VC_MANAGED_AGENT=1` (required) and `ADDLOCAL={HorizonAgentFeatures}` with
+  `Core,NGVC` - before, the silent install had no `VDM_VC_MANAGED_AGENT` and NGVC (Instant Clone Agent) is not a default
+  of a silent install. Per-profile feature sets (Configure step 4), `{HorizonAgentOptions}` for extra MSI properties,
+  MSI log in the tool's Logs, file pattern `*Horizon-Agent-x86*.exe`. `-Mode Validate` checks the property, Core/NGVC
+  and unknown feature names (e.g. V4V, removed in 2412).
 - Java development: packages `TemurinJDK21` (JAVA_HOME, PATH, .jar) and `TemurinJDK25` (Temurin MSI, fixed `INSTALLDIR`
   `jdk-21` / `jdk-25`, so monthly upgrades keep the path) and `EclipseJava` - new `Scripts\Install-Eclipse.ps1` 1.0 (EN/PL,
   -WhatIf): extracts the newest EPP ZIP to `%ProgramFiles%\Eclipse\java` (eclipse.exe signature checked), re-applies only the

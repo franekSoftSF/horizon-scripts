@@ -10,7 +10,7 @@
     "Profile": { "enum": ["University", "Business", "Graphics"], "description": "Image profile chosen in -Mode Configure." },
     "Variables": {
       "type": "object",
-      "description": "Values used as {Name} in Arguments. Built-in: {File} {Dir} {Log} {InstallDir}.",
+      "description": "Values used as {Name} in Arguments. Built-in: {File} {Dir} {Log} {InstallDir}. HorizonAgentFeatures = ADDLOCAL of the Horizon Agent (Core and NGVC required for Instant Clone), HorizonAgentOptions = extra MSI properties.",
       "additionalProperties": { "type": "string" }
     },
     "Osot": {
@@ -55,6 +55,14 @@
       "additionalProperties": false,
       "properties": {
         "Install": { "type": "array", "items": { "type": "string" }, "description": "winget ids installed machine-wide (chosen in -Mode Configure)." }
+      }
+    },
+    "Windows": {
+      "type": "object",
+      "patternProperties": { "^_": {} },
+      "additionalProperties": false,
+      "properties": {
+        "TargetRelease": { "enum": ["", "24H2", "25H2", "26H2"], "description": "Empty = stay on the current release (Update skips feature updates). A release = Update may install the feature update / enablement package to it (pins TargetReleaseVersionInfo)." }
       }
     },
     "Ignore": { "type": "array", "items": { "type": "string", "format": "regex" }, "description": "Regexes of paths (relative to C:\\install) that are not packages." },
