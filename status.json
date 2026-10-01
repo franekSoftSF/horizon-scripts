@@ -50,7 +50,7 @@
     {
       "id": "B1",
       "severity": "high",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 367,
       "confirmed": true,
       "status": "fixed-1.8.0",
@@ -59,7 +59,7 @@
     {
       "id": "B2",
       "severity": "high",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 1486,
       "confirmed": true,
       "status": "fixed-1.8.0",
@@ -68,7 +68,7 @@
     {
       "id": "B3",
       "severity": "high",
-      "file": "install/Scripts/Set-FSLogixConfig.ps1",
+      "file": "windows/install/Scripts/Set-FSLogixConfig.ps1",
       "line": 363,
       "confirmed": true,
       "status": "fixed-1.8.0",
@@ -77,7 +77,7 @@
     {
       "id": "B4",
       "severity": "high",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 715,
       "confirmed": false,
       "status": "fixed-1.8.0",
@@ -86,7 +86,7 @@
     {
       "id": "B5",
       "severity": "high",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 2166,
       "confirmed": true,
       "status": "fixed-1.8.0",
@@ -95,7 +95,7 @@
     {
       "id": "B6",
       "severity": "high",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 2204,
       "confirmed": true,
       "status": "fixed-1.8.0",
@@ -104,7 +104,7 @@
     {
       "id": "B7",
       "severity": "high",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 1991,
       "confirmed": false,
       "status": "fixed-1.8.0",
@@ -121,7 +121,7 @@
     {
       "id": "S2",
       "severity": "medium",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 1887,
       "status": "fixed-1.8.0",
       "title": "Downloaded teamsbootstrapper.exe not signature-checked"
@@ -129,7 +129,7 @@
     {
       "id": "S3",
       "severity": "medium",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 2235,
       "status": "fixed-1.8.0",
       "title": "Stop-Transcript in finally without try"
@@ -137,7 +137,7 @@
     {
       "id": "S4",
       "severity": "medium",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 1966,
       "confirmed": false,
       "status": "open",
@@ -146,7 +146,7 @@
     {
       "id": "S5",
       "severity": "medium",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 1419,
       "status": "fixed-1.8.0",
       "title": "Detect Registry/File without Path throws on empty -LiteralPath"
@@ -154,7 +154,7 @@
     {
       "id": "S6",
       "severity": "medium",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 1364,
       "status": "open",
       "title": "[bool]\"false\" is True - string values in manifest misread"
@@ -162,7 +162,7 @@
     {
       "id": "S7",
       "severity": "medium",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 1588,
       "status": "open",
       "title": "Get-NormalizedName strips years (VC++ 2013 vs 2015 collide)"
@@ -170,7 +170,7 @@
     {
       "id": "S8",
       "severity": "medium",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 1484,
       "confirmed": false,
       "status": "open",
@@ -179,7 +179,7 @@
     {
       "id": "S9",
       "severity": "medium",
-      "file": "install/Scripts/Set-FSLogixConfig.ps1",
+      "file": "windows/install/Scripts/Set-FSLogixConfig.ps1",
       "line": 255,
       "status": "fixed-1.8.0",
       "title": "Everyone silently kept in Include List when Get-LocalGroupMember fails"
@@ -187,7 +187,7 @@
     {
       "id": "S10",
       "severity": "medium",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 1264,
       "status": "open",
       "title": "Dry-run extracts ZIPs; stale extraction not refreshed"
@@ -195,7 +195,7 @@
     {
       "id": "S11",
       "severity": "medium",
-      "file": "install/VDI-ImageMaint.ps1",
+      "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 982,
       "status": "open",
       "title": "Help text and built-in default manifest out of sync with real config"

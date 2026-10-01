@@ -13,6 +13,8 @@
   option 8 downloads fresh packages before the monthly cycle; the menu passes its folder (`-InstallDir`) to the tool.
 
 ### Changed
+- Repository: the Windows tool moved to `windows/` (`windows/install` = C:\install, `windows/docs`, this changelog);
+  `linux/` holds the separate Linux tool.
 - Split into the module `Modules\VDI-ImageMaint` (Private per area, Public `Invoke-VdiImageMaint`);
   `VDI-ImageMaint.ps1` is a thin entry point with the same parameters.
 - **English is the primary language**, Polish the second: all ~400 messages in `en-US\*.psd1` / `pl-PL\*.psd1`,

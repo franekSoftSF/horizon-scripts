@@ -12,7 +12,7 @@
 *.iso
 *.wim
 *.img
-install/Office/Data/
+windows/install/Office/Data/
 # Customer-specific data stays local
-install/packages.local.json
+windows/install/packages.local.json
 *.bak_*

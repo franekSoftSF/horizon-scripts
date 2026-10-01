@@ -7,18 +7,23 @@ labs) and **business** customers (knowledge workers, Teams-heavy). Both must be 
 
 Current state and next steps: see `status.md` / `status.json` (keep both in sync after each work session).
 
-## Files
-- `install/` = the complete `C:\install` (copy it to the VM):
-  - `install/VDI-ImageMaint.ps1` – thin entry point (same parameters + `-Language auto|en|pl`) → `Invoke-VdiImageMaint`
-  - `install/Modules/VDI-ImageMaint/` – the module (v2.0.0): `Private/*.ps1` per area (00-Strings, 01-Config, Common,
+## Repository layout
+- `windows/` – the Windows tool (this file's conventions below apply to it); `linux/` – the Linux tool (Debian/Ubuntu,
+  Horizon Linux Agent), developed separately: never edit or stage `linux/` from Windows work.
+- `status.md` / `status.json` and this file are shared by both.
+
+## Windows files
+- `windows/install/` = the complete `C:\install` (copy it to the VM):
+  - `windows/install/VDI-ImageMaint.ps1` – thin entry point (same parameters + `-Language auto|en|pl`) → `Invoke-VdiImageMaint`
+  - `windows/install/Modules/VDI-ImageMaint/` – the module (v2.0.0): `Private/*.ps1` per area (00-Strings, 01-Config, Common,
     Winget, Seal, Osot, Packages, Discover, Update, Inventory, Configure, Build), `Public/Invoke-VdiImageMaint.ps1`,
     `en-US/*.psd1` + `pl-PL/*.psd1` string tables (one file per area), `Templates/packages.default.json`
-  - `install/START.cmd` + `install/Scripts/Start-Menu.ps1` – double-click launcher and EN/PL menu
-  - `install/Scripts/Set-FSLogixConfig.ps1` – FSLogix registry, redirections.xml, groups, AV exclusions (v1.0.1)
-  - `install/Scripts/Test-SysprepReadiness.ps1` – read-only pre-Generalize checks (EN/PL string table = the i18n pattern to follow)
-  - `install/packages.json` (manifest, customer University), `install/winget-catalog.json`, `install/OSOT/Optimize.json`, `install/Office/*.xml`
-- Binaries are git-ignored; `docs/` – EN docs, `docs/pl/` – PL docs
-- `docs/image-lifecycle.md` – Build (with Generalize, once per feature release) vs Day-2 (no Generalize) – the design basis for OSOT work
+  - `windows/install/START.cmd` + `windows/install/Scripts/Start-Menu.ps1` – double-click launcher and EN/PL menu
+  - `windows/install/Scripts/Set-FSLogixConfig.ps1` – FSLogix registry, redirections.xml, groups, AV exclusions (v1.0.1)
+  - `windows/install/Scripts/Test-SysprepReadiness.ps1` – read-only pre-Generalize checks (EN/PL string table = the i18n pattern to follow)
+  - `windows/install/packages.json` (manifest, customer University), `windows/install/winget-catalog.json`, `windows/install/OSOT/Optimize.json`, `windows/install/Office/*.xml`
+- Binaries are git-ignored; `windows/docs/` – EN docs, `windows/docs/pl/` – PL docs; `windows/CHANGELOG.md`
+- `windows/docs/image-lifecycle.md` – Build (with Generalize, once per feature release) vs Day-2 (no Generalize) – the design basis for OSOT work
 - On the VM everything lives in `C:\install` (script, `packages.json`, `OSOT\`, `Office\`, `Patches\`,
   `FSLogix\`, `Horizon\`, `Apps\`, `Scripts\`); logs/state in `C:\ProgramData\VDI-ImageMaint\`.
 
@@ -51,8 +56,8 @@ Current state and next steps: see `status.md` / `status.json` (keep both in sync
 ```powershell
 # parse under both engines
 powershell.exe -NoProfile -Command "[System.Management.Automation.Language.Parser]::ParseFile('<file>',[ref]`$null,[ref]`$e); `$e"
-Invoke-ScriptAnalyzer -Path install -Recurse          # PSScriptAnalyzer 1.25 installed
-Invoke-Pester                                          # Pester 5.9 installed (tests/ – to be created)
+Invoke-ScriptAnalyzer -Path windows/install -Recurse         # PSScriptAnalyzer 1.25 installed
+Invoke-Pester windows/tests                            # Pester 5.9 installed
 ```
 Nothing here can be run end-to-end locally (needs admin, VM, Horizon). Say clearly what was only
 statically checked vs. tested on the VM.

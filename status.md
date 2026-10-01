@@ -3,9 +3,10 @@
 _Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogixConfig **1.0.1** · Test-SysprepReadiness **0.1**
 
 ## Układ repozytorium
-- `install/` = kompletny `C:\install` (skrypty, manifest, katalog winget, XML Office, OSOT JSON; binaria poza git)
-- `docs/` (EN) + `docs/pl/` (PL): skąd pobrać instalatory (`downloads.md`), cykl życia obrazu (`image-lifecycle.md`)
-- `CHANGELOG.md`, `status.md`, `status.json`, `CLAUDE.md`
+- `windows/` – narzędzie Windows, `linux/` – narzędzie Linux (osobna praca)
+- `windows/install/` = kompletny `C:\install` (skrypty, manifest, katalog winget, XML Office, OSOT JSON; binaria poza git)
+- `windows/docs/` (EN) + `windows/docs/pl/` (PL): skąd pobrać instalatory (`downloads.md`), cykl życia obrazu (`image-lifecycle.md`)
+- `windows/CHANGELOG.md`, `status.md`, `status.json`, `CLAUDE.md`
 
 ## Zrobione
 - [x] Git (`main`), commit bazowy 1.7.3, `.gitattributes` (CRLF), `.gitignore` (bez binariów), `.editorconfig`

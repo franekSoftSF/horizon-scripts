@@ -14,3 +14,6 @@
 *.msu       binary
 *.cab       binary
 *.zip       binary
+
+# Linux tool: everything LF (bash, conf, example files)
+linux/**    text eol=lf
