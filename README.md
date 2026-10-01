@@ -173,7 +173,7 @@ linux/tests/run-tests.sh             # offline tests (run in a debian:12 contain
 
 ## License
 
-[MIT](LICENSE) © 2026 franekSoftSF. Third-party installers and tools (Omnissa OSOT, Horizon Agent, FSLogix,
+[MIT](LICENSE) © 2026 Szymon Frankiewicz. Third-party installers and tools (Omnissa OSOT, Horizon Agent, FSLogix,
 Microsoft 365 Apps, …) are not part of this repository and keep their own licenses.
 
 ## Disclaimer

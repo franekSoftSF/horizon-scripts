@@ -179,7 +179,7 @@ linux/tests/run-tests.sh             # testy offline (uruchamiane w kontenerze d
 
 ## Licencja
 
-[MIT](LICENSE) © 2026 franekSoftSF. Instalatory i narzędzia firm trzecich (Omnissa OSOT, Horizon Agent, FSLogix,
+[MIT](LICENSE) © 2026 Szymon Frankiewicz. Instalatory i narzędzia firm trzecich (Omnissa OSOT, Horizon Agent, FSLogix,
 Microsoft 365 Apps, …) nie są częścią repozytorium i mają własne licencje.
 
 ## Zastrzeżenie
