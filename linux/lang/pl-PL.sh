@@ -44,6 +44,7 @@ Tryby:
   adopt      istniejący obraz: wykrycie, utworzenie vdi-imagemaint.conf, podgląd (diff), zachowanie kroków, zapis wersji agenta
   prepare    pakiety bazowe, MATE + LightDM, locale, klawiatura, strefa czasowa, NTP
   domain     krb5.conf, SSSD, realm join obrazu, sudo, True SSO / karta
+  kerberos   bezpieczeństwo SSSD/Kerberos: bez automatycznej zmiany hasła komputera, czekanie na czas, odnawianie biletów
   nfs        katalogi domowe NFSv4 z Kerberosem (autofs, rpc.gssd, idmapd)
   agent      instalacja/aktualizacja agenta Horizon (z kontrolą wersji; zależności, sterownik USB VHCI, dźwięk), RunOnce
   usb        sam sterownik USB VHCI (przejęty obraz, bez reinstalacji agenta)
@@ -328,3 +329,16 @@ MSG[menu_self-update]='Zaktualizuj to narzędzie z GitHuba teraz'
 MSG[vhci_source]='Źródła VHCI: %s'
 MSG[vhci_already_patched]='Źródła VHCI mają już łatkę Omnissa - nie nakładam jej ponownie.'
 MSG[vhci_patch_no_fit]='Łatka VHCI agenta nie pasuje do %s (zmienione źródła albo łatka innej wersji agenta) - próbuję kolejnego źródła; szczegóły w logu.'
+
+# --- 0.5.0: Kerberos/SSSD robustness ---
+MSG[step_kerberos]='KERBEROS - hasło komputera, synchronizacja czasu i odnawianie biletów dla SSSD'
+MSG[krb_not_sssd]='Obraz nie jest dołączony przez SSSD - ustawienia Kerberos pominięte.'
+MSG[krb_harden]='Ustawienia bezpieczeństwa Kerberos/SSSD dla %s (bez automatycznej zmiany hasła komputera, SSSD czeka na synchronizację czasu, odnawianie biletów).'
+MSG[krb_hardened]='Ustawienia bezpieczeństwa Kerberos/SSSD aktywne.'
+MSG[krb_rotated]='Hasło konta komputera zmienione (jeśli starsze niż %s dni) - nowy snapshot ma aktualny keytab.'
+MSG[krb_rotate_failed]='Nie udało się zmienić hasła konta komputera (adcli update) - sprawdź: adcli testjoin.'
+MSG[chk_testjoin_ok]='Konto komputera w %s akceptuje ten keytab (adcli testjoin).'
+MSG[chk_testjoin_bad]='Konto komputera w %s NIE akceptuje tego keytabu - logowanie nie zadziała. Dołącz ponownie (tryb domain --force) albo "adcli update", potem nowy snapshot.'
+MSG[chk_krb_hardened]='Ustawienia bezpieczeństwa Kerberos/SSSD obecne.'
+MSG[chk_krb_not_hardened]='Brak ustawień bezpieczeństwa Kerberos/SSSD - uruchom tryb kerberos.'
+MSG[menu_kerberos]='Kerberos/SSSD: hasło komputera, czas, odnawianie biletów (logowanie po wyłączeniu VM)'

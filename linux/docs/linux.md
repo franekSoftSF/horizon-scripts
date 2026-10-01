@@ -110,6 +110,21 @@ If `check` reports L21 (no USB VHCI driver) on an adopted image, run `sudo ./vdi
 After `adopt`, use `check`, then `agent` (upgrade), `recording`, `apps`, `optimize`, `collab` and `seal` as usual.
 The docs recommend building golden images from a fresh installation and never from a cloned system.
 
+## Logons fail after the image was powered off (Kerberos / SSSD)
+
+Symptom: the golden image was powered off for a while, or a snapshot was reverted, and now logons
+stop working. This follows from how SSSD and Kerberos behave with AD; the Omnissa docs do not cover it.
+
+| Cause | What the tool does (mode `kerberos`, also run by `domain` and `adopt`) |
+|---|---|
+| SSSD changes the machine account password on its own every 30 days. AD accepts only the current and the previous password, so an older snapshot or keytab is rejected. | `ad_maximum_machine_account_password_age = 0` in `/etc/sssd/conf.d/60-vdi-imagemaint-kerberos.conf`. `update` rotates the password on purpose (`adcli update`, when older than `MACHINE_PASSWORD_DAYS`=25) right before the new snapshot. |
+| SSSD starts before the clock is synchronised, and Kerberos fails above 5 minutes of skew. | `sssd.service` waits for `time-sync.target` (`systemd-time-wait-sync`, at most 90 s). The per-clone script syncs time before restarting SSSD and NFS. |
+| User tickets expire in long sessions, and the NFS krb5 homes stop working. | Renewable tickets (7 days), renewed every 60 minutes by SSSD. |
+
+`check` L24 runs `adcli testjoin` and blocks `seal` when AD no longer accepts the keytab. Fix it with
+`domain --force` (rejoin) or `adcli update`, then take a new snapshot. Do not go back to snapshots that are
+more than one password rotation old. On clones, `runonce.log` shows the time sync and the keytab entries.
+
 ## Versions and re-runs
 
 - Each build step (`prepare`, `domain`, `nfs`) is recorded in `build-state.json` with the tool version,

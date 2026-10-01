@@ -1,5 +1,10 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.5.0 – 2026-10-02
+- Kerberos/SSSD robustness (logons failing after the image was powered off): no automatic machine password change (ad_maximum_machine_account_password_age = 0, conf.d snippet); update rotates it with adcli before the snapshot (MACHINE_PASSWORD_ROTATION, MACHINE_PASSWORD_DAYS); sssd waits for time-sync.target (systemd-time-wait-sync, 90 s cap); renewable user tickets. Applied by domain and adopt, mode kerberos.
+- Per-clone script: synchronises time before restarting SSSD/NFS and logs the keytab entries.
+- check L24 (adcli testjoin, blocks seal on a rejected keytab), L25 (settings present).
+
 ## 0.4.2 – 2026-10-02
 - VHCI: when the agent patch does not fit an unpacked vhci-hcd folder (changed by hand or patched for another agent version), the next source is tried and finally the pristine download; patches are dry-run first (no half-patched tree), the patch output goes to the log; downloads are checked to be real tarballs.
 

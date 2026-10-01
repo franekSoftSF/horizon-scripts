@@ -22,6 +22,16 @@ if ! ls /etc/ssh/ssh_host_*_key >/dev/null 2>&1; then
     systemctl is-enabled --quiet ssh.service 2>/dev/null && step systemctl restart ssh.service
 fi
 
+# Clock first: after the fork Kerberos (SSSD, NFS) fails above 5 minutes of skew.
+if systemctl is-enabled --quiet systemd-timesyncd.service 2>/dev/null; then
+    step systemctl restart systemd-timesyncd.service
+    for _ in $(seq 1 20); do
+        [[ $(timedatectl show -p NTPSynchronized --value 2>/dev/null) == yes ]] && break
+        sleep 1
+    done
+    echo "time: $(date -Is) synchronized=$(timedatectl show -p NTPSynchronized --value 2>/dev/null)"
+fi
+
 # Site hook first - it may create the keytab, e.g. the RunOnceScript an adopted
 # image had before (domain rejoin).
 # Same rules: non-interactive, finish within RunOnceScriptTimeout.
@@ -32,6 +42,7 @@ fi
 # New machine keytab from the offline join -> refresh SSSD and NFS Kerberos clients.
 step sss_cache -E
 step systemctl restart sssd.service
+echo "keytab: $(klist -k /etc/krb5.keytab 2>/dev/null | awk 'NR>3 {print $1, $2}' | sort -u | head -n 3 | tr '\n' ' ')"
 if systemctl is-enabled --quiet autofs.service 2>/dev/null; then
     step systemctl restart rpc-gssd.service
     step systemctl restart autofs.service
