@@ -14,18 +14,42 @@
 RUNONCE_TARGET="/usr/local/sbin/vdi-imagemaint-runonce.sh"
 AGENT_DEPENDENCIES="gnome-shell-extension-appindicator libnss3-tools pulseaudio-utils open-vm-tools krb5-user"
 
+# Newest Horizon agent installer: a .tar.gz or an already unpacked folder (with
+# install_viewagent.sh), in Horizon/ or HORIZON_EXTRA_DIRS. Sorted by the version in
+# the name, so Omnissa 2506 wins over VMware 2406 regardless of the prefix.
 agent_find_archive() {
     if [[ -n $HORIZON_AGENT_ARCHIVE ]]; then
         printf '%s' "$HORIZON_AGENT_ARCHIVE"
         return 0
     fi
-    find "${VDI_ROOT}/Horizon" -maxdepth 1 -type f -iname '*horizonagent-linux*.tar.gz' -printf '%f\n' 2>/dev/null |
-        sort -V | tail -n1 | sed "s|^|${VDI_ROOT}/Horizon/|" || true
+    local p v
+    {
+        find_sources '*horizonagent-linux*.tar.gz' f
+        find_sources '*horizonagent-linux*' d
+    } | while IFS= read -r p; do
+        [[ -d $p && ! -f ${p}/install_viewagent.sh ]] && continue
+        v=$(agent_archive_version "$p")
+        [[ -n $v ]] && printf '%s\t%s\n' "${v//-/.}" "$p"
+    done | sort -V -k1,1 | tail -n1 | cut -f2 || true
 }
 
 # Omnissa-horizonagent-linux-x86_64-YYMM-y.y.y-xxxxxxx.tar.gz -> "YYMM-y.y.y-xxxxxxx"
 agent_archive_version() {
-    basename "$1" | sed -nE 's/.*-([0-9]{4}-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+)\.tar\.gz$/\1/p'
+    basename "$1" | sed -nE 's/.*-([0-9]{4}-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+)(\.tar\.gz)?$/\1/p'
+}
+
+# agent_unpack SOURCE -> prints the folder that contains install_viewagent.sh
+# (a folder source is used as it is; a .tar.gz is unpacked into $AGENT_WORK, set by the caller).
+agent_unpack() {
+    local src=$1 installer
+    if [[ -d $src ]]; then
+        printf '%s' "$src"
+        return 0
+    fi
+    tar -xzf "$src" -C "$AGENT_WORK"
+    installer=$(find "$AGENT_WORK" -name install_viewagent.sh -print -quit)
+    [[ -n $installer ]] && dirname "$installer"
+    return 0
 }
 
 # version_cmp A B -> prints -1, 0 or 1 (dash-separated parts compared as versions)
@@ -57,8 +81,8 @@ mode_agent() {
     logt STEP step_agent
     local archive version args installed_ver installed_args action
     archive=$(agent_find_archive)
-    if [[ -z $archive || ! -f $archive ]]; then
-        logt ERR agent_archive_missing "${VDI_ROOT}/Horizon"
+    if [[ -z $archive || ! -e $archive ]]; then
+        logt ERR agent_archive_missing "$(source_dirs | tr '\n' ' ')"
         exit 1
     fi
     version=$(agent_archive_version "$archive")
@@ -107,16 +131,15 @@ mode_agent() {
     apt_install $AGENT_DEPENDENCIES
     [[ $FIDO_ENABLE == yes ]] && apt_install --no-install-recommends fido2-tools libfido2-1
 
-    local work installer dir
-    work=$(mktemp -d /tmp/vdi-agent.XXXXXX)
-    tar -xzf "$archive" -C "$work"
-    installer=$(find "$work" -name install_viewagent.sh -print -quit)
-    if [[ -z $installer ]]; then
-        rm -rf "$work"
+    local work dir
+    AGENT_WORK=$(mktemp -d /tmp/vdi-agent.XXXXXX)
+    work=$AGENT_WORK
+    dir=$(agent_unpack "$archive")
+    if [[ -z $dir ]]; then
+        [[ -n $work ]] && rm -rf "$work"
         logt ERR agent_installer_missing "$archive"
         exit 1
     fi
-    dir=$(dirname "$installer")
 
     # Documented order for the tarball: unpack -> VHCI driver -> agent with -U yes.
     if [[ $USB_ENABLE == yes || $FIDO_ENABLE == yes ]]; then

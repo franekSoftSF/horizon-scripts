@@ -127,6 +127,8 @@ adopt_detect_config() {
         [[ -s /etc/sssd/pki/sssd_auth_ca_db.pem ]] && adopt_cfg_set CERT_CA_FILES /etc/sssd/pki/sssd_auth_ca_db.pem
     fi
 
+    [[ -n $(find_sources '*horizonagent-linux*' f; find_sources '*horizonagent-linux*' d) ]] &&
+        [[ -n ${HORIZON_EXTRA_DIRS:-} ]] && adopt_cfg_set HORIZON_EXTRA_DIRS "$HORIZON_EXTRA_DIRS"
     if unit_known horizonrecording.service; then adopt_cfg_set REC_ENABLE yes; fi
     return 0
 }

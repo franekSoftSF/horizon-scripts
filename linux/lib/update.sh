@@ -39,7 +39,7 @@ mode_update() {
 update_agents() {
     local archive version installed
     archive=$(agent_find_archive)
-    if [[ -n $archive && -f $archive ]] && agent_installed; then
+    if [[ -n $archive && -e $archive ]] && agent_installed; then
         version=$(agent_archive_version "$archive")
         installed=$(state_get build '.agent.version // empty')
         if [[ -n $version && -n $installed && $(version_cmp "$installed" "$version") == -1 ]]; then

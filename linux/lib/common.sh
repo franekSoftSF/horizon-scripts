@@ -2,7 +2,7 @@
 # VDI-ImageMaint for Linux - shared helpers: config, i18n, logging, state, tracked changes.
 # Sourced by vdi-imagemaint.sh; expects VDI_ROOT to be set.
 
-VDI_VERSION="0.4.0"
+VDI_VERSION="0.4.1"
 STATE_DIR="/var/lib/vdi-imagemaint"
 LOG_DIR="/var/log/vdi-imagemaint"
 LOG_FILE="${LOG_DIR}/vdi-imagemaint-$(date +%Y%m%d).log"
@@ -367,6 +367,27 @@ os_check() {
         logt WARN os_unsupported "${PRETTY_NAME:-unknown}"
         return 1
     fi
+}
+
+# Folders with Omnissa installers: Horizon/ next to the tool (new layout) and
+# HORIZON_EXTRA_DIRS (e.g. /install on images prepared by hand).
+source_dirs() {
+    local d
+    printf '%s\n' "${VDI_ROOT}/Horizon"
+    for d in ${HORIZON_EXTRA_DIRS:-}; do
+        [[ -d $d ]] && printf '%s\n' "$d"
+    done
+    return 0
+}
+
+# find_source GLOB [f|d] - newest match (by the version in its name) in the source dirs;
+# f = .tar.gz files, d = unpacked directories. Prints "version<TAB>path" lines, newest last.
+find_sources() {
+    local glob=$1 type=$2 d
+    while IFS= read -r d; do
+        [[ -d $d ]] || continue
+        find "$d" -maxdepth 1 -type "$type" -iname "$glob" 2>/dev/null || true
+    done < <(source_dirs)
 }
 
 # Horizon renamed /etc/vmware -> /etc/omnissa in newer Linux agents; support both.

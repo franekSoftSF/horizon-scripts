@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-02",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",

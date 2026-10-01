@@ -1,5 +1,10 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.4.1 – 2026-10-02
+- Installers are found in Horizon/ and in HORIZON_EXTRA_DIRS (default /install, the hand-made layout of existing images); agent installers may be .tar.gz or already unpacked folders, chosen by the version in the name (Omnissa 2506 over VMware 2406).
+- VHCI source may be an unpacked vhci-hcd-1.15 folder; an already applied Omnissa patch is detected and not applied twice.
+- adopt proposes the agent version from the newest installer found (e.g. /install/Omnissa-horizonagent-linux-x86_64-2506-8.16.0-...).
+
 ## 0.4.0 – 2026-10-02
 - Automatic tool upgrade: every run checks the newest linux-v* GitHub release; a newer one is installed in place through get-vdi-imagemaint.sh (SHA-256, local files kept) and the same command restarts with it. AUTO_UPGRADE=yes|ask|no, --no-upgrade, mode self-update. Offline runs continue unchanged.
 - The installed per-clone script is refreshed when the tool version changes it.
