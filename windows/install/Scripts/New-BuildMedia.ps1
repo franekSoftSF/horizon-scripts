@@ -41,6 +41,14 @@
     Leave out installers (exe, msi, msu, zip, ...) - copy them to C:\install later (smaller ISO).
 .PARAMETER XmlOnly
     Write only autounattend.xml (next to OutFile) - e.g. for your own ISO tooling.
+.PARAMETER Method
+    Setup (default) = autounattend.xml next to the Windows ISO. OSDCloud = one bootable WinPE ISO built with the OSD
+    module (github.com/OSDeploy/OSD): downloads Windows 11 from Microsoft, applies it, adds C:\install and the audit-mode
+    answer file. Needs Windows ADK + WinPE add-on, the OSD module and an elevated PowerShell.
+.PARAMETER Release
+    OSDCloud: Windows 11 release (24H2, 25H2, 26H2; default packages.json Windows.TargetRelease, otherwise 24H2).
+.PARAMETER Workspace
+    OSDCloud workspace (default C:\OSDCloud\VDI-ImageMaint).
 .PARAMETER Language
     auto (UI culture: pl -> Polish, everything else -> English), en, pl.
 
@@ -48,11 +56,15 @@
     .\New-BuildMedia.ps1
 .EXAMPLE
     .\New-BuildMedia.ps1 -Edition Education -UILanguage pl-PL -AutoStart Update
+.EXAMPLE
+    .\New-BuildMedia.ps1 -Method OSDCloud -Release 24H2 -Edition Enterprise -UILanguage pl-PL
 
 .NOTES
-    Version 1.0. Sources: Microsoft "Answer files (unattend.xml)", "Unattended Windows Setup Reference",
+    Version 1.1. Sources: Microsoft "Answer files (unattend.xml)", "Unattended Windows Setup Reference",
     "KMS client activation keys"; Omnissa KB 85960 (Windows 11 golden image without vTPM).
 #>
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'ScriptsOnly',
+    Justification = 'Used inside Copy-InstallTree')]
 [CmdletBinding()]
 param(
     [string]$InstallDir = '',
@@ -67,6 +79,11 @@ param(
     [string]$AutoStart = 'Menu',
     [switch]$ScriptsOnly,
     [switch]$XmlOnly,
+    [ValidateSet('Setup', 'OSDCloud')]
+    [string]$Method = 'Setup',
+    [ValidateSet('', '24H2', '25H2', '26H2')]
+    [string]$Release = '',
+    [string]$Workspace = '',
     [ValidateSet('auto', 'en', 'pl')]
     [string]$Language = 'auto'
 )
@@ -87,7 +104,7 @@ $Strings = @{
         'vtpm.yes'  = '-WithVtpm: remove the vTPM from the golden image VM before creating the pool (KB 85960).'
         'stage'     = 'Preparing files: {0}'
         'skipped'   = '{0} installer file(s) left out (-ScriptsOnly) - copy them to C:\install later'
-        'xml'       = 'autounattend.xml written: {0}'
+        'xml'       = 'Answer file written: {0}'
         'iso'       = 'Writing ISO ({0:N0} MB): {1}'
         'done'      = 'Build media ready: {0}'
         'next'      = 'Next steps:'
@@ -102,6 +119,19 @@ $Strings = @{
         'next4.None'   = 'run C:\install\START.cmd'
         'next5'     = '  5. Snapshot "pre-generalize" before Generalize (the menu asks for it)'
         'isoFail'   = 'Writing the ISO failed: {0}'
+        'osd.admin' = 'OSDCloud media needs an elevated PowerShell (Windows ADK + WinPE add-on, DISM)'
+        'osd.noModule' = 'The OSD module is missing: Install-Module OSD -Scope AllUsers (github.com/OSDeploy/OSD); Windows ADK + WinPE add-on are required too'
+        'osd.version'  = 'OSD module {0}'
+        'osd.template' = 'Creating the OSDCloud template (WinPE from the ADK, once)...'
+        'osd.workspace'= 'Creating the OSDCloud workspace {0}...'
+        'osd.start'    = 'WinPE starts: Start-OSDCloud {0}'
+        'osd.edition'  = 'OSDCloud has no Pro Education image - use Education, Enterprise or Pro'
+        'osd.language' = 'Language {0} is not offered by OSDCloud (Start-OSDCloud -OSLanguage)'
+        'osd.method'   = 'OSDCloud: Windows 11 {0} is downloaded from Microsoft in WinPE (the VM needs internet access), applied without Setup and without a TPM check'
+        'osd.copy'     = 'VDI-ImageMaint: copying C:\install and the audit-mode answer file'
+        'osd.missing'  = 'VDI-ImageMaint: build media (vdi-build.tag) not found - C:\install not copied'
+        'osd.next2'    = '  2. CD/DVD 1 = this ISO ("Connect at power on"), boot - no key press needed'
+        'osd.next3'    = '  3. WinPE downloads and applies Windows, copies C:\install, restarts into audit mode (built-in Administrator)'
     }
     pl = @{
         'title'     = 'VDI-ImageMaint - nośnik do budowy nowego złotego obrazu'
@@ -113,7 +143,7 @@ $Strings = @{
         'vtpm.yes'  = '-WithVtpm: przed utworzeniem puli usuń vTPM z VM złotego obrazu (KB 85960).'
         'stage'     = 'Przygotowanie plików: {0}'
         'skipped'   = 'Pominięto {0} plik(ów) instalatorów (-ScriptsOnly) - skopiuj je później do C:\install'
-        'xml'       = 'Zapisano autounattend.xml: {0}'
+        'xml'       = 'Zapisano plik odpowiedzi: {0}'
         'iso'       = 'Zapis ISO ({0:N0} MB): {1}'
         'done'      = 'Nośnik gotowy: {0}'
         'next'      = 'Dalsze kroki:'
@@ -128,6 +158,19 @@ $Strings = @{
         'next4.None'   = 'uruchom C:\install\START.cmd'
         'next5'     = '  5. Przed Generalize zrób snapshot "pre-generalize" (menu o to zapyta)'
         'isoFail'   = 'Zapis ISO nie powiódł się: {0}'
+        'osd.admin' = 'Nośnik OSDCloud wymaga PowerShell uruchomionego jako administrator (Windows ADK + dodatek WinPE, DISM)'
+        'osd.noModule' = 'Brak modułu OSD: Install-Module OSD -Scope AllUsers (github.com/OSDeploy/OSD); potrzebne są też Windows ADK i dodatek WinPE'
+        'osd.version'  = 'Moduł OSD {0}'
+        'osd.template' = 'Tworzenie szablonu OSDCloud (WinPE z ADK, jednorazowo)...'
+        'osd.workspace'= 'Tworzenie przestrzeni roboczej OSDCloud {0}...'
+        'osd.start'    = 'WinPE uruchomi: Start-OSDCloud {0}'
+        'osd.edition'  = 'OSDCloud nie ma obrazu Pro Education - użyj Education, Enterprise albo Pro'
+        'osd.language' = 'OSDCloud nie oferuje języka {0} (Start-OSDCloud -OSLanguage)'
+        'osd.method'   = 'OSDCloud: Windows 11 {0} jest pobierany z Microsoft w WinPE (VM potrzebuje internetu) i nakładany bez instalatora i bez sprawdzania TPM'
+        'osd.copy'     = 'VDI-ImageMaint: kopiowanie C:\install i pliku odpowiedzi trybu audytu'
+        'osd.missing'  = 'VDI-ImageMaint: nie znaleziono nośnika (vdi-build.tag) - C:\install nie został skopiowany'
+        'osd.next2'    = '  2. CD/DVD 1 = to ISO ("Connect at power on"), start - bez naciskania klawisza'
+        'osd.next3'    = '  3. WinPE pobiera i nakłada Windows, kopiuje C:\install, restartuje do trybu audytu (wbudowany Administrator)'
     }
 }
 
@@ -158,6 +201,11 @@ $Editions = @{
     Pro          = @{ Name = 'Windows 11 Pro';           Key = 'W269N-WFGWX-YVC9B-4J6C9-T83GX' }
     ProEducation = @{ Name = 'Windows 11 Pro Education'; Key = '6TP4R-GNPTD-KYYHQ-7B7DP-J447Y' }
 }
+
+# Start-OSDCloud -OSLanguage values (OSD module 26.9)
+$OsdLanguages = @('ar-sa', 'bg-bg', 'cs-cz', 'da-dk', 'de-de', 'el-gr', 'en-gb', 'en-us', 'es-es', 'es-mx', 'et-ee', 'fi-fi',
+    'fr-ca', 'fr-fr', 'he-il', 'hr-hr', 'hu-hu', 'it-it', 'ja-jp', 'ko-kr', 'lt-lt', 'lv-lv', 'nb-no', 'nl-nl', 'pl-pl', 'pt-br',
+    'pt-pt', 'ro-ro', 'ru-ru', 'sk-sk', 'sl-si', 'sr-latn-rs', 'sv-se', 'th-th', 'tr-tr', 'uk-ua', 'zh-cn', 'zh-tw')
 
 # Marker file on the build ISO: the auditUser commands find the drive letter by it
 $TagName = 'vdi-build.tag'
@@ -306,6 +354,28 @@ $startCmd      </RunSynchronous>
 "@
 }
 
+function ConvertTo-PantherAnswer {
+    # OSDCloud applies the image itself (DISM in WinPE) and copies C:\install there: the answer file goes to
+    # C:\Windows\Panther\unattend.xml without the windowsPE pass and without the copy command
+    param([string]$Xml)
+    [xml]$doc = $Xml
+    $ns = New-Object Xml.XmlNamespaceManager $doc.NameTable
+    $ns.AddNamespace('u', 'urn:schemas-microsoft-com:unattend')
+    foreach ($n in @($doc.SelectNodes("//u:settings[@pass='windowsPE']", $ns))) { [void]$n.ParentNode.RemoveChild($n) }
+    $audit = $doc.SelectSingleNode("//u:settings[@pass='auditUser']", $ns)
+    foreach ($n in @($audit.SelectNodes('.//u:RunSynchronousCommand', $ns))) {
+        if ($n.SelectSingleNode('u:Path', $ns).InnerText -match 'robocopy') { [void]$n.ParentNode.RemoveChild($n) }
+    }
+    $left = @($audit.SelectNodes('.//u:RunSynchronousCommand', $ns))
+    if ($left.Count -eq 0) { [void]$audit.ParentNode.RemoveChild($audit) }
+    else { for ($i = 0; $i -lt $left.Count; $i++) { $left[$i].SelectSingleNode('u:Order', $ns).InnerText = [string]($i + 1) } }
+    $sw = New-Object IO.StringWriter
+    $xw = New-Object Xml.XmlTextWriter $sw
+    $xw.Formatting = 'Indented'; $xw.Indentation = 2
+    $doc.Save($xw)
+    return ($sw.ToString() -replace 'encoding="utf-16"', 'encoding="utf-8"')
+}
+
 function Write-IsoFile {
     # ISO (UDF) from a folder with the built-in IMAPI2 file system image COM object - no ADK needed
     param([string]$SourceDir, [string]$Path, [string]$VolumeName)
@@ -342,6 +412,79 @@ public static class VdiIsoWriter {
 # =====================================================================
 #  MAIN
 # =====================================================================
+function Copy-InstallTree {
+    # C:\install -> $Destination; -ScriptsOnly leaves out the installers
+    param([string]$Destination)
+    $skipped = 0
+    foreach ($f in @(Get-ChildItem -LiteralPath $InstallDir -Recurse -File)) {
+        if ($f.FullName -eq $OutFile) { continue }
+        if ($ScriptsOnly -and $InstallerExt -contains $f.Extension.ToLower()) { $skipped++; continue }
+        $rel = $f.FullName.Substring($InstallDir.Length).TrimStart('\')
+        $dest = Join-Path $Destination $rel
+        $null = New-Item -ItemType Directory -Path (Split-Path $dest -Parent) -Force
+        Copy-Item -LiteralPath $f.FullName -Destination $dest -Force
+    }
+    if ($skipped) { Write-Host (T 'skipped' @($skipped)) -ForegroundColor Yellow }
+}
+
+function New-OsdShutdownScript {
+    # Runs in WinPE after OSDCloud applied Windows (<media>\OSDCloud\Config\Scripts\Shutdown):
+    # copies C:\install and the audit-mode answer file from the build media
+    $msgCopy = (T 'osd.copy') -replace "'", "''"
+    $msgMiss = (T 'osd.missing') -replace "'", "''"
+    return @"
+# VDI-ImageMaint - OSDCloud shutdown script (generated by New-BuildMedia.ps1, $(Get-Date -Format 'yyyy-MM-dd HH:mm'))
+`$src = Get-PSDrive -PSProvider FileSystem | Where-Object { `$_.Name -ne 'C' } | ForEach-Object { `$_.Root } |
+    Where-Object { Test-Path (Join-Path `$_ '$TagName') } | Select-Object -First 1
+if (-not `$src) { Write-Warning '$msgMiss'; return }
+Write-Host -ForegroundColor Cyan '$msgCopy'
+robocopy (Join-Path `$src 'install') 'C:\install' /E /R:1 /W:1 /NP /NFL /NDL /LOG:C:\Windows\Temp\vdi-build-copy.log | Out-Null
+`$null = New-Item -ItemType Directory -Path 'C:\Windows\Panther' -Force
+Copy-Item -Path (Join-Path `$src 'OSDCloud\Config\VDI-ImageMaint\unattend.xml') -Destination 'C:\Windows\Panther\unattend.xml' -Force
+"@
+}
+
+function Invoke-OsdCloudMedia {
+    # OSDCloud (github.com/OSDeploy/OSD): WinPE with VMware drivers that downloads Windows from Microsoft
+    # (Start-OSDCloud -ZTI) and applies it; our shutdown script adds C:\install and the audit-mode answer file
+    param([string]$AnswerXml)
+    $id = [Security.Principal.WindowsIdentity]::GetCurrent()
+    if (-not (New-Object Security.Principal.WindowsPrincipal $id).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw (T 'osd.admin') }
+    if (-not (Get-Module -ListAvailable -Name OSD)) { throw (T 'osd.noModule') }
+    Import-Module OSD -Force
+    Write-Host (T 'osd.version' @((Get-Module OSD).Version))
+
+    if (-not (Get-OSDCloudTemplate -ErrorAction SilentlyContinue)) {
+        Write-Host (T 'osd.template') -ForegroundColor Cyan
+        New-OSDCloudTemplate
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $Workspace 'Media\sources\boot.wim'))) {
+        Write-Host (T 'osd.workspace' @($Workspace)) -ForegroundColor Cyan
+        New-OSDCloudWorkspace -WorkspacePath $Workspace
+    }
+    $start = "-OSName 'Windows 11 $Release x64' -OSEdition $Edition -OSLanguage $($UILanguage.ToLower()) -OSActivation Volume -ZTI -SkipAutopilot -SkipODT -Restart"
+    Write-Host (T 'osd.start' @($start))
+    Edit-OSDCloudWinPE -WorkspacePath $Workspace -CloudDriver VMware -StartOSDCloud $start
+
+    $media = Join-Path $Workspace 'Media'
+    Write-Host (T 'stage' @($media))
+    $inst = Join-Path $media 'install'
+    if (Test-Path -LiteralPath $inst) { Remove-Item -LiteralPath $inst -Recurse -Force }
+    Copy-InstallTree -Destination $inst
+    [IO.File]::WriteAllText((Join-Path $media $TagName), "VDI-ImageMaint build media $($settings.Created)`r`n")
+    $cfg = Join-Path $media 'OSDCloud\Config\VDI-ImageMaint'
+    $sd  = Join-Path $media 'OSDCloud\Config\Scripts\Shutdown'
+    $null = New-Item -ItemType Directory -Path $cfg, $sd -Force
+    [IO.File]::WriteAllText((Join-Path $cfg 'unattend.xml'), ($AnswerXml -replace "`r?`n", "`r`n"), [Text.UTF8Encoding]::new($false))
+    [IO.File]::WriteAllText((Join-Path $sd 'VDI-ImageMaint.ps1'), ((New-OsdShutdownScript) -replace "`r?`n", "`r`n"), [Text.UTF8Encoding]::new($true))
+
+    New-OSDCloudISO -WorkspacePath $Workspace
+    $iso = Join-Path $Workspace 'OSDCloud_NoPrompt.iso'   # no "Press any key" - boots unattended
+    if (-not (Test-Path -LiteralPath $iso)) { $iso = Join-Path $Workspace 'OSDCloud.iso' }
+    if (-not (Test-Path -LiteralPath $iso)) { throw (T 'isoFail' @($Workspace)) }
+    Copy-Item -LiteralPath $iso -Destination $OutFile -Force
+}
+
 Write-Host ''
 Write-Host (T 'title') -ForegroundColor Cyan
 # $PSScriptRoot is empty in param() defaults in Windows PowerShell 5.1
@@ -349,15 +492,25 @@ if (-not $InstallDir) { $InstallDir = Split-Path $PSScriptRoot -Parent }
 if (-not (Test-Path -LiteralPath $InstallDir)) { throw (T 'noDir' @($InstallDir)) }
 $InstallDir = (Resolve-Path -LiteralPath $InstallDir).Path
 if (-not (Test-Path -LiteralPath (Join-Path $InstallDir 'VDI-ImageMaint.ps1'))) { throw (T 'noTool' @($InstallDir)) }
-if (-not $OutFile) { $OutFile = Join-Path (Split-Path $InstallDir -Parent) 'VDI-Build.iso' }
+if (-not $OutFile) {
+    $OutFile = Join-Path (Split-Path $InstallDir -Parent) $(if ($Method -eq 'OSDCloud') { 'VDI-OSDCloud.iso' } else { 'VDI-Build.iso' })
+}
 
 # Regional settings from the manifest (Configure step 5), then sensible defaults
-$build = $null
+$build = $null; $windows = $null
 $manifestPath = Join-Path $InstallDir 'packages.json'
 if (Test-Path -LiteralPath $manifestPath) {
-    $build = Get-P (Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json) 'Build'
+    $mf = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $build = Get-P $mf 'Build'; $windows = Get-P $mf 'Windows'
 }
 if (-not $UILanguage) { $UILanguage = [string](Get-P $build 'UILanguage' 'en-US') }
+if ($Method -eq 'OSDCloud') {
+    if ($Edition -eq 'ProEducation') { throw (T 'osd.edition') }
+    if ($OsdLanguages -notcontains $UILanguage.ToLower()) { throw (T 'osd.language' @($UILanguage)) }
+    # Horizon 2506 supports up to 24H2 (KB 78714) - the default follows Windows.TargetRelease
+    if (-not $Release) { $Release = [string](Get-P $windows 'TargetRelease' '24H2') }
+    if (-not $Workspace) { $Workspace = Join-Path $env:SystemDrive 'OSDCloud\VDI-ImageMaint' }
+}
 $ed = $Editions[$Edition]
 $settings = @{
     UILanguage   = $UILanguage
@@ -374,49 +527,54 @@ $settings = @{
     Created      = (Get-Date -Format 'yyyy-MM-dd HH:mm')
 }
 Write-Host (T 'settings' @($Edition, $settings.ImageName, $settings.UILanguage, $settings.InputLocale, $settings.TimeZone, $settings.ComputerName))
-Write-Host (T 'langNote') -ForegroundColor Yellow
-Write-Host $(if ($WithVtpm) { T 'vtpm.yes' } else { T 'vtpm.no' }) -ForegroundColor Yellow
+if ($Method -eq 'OSDCloud') { Write-Host (T 'osd.method' @($Release)) -ForegroundColor Yellow }
+else {
+    Write-Host (T 'langNote') -ForegroundColor Yellow
+    Write-Host $(if ($WithVtpm) { T 'vtpm.yes' } else { T 'vtpm.no' }) -ForegroundColor Yellow
+}
 
 $xml = New-AutounattendXml -S $settings
+if ($Method -eq 'OSDCloud') { $xml = ConvertTo-PantherAnswer $xml }
 [void]([xml]$xml)   # well-formed
 
 if ($XmlOnly) {
-    $xmlPath = Join-Path (Split-Path $OutFile -Parent) 'autounattend.xml'
+    $xmlPath = Join-Path (Split-Path $OutFile -Parent) $(if ($Method -eq 'OSDCloud') { 'unattend.xml' } else { 'autounattend.xml' })
     [IO.File]::WriteAllText($xmlPath, ($xml -replace "`r?`n", "`r`n"), [Text.UTF8Encoding]::new($false))
     Write-Host (T 'xml' @($xmlPath)) -ForegroundColor Green
     exit 0
 }
 
-# Staging folder: \autounattend.xml, \vdi-build.tag, \install\...
-$stage = Join-Path ([IO.Path]::GetTempPath()) ('VDI-Build-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
-Write-Host (T 'stage' @($stage))
-$null = New-Item -ItemType Directory -Path (Join-Path $stage 'install') -Force
-try {
-    [IO.File]::WriteAllText((Join-Path $stage 'autounattend.xml'), ($xml -replace "`r?`n", "`r`n"), [Text.UTF8Encoding]::new($false))
-    [IO.File]::WriteAllText((Join-Path $stage $TagName), "VDI-ImageMaint build media $($settings.Created)`r`n")
-    $skipped = 0
-    foreach ($f in @(Get-ChildItem -LiteralPath $InstallDir -Recurse -File)) {
-        if ($f.FullName -eq $OutFile) { continue }
-        if ($ScriptsOnly -and $InstallerExt -contains $f.Extension.ToLower()) { $skipped++; continue }
-        $rel = $f.FullName.Substring($InstallDir.Length).TrimStart('\')
-        $dest = Join-Path (Join-Path $stage 'install') $rel
-        $null = New-Item -ItemType Directory -Path (Split-Path $dest -Parent) -Force
-        Copy-Item -LiteralPath $f.FullName -Destination $dest
+if ($Method -eq 'OSDCloud') {
+    Invoke-OsdCloudMedia -AnswerXml $xml
+} else {
+    # Staging folder: \autounattend.xml, \vdi-build.tag, \install\...
+    $stage = Join-Path ([IO.Path]::GetTempPath()) ('VDI-Build-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
+    Write-Host (T 'stage' @($stage))
+    $null = New-Item -ItemType Directory -Path (Join-Path $stage 'install') -Force
+    try {
+        [IO.File]::WriteAllText((Join-Path $stage 'autounattend.xml'), ($xml -replace "`r?`n", "`r`n"), [Text.UTF8Encoding]::new($false))
+        [IO.File]::WriteAllText((Join-Path $stage $TagName), "VDI-ImageMaint build media $($settings.Created)`r`n")
+        Copy-InstallTree -Destination (Join-Path $stage 'install')
+        if (Test-Path -LiteralPath $OutFile) { Remove-Item -LiteralPath $OutFile -Force }
+        try { Write-IsoFile -SourceDir $stage -Path $OutFile -VolumeName 'VDIBUILD' }
+        catch { throw (T 'isoFail' @($_.Exception.Message)) }
+    } finally {
+        Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
     }
-    if ($skipped) { Write-Host (T 'skipped' @($skipped)) -ForegroundColor Yellow }
-    if (Test-Path -LiteralPath $OutFile) { Remove-Item -LiteralPath $OutFile -Force }
-    try { Write-IsoFile -SourceDir $stage -Path $OutFile -VolumeName 'VDIBUILD' }
-    catch { throw (T 'isoFail' @($_.Exception.Message)) }
-} finally {
-    Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host ''
 Write-Host (T 'done' @($OutFile)) -ForegroundColor Green
 Write-Host (T 'next') -ForegroundColor Cyan
-Write-Host (T 'next1' @($(if ($WithVtpm) { T 'next1.with' } else { T 'next1.vtpm' })))
-Write-Host (T 'next2')
-Write-Host (T 'next3')
+if ($Method -eq 'OSDCloud') {
+    Write-Host (T 'next1' @((T 'next1.vtpm')))
+    Write-Host (T 'osd.next2')
+    Write-Host (T 'osd.next3')
+} else {
+    Write-Host (T 'next1' @($(if ($WithVtpm) { T 'next1.with' } else { T 'next1.vtpm' })))
+    Write-Host (T 'next2')
+    Write-Host (T 'next3')
+}
 Write-Host (T 'next4' @((T "next4.$AutoStart")))
 Write-Host (T 'next5')
 exit 0

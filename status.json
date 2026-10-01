@@ -35,7 +35,7 @@
     },
     "pester": {
       "status": "pass",
-      "detail": "147 tests in Windows PowerShell 5.1 and PowerShell 7 (windows/tests/Invoke-Tests.ps1)"
+      "detail": "154 tests in Windows PowerShell 5.1 and PowerShell 7 (windows/tests/Invoke-Tests.ps1)"
     }
   },
   "issues": [
@@ -255,7 +255,8 @@
     "-Mode Validate + packages.schema.json; Office XML templates (ProPlus/Business Shared x pl, en, de, fr, pl+en)",
     "Java development: Temurin JDK 21 + 25 (MSI, fixed INSTALLDIR) + Eclipse IDE (Scripts/Install-Eclipse.ps1 1.0, EN/PL) as packages TemurinJDK21/TemurinJDK25/EclipseJava; -Mode Download fetches them (Adoptium API, EPP release.xml -> {Release}); docs/eclipse-java.md (+pl): workspace in FSLogix, DEM folder redirection to UNC. Installer tested locally with the real 2026-09 ZIP (install, idempotent re-run, -WhatIf, uninstall); downloads tested for real; NOT tested on a VM",
     "Windows 11 26H2 readiness: release table 24H2/25H2/26H2/26H1 with Horizon Agent (KB 78714), OSOT and servicing end; Update skips feature updates unless Windows.TargetRelease; readiness 26H2 WARN, 26H1 FAIL, C21 vTPM; Horizon Agent silent install with VDM_VC_MANAGED_AGENT=1 + ADDLOCAL Core/NGVC per profile, validated. NOT tested on a VM",
-    "New image installation: Scripts/New-BuildMedia.ps1 1.0 (menu B) - VDI-Build.iso with autounattend.xml (unattended Setup into audit mode, no vTPM, no device encryption, Store auto-updates off), copies C:\\install, opens the menu. ISO tested locally (PS 5.1 + pwsh 7, mounted: UDF, all files); NOT tested on a VM"
+    "New image installation: Scripts/New-BuildMedia.ps1 1.0 (menu B) - VDI-Build.iso with autounattend.xml (unattended Setup into audit mode, no vTPM, no device encryption, Store auto-updates off), copies C:\\install, opens the menu. ISO tested locally (PS 5.1 + pwsh 7, mounted: UDF, all files); NOT tested on a VM",
+    "vCenter automation: Scripts/Invoke-GoldenVm.ps1 1.0 (PowerCLI; New/Snapshot/Release, vcenter.json) and OSDCloud media (New-BuildMedia -Method OSDCloud, OSD module 26.9.30). Answer files and config validation tested locally; NOT tested: OSDCloud media build (ADK), vCenter actions, VM install"
   ],
   "osotFindings": [
     "Generalize requires audit mode; cannot be combined with Finalize; reboot required after",

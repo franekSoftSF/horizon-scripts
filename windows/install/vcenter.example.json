@@ -1,0 +1,20 @@
+{
+  "_description": "Copy to vcenter.json and fill in. Used by Scripts\\Invoke-GoldenVm.ps1 (VMware PowerCLI). No passwords here - you are asked when connecting. / Skopiuj do vcenter.json i uzupełnij. Bez haseł - pytanie przy połączeniu.",
+  "Server": "vcenter.domain.local",
+  "Cluster": "Cluster01",
+  "VMHost": "",
+  "Datastore": "ds-golden",
+  "Folder": "Golden Images",
+  "Network": "VDI-Build",
+  "IsoDatastore": "",
+  "IsoFolder": "ISO/VDI-ImageMaint",
+  "WindowsIso": "[ds-iso] Windows/Win11_24H2_Polish_x64.iso",
+  "VM": {
+    "Name": "W11-GOLD-24H2",
+    "NumCpu": 4,
+    "CoresPerSocket": 4,
+    "MemoryGB": 8,
+    "DiskGB": 80,
+    "GuestId": "windows11_64Guest"
+  }
+}

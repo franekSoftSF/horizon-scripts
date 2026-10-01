@@ -49,6 +49,8 @@ After a clone fails, read `C:\Windows\Panther\` and `C:\Windows\Panther\Unattend
 
 ### 2a. Unattended installation of a new image (`New-BuildMedia.ps1`)
 
+> Fully automated with vCenter (create VM, upload ISO, boot, release for the pool) and the OSDCloud alternative: [vcenter-osdcloud.md](vcenter-osdcloud.md).
+
 Run it on your PC where `C:\install` is prepared (after Configure and Download) - menu **B**, or:
 
 ```

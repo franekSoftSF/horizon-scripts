@@ -21,7 +21,8 @@ Current state and next steps: see `status.md` / `status.json` (keep both in sync
     `en-US/*.psd1` + `pl-PL/*.psd1` string tables (one file per area), `Templates/packages.default.json`
   - `windows/install/START.cmd` + `windows/install/Scripts/Start-Menu.ps1` – double-click launcher and EN/PL menu
   - `windows/install/Scripts/Set-FSLogixConfig.ps1` – FSLogix registry, redirections.xml, groups, AV exclusions (v1.1.0, EN/PL inline table)
-  - `windows/install/Scripts/New-BuildMedia.ps1` – build ISO (autounattend.xml → audit mode + C:\install) for a new golden VM (v1.0, EN/PL inline table)
+  - `windows/install/Scripts/New-BuildMedia.ps1` – build ISO (autounattend.xml → audit mode + C:\install) for a new golden VM; `-Method OSDCloud` = WinPE via the OSD module (v1.1, EN/PL inline table)
+  - `windows/install/Scripts/Invoke-GoldenVm.ps1` – vCenter (PowerCLI): New / Snapshot / Release of the golden VM, settings `vcenter.json` (v1.0, EN/PL inline table)
   - `windows/install/Scripts/Test-SysprepReadiness.ps1` – read-only pre-Generalize checks (EN/PL string table = the i18n pattern to follow)
   - `windows/install/packages.json` (manifest, customer University), `windows/install/winget-catalog.json`, `windows/install/OSOT/Optimize.json`, `windows/install/Office/*.xml` + `Office/Templates/` (10 ODT templates)
 - Binaries are git-ignored; `windows/docs/` – EN docs, `windows/docs/pl/` – PL docs; `windows/CHANGELOG.md`

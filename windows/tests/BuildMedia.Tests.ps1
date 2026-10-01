@@ -86,3 +86,58 @@ Describe 'New-BuildMedia ISO' {
         [Text.Encoding]::ASCII.GetString($bytes, 16 * 2048, 8 * 2048) | Should -Match 'NSR0[23]'
     }
 }
+
+Describe 'New-BuildMedia -Method OSDCloud answer file' {
+    BeforeAll {
+        $dir = Join-Path $TestDrive 'osd'
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        $out = & $Ps51 -NoProfile -ExecutionPolicy Bypass -File $Script -Method OSDCloud -XmlOnly -OutFile (Join-Path $dir 'x.iso') -UILanguage pl-PL -Language en 2>&1
+        if ($LASTEXITCODE -ne 0) { throw ($out | Out-String) }
+        $script:O = [xml](Get-Content (Join-Path $dir 'unattend.xml') -Raw)
+    }
+    It 'has no windowsPE pass (OSDCloud applies the image) and still ends in audit mode' {
+        (@($O | Select-Xml '//u:settings' -Namespace $Ns | ForEach-Object { $_.Node.GetAttribute('pass') }) -join ',') | Should -Be 'specialize,oobeSystem,auditUser'
+        Get-Text $O '//u:Reseal/u:Mode' | Should -Be 'Audit'
+    }
+    It 'only starts the menu in auditUser (C:\install is copied in WinPE)' {
+        $cmds = @(Get-Text $O "//u:settings[@pass='auditUser']//u:Path")
+        $cmds.Count | Should -Be 1
+        $cmds[0] | Should -Match 'START\.cmd'
+        Get-Text $O "//u:settings[@pass='auditUser']//u:Order" | Should -Be '1'
+    }
+    It 'rejects Pro Education and languages OSDCloud does not offer' {
+        # the script writes the error to stderr - Windows PowerShell 5.1 would turn it into an exception
+        $ErrorActionPreference = 'Continue'
+        & $Ps51 -NoProfile -ExecutionPolicy Bypass -File $Script -Method OSDCloud -XmlOnly -Edition ProEducation -OutFile (Join-Path $TestDrive 'y.iso') -Language en 2>&1 | Out-Null
+        $LASTEXITCODE | Should -Not -Be 0
+        & $Ps51 -NoProfile -ExecutionPolicy Bypass -File $Script -Method OSDCloud -XmlOnly -UILanguage xx-XX -OutFile (Join-Path $TestDrive 'y.iso') -Language en 2>&1 | Out-Null
+        $LASTEXITCODE | Should -Not -Be 0
+    }
+}
+
+Describe 'Invoke-GoldenVm -ValidateOnly' {
+    BeforeAll {
+        $script:Vm = Join-Path $Install 'Scripts\Invoke-GoldenVm.ps1'
+        $script:Root = Join-Path $TestDrive 'vc'
+        $script:Inst = Join-Path $Root 'install'
+        New-Item -ItemType Directory -Path $Inst -Force | Out-Null
+        Copy-Item (Join-Path $Install 'vcenter.example.json') (Join-Path $Inst 'vcenter.json')
+        Set-Content -Path (Join-Path $Root 'VDI-Build.iso') -Value 'x'
+    }
+    It 'accepts the example config and prints the two CD drives' {
+        $out = & $Ps51 -NoProfile -ExecutionPolicy Bypass -File $Vm -Action New -InstallDir $Inst -ValidateOnly -Language en 2>&1 | Out-String
+        $LASTEXITCODE | Should -Be 0 -Because $out
+        $out | Should -Match 'CD 1: \[ds-iso\] Windows/Win11'
+        $out | Should -Match 'CD 2: \[ds-golden\] ISO/VDI-ImageMaint/VDI-Build\.iso'
+    }
+    It 'fails without vcenter.json' {
+        $ErrorActionPreference = 'Continue'
+        & $Ps51 -NoProfile -ExecutionPolicy Bypass -File $Vm -Action New -InstallDir (Join-Path $TestDrive 'none') -ValidateOnly -Language en 2>&1 | Out-Null
+        $LASTEXITCODE | Should -Be 2
+    }
+    It 'fails when the build ISO is missing (OSDCloud)' {
+        $ErrorActionPreference = 'Continue'
+        & $Ps51 -NoProfile -ExecutionPolicy Bypass -File $Vm -Action New -Method OSDCloud -InstallDir $Inst -ValidateOnly -Language en 2>&1 | Out-Null
+        $LASTEXITCODE | Should -Be 2
+    }
+}

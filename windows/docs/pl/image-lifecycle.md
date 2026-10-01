@@ -49,6 +49,8 @@ Gdy nie powiedzie się klon, przeczytaj `C:\Windows\Panther\` i `C:\Windows\Pant
 
 ### 2a. Instalacja nowego obrazu bez pytań (`New-BuildMedia.ps1`)
 
+> W pełni automatycznie z vCenter (utworzenie VM, wysłanie ISO, start, wydanie do puli) oraz alternatywa OSDCloud: [vcenter-osdcloud.md](vcenter-osdcloud.md).
+
 Uruchom na swoim komputerze, na którym przygotowano `C:\install` (po Configure i Download) - menu **B** albo:
 
 ```

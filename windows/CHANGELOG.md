@@ -3,6 +3,14 @@
 ## VDI-ImageMaint 2.0.0 – in progress
 
 ### Added
+- **vCenter automation** - `Scripts\Invoke-GoldenVm.ps1` 1.0 (EN/PL, VMware PowerCLI, START menu **C** / **R**, settings in
+  `vcenter.json` from `vcenter.example.json`): `-Action New` uploads the build ISO and creates the golden VM (Windows 11 guest,
+  EFI + Secure Boot, no vTPM, PVSCSI, VMXNET3, thin disk, no floppy, `devices.hotplug=FALSE`, boot CD -> disk), connects the CDs,
+  powers on and sends Enter for "Press any key"; `-Action Snapshot` (pre-generalize); `-Action Release` (VM off: CDs emptied,
+  vTPM removed, snapshot `Gold <date>` for Push Image); `-ValidateOnly`. No credentials stored.
+- **OSDCloud** (github.com/OSDeploy/OSD) - `New-BuildMedia.ps1 -Method OSDCloud` 1.1 (menu **O**): WinPE with VMware drivers that
+  downloads Windows 11 24H2/25H2/26H2 from Microsoft (`Start-OSDCloud -ZTI`), a shutdown script copies `C:\install` and the
+  audit-mode answer file to `C:\Windows\Panther`; `OSDCloud_NoPrompt.iso` -> `VDI-OSDCloud.iso`. Docs `docs/vcenter-osdcloud.md` (+pl).
 - **New image installation** - `Scripts\New-BuildMedia.ps1` 1.0 (EN/PL, START menu **B**): writes `VDI-Build.iso` (UDF via the
   built-in IMAPI2, no ADK) with `autounattend.xml` + `C:\install`. With the Windows ISO on the first CD drive Setup runs
   without questions: UEFI partitions on disk 0, edition by name + generic KMS key, TPM check bypassed (golden image without
