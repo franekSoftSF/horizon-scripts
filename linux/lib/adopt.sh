@@ -167,6 +167,7 @@ mode_adopt() {
 
 adopt_agent() {
     [[ $ADOPT_AGENT == yes ]] || return 0
+    adopt_runonce
     local guess version args
     if [[ -n $(state_get build '.agent.version // empty') ]]; then
         logt OK adopt_agent_known "$(state_get build '.agent.version')"
@@ -189,13 +190,24 @@ adopt_agent() {
     state_update build '.agent = {version: $v, args: $a, archive: "adopted", at: $d, tool: $t}' \
         --arg v "$version" --arg a "$args" --arg d "$(date -Is)" --arg t "$VDI_VERSION"
     logt OK adopt_agent_recorded "$version" "$args"
+}
 
-    # Keep an existing RunOnceScript (e.g. winbind rejoin): chain it from the tool's script.
+# The tool's per-clone script must run on every clone: seal removes the SSH host keys
+# and relies on it to create new ones. An existing RunOnceScript (e.g. winbind rejoin)
+# is kept and chained through /etc/vdi-imagemaint/runonce.local.
+adopt_runonce() {
+    local dir conf
+    dir=$(agent_conf_dir) || return 0
+    conf="${dir}/viewagent-custom.conf"
     if [[ -n $ADOPT_RUNONCE && $ADOPT_RUNONCE != "$RUNONCE_TARGET" && -x $ADOPT_RUNONCE ]]; then
         printf '#!/bin/sh\n%s\n# RunOnceScript of the adopted image, chained by the VDI-ImageMaint per-clone script.\nexec %q\n' \
             "$MANAGED_MARK" "$ADOPT_RUNONCE" | write_file build /etc/vdi-imagemaint/runonce.local 0700
         logt OK adopt_runonce_chained "$ADOPT_RUNONCE"
     fi
+    agent_install_runonce
+    KV_SECTION=build set_kv "$conf" RunOnceScript "$RUNONCE_TARGET"
+    KV_SECTION=build set_kv "$conf" RunOnceScriptTimeout "$RUNONCE_TIMEOUT"
+    logt OK adopt_runonce_set "$RUNONCE_TARGET" "$conf"
 }
 
 # OfflineJoinDomain value for agent_configure: sssd unless an adopted image joined differently.

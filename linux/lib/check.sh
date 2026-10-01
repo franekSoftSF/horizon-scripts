@@ -21,6 +21,18 @@ mode_check() {
     CHECK_WARN=0
     domain_defaults
 
+    local k example=""
+    for k in AD_DOMAIN AD_JOIN_USER AD_COMPUTER_OU NFS_SERVER HORIZON_CS_FQDN COLLAB_SERVER_URL REC_SERVER_URL REC_USERNAME; do
+        [[ ${!k:-} == *example* ]] && example+=" $k"
+    done
+    if [[ -n $example ]]; then
+        if [[ -f ${CONF_FILE}.detected ]]; then
+            check_result WARN L00 chk_conf_example_detected "$example" "${CONF_FILE}.detected"
+        else
+            check_result WARN L00 chk_conf_example "$example" "$CONF_FILE"
+        fi
+    fi
+
     if os_check 2>/dev/null; then check_result OK L01 chk_os_ok; else check_result WARN L01 chk_os_bad; fi
 
     if reboot_pending; then
@@ -57,7 +69,7 @@ mode_check() {
         if [[ -n $ro && -x $ro ]]; then
             check_result OK L06 chk_runonce_ok "$ro"
         else
-            check_result ERR L06 chk_runonce_bad "${ro:-?}"
+            check_result ERR L06 chk_runonce_bad "${ro:-<unset>}"
         fi
     else
         check_result ERR L05 chk_agent_conf_missing
@@ -161,7 +173,13 @@ mode_check() {
     if [[ -z $missing ]]; then
         check_result OK L20 chk_deps_ok
     else
-        check_result ERR L20 chk_deps_missing "$missing"
+        # The documented dependencies are checked by the agent INSTALLER; an agent that is
+        # already installed runs without them - they are needed again for the next upgrade.
+        if agent_installed; then
+            check_result WARN L20 chk_deps_missing_installed "$missing"
+        else
+            check_result ERR L20 chk_deps_missing "$missing"
+        fi
     fi
 
     if [[ $USB_ENABLE == yes || $FIDO_ENABLE == yes ]]; then
@@ -184,7 +202,9 @@ mode_check() {
 
     local cs
     for cs in $HORIZON_CS_FQDN; do
-        if getent hosts "$cs" >/dev/null; then
+        if [[ $cs == *example* ]]; then
+            check_result WARN L23 chk_cs_example "$cs"
+        elif getent hosts "$cs" >/dev/null; then
             check_result OK L23 chk_cs_ok "$cs"
         else
             check_result ERR L23 chk_cs_bad "$cs"

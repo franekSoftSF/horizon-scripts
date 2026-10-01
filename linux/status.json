@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-02",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",
@@ -103,5 +103,18 @@
     "fixes after test, 0.2.0",
     "HTML cycle report"
   ],
-  "docsSource": "Desktops and Applications in Omnissa Horizon 8, PDF version 2606 (user) + docs.omnissa.com Vmulti/2506"
+  "docsSource": "Desktops and Applications in Omnissa Horizon 8, PDF version 2606 (user) + docs.omnissa.com Vmulti/2506",
+  "vmFeedback": [
+    {
+      "date": "2026-10-02",
+      "image": "adopted",
+      "found": [
+        "L20 appindicator missing on installed agent",
+        "L21 VHCI missing (kernel 6.1.0-50-amd64)",
+        "L23 example CS name",
+        "menu reported check as failed step"
+      ],
+      "fixedIn": "0.3.2"
+    }
+  ]
 }

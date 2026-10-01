@@ -28,7 +28,7 @@ usage() {
 
 menu() {
     local choice
-    local -a modes=(adopt prepare domain nfs agent recording apps optimize collab check seal update unlock fido status)
+    local -a modes=(adopt prepare domain nfs agent usb recording apps optimize collab check seal update unlock fido status)
     while true; do
         printf '\n%s\n' "$(t menu_title "$VDI_VERSION" "$PROFILE")"
         local i=1 m
@@ -43,8 +43,10 @@ menu() {
             MODE=${modes[choice - 1]}
             # Separate process: errexit stays effective inside the step, and a
             # failing step does not end the menu.
-            VDI_CONF=$CONF_FILE bash "${VDI_ROOT}/vdi-imagemaint.sh" "$MODE" --lang "$VDI_LANG" ||
-                logt WARN menu_step_failed "$MODE"
+            if ! VDI_CONF=$CONF_FILE bash "${VDI_ROOT}/vdi-imagemaint.sh" "$MODE" --lang "$VDI_LANG"; then
+                # check exits 1 when it found errors: that is its result, not a failure.
+                [[ $MODE == check ]] || logt WARN menu_step_failed "$MODE"
+            fi
         fi
     done
 }
@@ -56,6 +58,7 @@ dispatch() {
         domain) run_step domain mode_domain ;;
         nfs) run_step nfs mode_nfs ;;
         agent) mode_agent ;;
+        usb) mode_usb ;;
         recording) mode_recording ;;
         apps) mode_apps ;;
         optimize) mode_optimize ;;

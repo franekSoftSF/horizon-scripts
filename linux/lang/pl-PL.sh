@@ -46,6 +46,7 @@ Tryby:
   domain     krb5.conf, SSSD, realm join obrazu, sudo, True SSO / karta
   nfs        katalogi domowe NFSv4 z Kerberosem (autofs, rpc.gssd, idmapd)
   agent      instalacja/aktualizacja agenta Horizon (z kontrolą wersji; zależności, sterownik USB VHCI, dźwięk), RunOnce
+  usb        sam sterownik USB VHCI (przejęty obraz, bez reinstalacji agenta)
   recording  Horizon Recording Agent (tryb szablonu -t; pyta o hasło do serwera)
   apps       uruchamia apps/*.sh --install (np. Eclipse)
   optimize   strojenie VDI (usługi, dconf MATE, LightDM, journald, sysctl, I/O, polkit)
@@ -137,7 +138,7 @@ MSG[chk_agent_conf_missing]='Nie znaleziono viewagent-custom.conf.'
 MSG[chk_offlinejoin_ok]='OfflineJoinDomain=sssd.'
 MSG[chk_offlinejoin_bad]='W %s nie ustawiono OfflineJoinDomain=sssd.'
 MSG[chk_runonce_ok]='RunOnceScript %s istnieje.'
-MSG[chk_runonce_bad]='RunOnceScript "%s" nie istnieje lub nie jest wykonywalny.'
+MSG[chk_runonce_bad]='RunOnceScript "%s" nie istnieje lub nie jest wykonywalny - uruchom adopt (istniejący obraz) albo agent; seal usuwa klucze SSH i na nim polega.'
 MSG[chk_sssd_ok]='SSSD działa.'
 MSG[chk_sssd_bad]='SSSD nie działa.'
 MSG[chk_time_ok]='Czas zsynchronizowany (NTP).'
@@ -245,7 +246,7 @@ MSG[domain_discover_failed]='realm discover %s nie powiódł się - sprawdź DNS
 MSG[chk_deps_ok]='Pakiety zależności agenta zainstalowane.'
 MSG[chk_deps_missing]='Brak pakietów zależności agenta:%s (tryb agent).'
 MSG[chk_vhci_ok]='Sterownik USB VHCI dostępny dla jądra %s.'
-MSG[chk_vhci_bad]='Brak sterownika USB VHCI dla jądra %s - przekierowanie USB nie zadziała (tryb agent / dkms autoinstall).'
+MSG[chk_vhci_bad]='Brak sterownika USB VHCI dla jądra %s - przekierowanie USB (USB 3.0, FIDO2) nie zadziała. Uruchom tryb usb.'
 MSG[chk_rec_ok]='Usługa Horizon Recording Agent włączona.'
 MSG[chk_rec_bad]='Brak usługi Horizon Recording Agent lub jest wyłączona (tryb recording).'
 MSG[chk_cs_ok]='Connection Server %s rozwiązuje się w DNS.'
@@ -299,3 +300,15 @@ MSG[adopt_config_header2]='Pozostałe ustawienia biorą się z conf/defaults.con
 MSG[adopt_config_created]='Konfiguracja utworzona z wykrytych ustawień: %s'
 MSG[adopt_config_exists]='%s już istnieje i nie została zmieniona - wykryte wartości zapisano w %s'
 MSG[adopt_config_diff]='różnica: %s: w konfiguracji %s, wykryto %s'
+
+# --- 0.3.2 ---
+MSG[chk_deps_missing_installed]='Brak zależności instalatora agenta:%s - zainstalowany agent działa bez nich; doinstaluj je przed następną aktualizacją agenta.'
+MSG[chk_cs_example]='HORIZON_CS_FQDN ma nadal wartość przykładową %s - wpisz w vdi-imagemaint.conf prawdziwą nazwę Connection Server (albo zostaw puste).'
+MSG[step_usb]='USB - sterownik VHCI do przekierowania USB (bez reinstalacji agenta)'
+MSG[usb_no_patch]='Brak łatki VHCI w zainstalowanym agencie i brak archiwum agenta w %s - skopiuj tam Omnissa-horizonagent-linux-x86_64-*.tar.gz.'
+MSG[usb_patch_from]='Łatka VHCI pobrana z %s.'
+MSG[usb_agent_component_missing]='Agent nie ma składnika USB (instalowany bez -U yes): uruchom tryb agent z USB_ENABLE="yes" (ta sama wersja: --force), aby przekierowanie USB działało.'
+MSG[menu_usb]='Sam sterownik przekierowania USB (VHCI) - także dla przejętego obrazu'
+MSG[adopt_runonce_set]='Skrypt klona %s ustawiony jako RunOnceScript w %s (nowe klucze SSH i odświeżenie SSSD/NFS na każdym klonie).'
+MSG[chk_conf_example]='W konfiguracji zostały wartości przykładowe:%s - ustaw je w %s.'
+MSG[chk_conf_example_detected]='W konfiguracji zostały wartości przykładowe:%s - wartości wykryte na tym obrazie są w %s (przepisz je).'

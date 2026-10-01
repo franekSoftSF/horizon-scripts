@@ -46,6 +46,7 @@ Modes:
   domain     krb5.conf, SSSD, realm join of the golden image, sudo, True SSO / smart card
   nfs        NFSv4 home directories with Kerberos (autofs, rpc.gssd, idmapd)
   agent      install/upgrade Horizon agent (version-aware; dependencies, USB VHCI driver, audio), RunOnce
+  usb        USB VHCI driver only (adopted image, agent not reinstalled)
   recording  Horizon Recording Agent (-t template mode; asks for the server password)
   apps       run apps/*.sh --install (e.g. Eclipse)
   optimize   VDI tuning (services, MATE dconf, LightDM, journald, sysctl, I/O, polkit)
@@ -137,7 +138,7 @@ MSG[chk_agent_conf_missing]='viewagent-custom.conf not found.'
 MSG[chk_offlinejoin_ok]='OfflineJoinDomain=sssd.'
 MSG[chk_offlinejoin_bad]='OfflineJoinDomain=sssd is not set in %s.'
 MSG[chk_runonce_ok]='RunOnceScript %s present.'
-MSG[chk_runonce_bad]='RunOnceScript "%s" missing or not executable.'
+MSG[chk_runonce_bad]='RunOnceScript "%s" missing or not executable - run adopt (existing image) or agent; seal removes the SSH host keys and relies on it.'
 MSG[chk_sssd_ok]='SSSD running.'
 MSG[chk_sssd_bad]='SSSD not running.'
 MSG[chk_time_ok]='Time synchronized (NTP).'
@@ -245,7 +246,7 @@ MSG[domain_discover_failed]='realm discover %s failed - check DNS before joining
 MSG[chk_deps_ok]='Agent dependency packages installed.'
 MSG[chk_deps_missing]='Agent dependency packages missing:%s (mode agent).'
 MSG[chk_vhci_ok]='USB VHCI driver available for kernel %s.'
-MSG[chk_vhci_bad]='USB VHCI driver missing for kernel %s - USB redirection will not work (mode agent / dkms autoinstall).'
+MSG[chk_vhci_bad]='USB VHCI driver missing for kernel %s - USB redirection (USB 3.0, FIDO2) will not work. Run mode usb.'
 MSG[chk_rec_ok]='Horizon Recording Agent service enabled.'
 MSG[chk_rec_bad]='Horizon Recording Agent service missing or disabled (mode recording).'
 MSG[chk_cs_ok]='Connection Server %s resolves in DNS.'
@@ -299,3 +300,15 @@ MSG[adopt_config_header2]='All other settings use conf/defaults.conf and the pro
 MSG[adopt_config_created]='Configuration created from the detected settings: %s'
 MSG[adopt_config_exists]='%s already exists and was not changed - detected values written to %s'
 MSG[adopt_config_diff]='differs: %s: configuration %s, detected %s'
+
+# --- 0.3.2 ---
+MSG[chk_deps_missing_installed]='Agent installer dependencies missing:%s - the installed agent runs without them; install them before the next agent upgrade.'
+MSG[chk_cs_example]='HORIZON_CS_FQDN is still the example value %s - set the real Connection Server name in vdi-imagemaint.conf (or leave it empty).'
+MSG[step_usb]='USB - VHCI driver for USB redirection (agent not reinstalled)'
+MSG[usb_no_patch]='No VHCI patch in the installed agent and no agent archive in %s - copy Omnissa-horizonagent-linux-x86_64-*.tar.gz there.'
+MSG[usb_patch_from]='VHCI patch taken from %s.'
+MSG[usb_agent_component_missing]='The agent has no USB component (installed without -U yes): run mode agent with USB_ENABLE="yes" (same version: --force) so USB redirection works.'
+MSG[menu_usb]='USB redirection driver (VHCI) only - also for an adopted image'
+MSG[adopt_runonce_set]='Per-clone script %s set as RunOnceScript in %s (new SSH host keys and SSSD/NFS refresh on every clone).'
+MSG[chk_conf_example]='Example values still in the configuration:%s - set them in %s.'
+MSG[chk_conf_example_detected]='Example values still in the configuration:%s - the values found on this image are in %s (copy them over).'

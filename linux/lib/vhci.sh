@@ -98,3 +98,42 @@ EOF
         --arg v "$VHCI_VERSION" --arg k "$(uname -r)" --arg d "$(date -Is)"
     logt OK vhci_done "$VHCI_VERSION" "$(uname -r)"
 }
+
+# Mode "usb": USB VHCI driver only, for an image whose agent is already installed
+# (e.g. adopted) - the agent is not reinstalled. The patch comes from the installed
+# agent (resources/vhci/patch, as for the RPM install) or from the newest agent
+# archive in Horizon/ (as for the tarball install).
+mode_usb() {
+    logt STEP step_usb
+    local patch="" d work="" archive
+    for d in /usr/lib/omnissa/viewagent /usr/lib/vmware/viewagent; do
+        [[ -s ${d}/resources/vhci/patch/vhci.patch ]] && { patch="${d}/resources/vhci/patch/vhci.patch"; break; }
+    done
+    if [[ -z $patch ]]; then
+        archive=$(agent_find_archive)
+        if [[ -z $archive || ! -f $archive ]]; then
+            logt ERR usb_no_patch "${VDI_ROOT}/Horizon"
+            exit 1
+        fi
+        work=$(mktemp -d /tmp/vdi-usb.XXXXXX)
+        tar -xzf "$archive" -C "$work"
+        patch=$(find "$work" -path '*resources/vhci/patch/vhci.patch' -print -quit)
+        if [[ -z $patch ]]; then
+            rm -rf "$work"
+            logt ERR vhci_patch_missing "$archive"
+            exit 1
+        fi
+        logt INFO usb_patch_from "$(basename "$archive")"
+    fi
+    if ! vhci_install "$patch"; then
+        [[ -n $work ]] && rm -rf "$work"
+        exit 1
+    fi
+    [[ -n $work ]] && rm -rf "$work"
+    # USB redirection also needs the agent's USB component (installed with -U yes).
+    if [[ -z $(find /usr/lib/omnissa /usr/lib/vmware -maxdepth 4 -name '*usbarbitrator*' 2>/dev/null | head -n1 || true) ]]; then
+        logt WARN usb_agent_component_missing
+    fi
+    logt WARN reboot_needed
+    mark_reboot_required
+}

@@ -94,6 +94,8 @@ unchanged: the detected values go to `vdi-imagemaint.conf.detected` and the diff
      `/etc/vdi-imagemaint/runonce.local`. It runs before the SSSD/NFS restart.
    - `check` accepts the adopted desktop, join method and home directories.
 
+If `check` reports L21 (no USB VHCI driver) on an adopted image, run `sudo ./vdi-imagemaint.sh usb`: it builds the driver with the patch from the installed agent, or from the agent archive in `Horizon/`, without reinstalling the agent.
+
 After `adopt`, use `check`, then `agent` (upgrade), `recording`, `apps`, `optimize`, `collab` and `seal` as usual.
 The docs recommend building golden images from a fresh installation and never from a cloned system.
 
