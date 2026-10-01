@@ -23,6 +23,7 @@ $ErrorActionPreference = 'Stop'
 $Root   = Split-Path $PSScriptRoot -Parent            # C:\install
 $Tool   = Join-Path $Root 'VDI-ImageMaint.ps1'
 $Check  = Join-Path $PSScriptRoot 'Test-SysprepReadiness.ps1'
+$Media  = Join-Path $PSScriptRoot 'New-BuildMedia.ps1'
 $LogDir = Join-Path $env:ProgramData 'VDI-ImageMaint\Logs'
 
 # =====================================================================
@@ -45,6 +46,7 @@ $Strings = @{
         'm8' = 'Everything automatically: download, update, reboots, seal, shut down'
         'm9' = 'Seal only (block updates, finalize) - after manual changes'
         'mS' = 'Status'; 'mU' = 'Unlock'; 'mI' = 'Inventory'; 'mV' = 'Check manifest'; 'mL' = 'Open logs'; 'mQ' = 'Quit'
+        'mB' = 'Build media for a new VM (ISO: unattended install to audit mode + C:\install)'
         'choice'     = 'Select a step and press Enter'
         'i1' = 'Answer the questions. Enter accepts the default in brackets. Every file is backed up first.'
         'i2' = 'Downloads the packages that need no login into the right folders, checks their signatures and extracts the archives. Packages that need a login (OSOT, Horizon agents) are listed at the end.'
@@ -87,6 +89,7 @@ $Strings = @{
         'm8' = 'Wszystko automatycznie: pobranie, aktualizacja, restarty, zamknięcie, wyłączenie'
         'm9' = 'Tylko zamknięcie obrazu (Seal) - po ręcznych zmianach'
         'mS' = 'Stan'; 'mU' = 'Odblokuj'; 'mI' = 'Spis pakietów'; 'mV' = 'Sprawdź manifest'; 'mL' = 'Otwórz logi'; 'mQ' = 'Wyjście'
+        'mB' = 'Nośnik dla nowej VM (ISO: instalacja bez pytań do trybu audytu + C:\install)'
         'choice'     = 'Wybierz krok i naciśnij Enter'
         'i1' = 'Odpowiadaj na pytania. Enter przyjmuje wartość domyślną w nawiasie. Przed zmianą każdego pliku powstaje kopia.'
         'i2' = 'Pobiera pakiety niewymagające logowania do właściwych folderów, sprawdza podpisy i rozpakowuje archiwa. Pakiety wymagające logowania (OSOT, agenty Horizon) zostaną wypisane na końcu.'
@@ -191,6 +194,7 @@ function Show-Menu {
     Write-Host ''
     Write-Host ('  ' + (T 'sec.tools')) -ForegroundColor Yellow
     Write-Host ('    S. {0}    U. {1}    I. {2}    V. {3}' -f (T 'mS'), (T 'mU'), (T 'mI'), (T 'mV'))
+    Write-Host ('    B. {0}' -f (T 'mB'))
     Write-Host ('    L. {0}    Q. {1}' -f (T 'mL'), (T 'mQ'))
     Write-Host ''
 }
@@ -241,6 +245,7 @@ while ($true) {
             if (Read-YesNo (T 'q.shutdown')) { $a += '-Shutdown' }
             Invoke-Tool $Tool $a
         }
+        'B' { Invoke-Tool $Media @('-InstallDir', $Root) }
         'S' { Invoke-Tool $Tool @('-Mode', 'Status') }
         'U' {
             Show-Info (T 'iU')

@@ -26,8 +26,8 @@ Dlaczego w Day-2 nie powtarzamy Generalize:
 
 | # | Krok | Narzędzie / polecenie | Dlaczego to ważne w 24H2 / 25H2 |
 |---|---|---|---|
-| 1 | VM: UEFI + Secure Boot + vTPM, VMXNET3, PVSCSI, bez stacji dyskietek i portów szeregowych | vSphere | vTPM jest wymagany przez Windows 11. Umożliwia też **automatyczne szyfrowanie urządzenia**, patrz krok 4 |
-| 2 | Instalacja z czystego ISO. Na pierwszym ekranie OOBE naciśnij **Ctrl+Shift+F3**, co włącza **tryb audytu** (wbudowany Administrator) | – | OSOT Generalize **wymaga trybu audytu**. Nie twórz kont i nie loguj się kontem Microsoft |
+| 1 | VM: Windows 11 64-bit, UEFI + Secure Boot, **bez vTPM**, VMXNET3, PVSCSI (sterowniki wbudowane od 22H2), bez stacji dyskietek i portów szeregowych | vSphere | Złoty obraz nie może mieć vTPM: Horizon dodaje unikalny vTPM do każdego klona (Omnissa KB 85960). Bez vTPM nie ma też automatycznego szyfrowania urządzenia (krok 4) |
+| 2 | Instalacja z czystego ISO **bez pytań, prosto do trybu audytu**: CD 1 = ISO Windows, CD 2 = `VDI-Build.iso` (§2a). Ręcznie: na pierwszym ekranie OOBE naciśnij **Ctrl+Shift+F3** | `Scripts\New-BuildMedia.ps1` (menu **B**) | OSOT Generalize **wymaga trybu audytu**. Nie twórz kont i nie loguj się kontem Microsoft |
 | 3 | W trybie audytu okno Sysprep zamykasz przy każdym logowaniu (Anuluj) | – | Tryb audytu przetrwa restarty |
 | 4 | **Od razu zatrzymaj szyfrowanie urządzenia i BitLocker**: `PreventDeviceEncryption=1`, usługa BDESVC wyłączona, dysk C: w pełni odszyfrowany | sprawdza to `Test-SysprepReadiness.ps1` | Nowe kompilacje Win11 same włączają szyfrowanie, a Sysprep przy wyjściu z trybu audytu kończy się wtedy błędem. OSOT 2606+ robi to w Optimize, starsze wersje nie |
 | 5 | **Zablokuj aktualizacje Store dla bieżącego konta**: polityka `WindowsStore\AutoDownload=2`, nie otwieraj Store | polityka | Aplikacja Store zaktualizowana tylko dla Administratora wywraca Sysprep z błędem `0x80073cf2` |
@@ -46,6 +46,33 @@ Dlaczego w Day-2 nie powtarzamy Generalize:
 Gdy Sysprep się nie powiedzie, przeczytaj `C:\Windows\System32\Sysprep\Panther\setuperr.log` i `setupact.log`.
 Gdy nie powiedzie się klon, przeczytaj `C:\Windows\Panther\` i `C:\Windows\Panther\UnattendGC\`.
 `Test-SysprepReadiness.ps1` wypisuje ostatnie błędy z tych logów.
+
+### 2a. Instalacja nowego obrazu bez pytań (`New-BuildMedia.ps1`)
+
+Uruchom na swoim komputerze, na którym przygotowano `C:\install` (po Configure i Download) - menu **B** albo:
+
+```
+.\Scripts\New-BuildMedia.ps1 -Edition Enterprise -UILanguage pl-PL
+```
+
+Skrypt zapisuje `VDI-Build.iso` (UDF, wbudowany IMAPI2, bez Windows ADK) z `autounattend.xml`, plikiem znacznika
+i całym folderem `install\`. Instalator Windows znajduje plik odpowiedzi na drugim napędzie CD/DVD:
+
+| Faza | Co się dzieje |
+|---|---|
+| windowsPE | język, dysk 0 czyszczony: EFI 260 MB + MSR 16 MB + Windows (bez partycji odzyskiwania), edycja po nazwie + ogólny klucz klienta KMS (GVLK), bez Dynamic Update, pominięte sprawdzanie TPM (bez vTPM, KB 85960) |
+| specialize | nazwa komputera i strefa czasowa (z `packages.json` Build), `PreventDeviceEncryption=1`, wyłączone automatyczne aktualizacje Store |
+| oobeSystem | bez ekranów OOBE: **tryb audytu** (wbudowany Administrator, bez hasła) |
+| auditUser | `install\` kopiowany do `C:\install`, potem otwiera się menu (`-AutoStart Menu`) albo startuje Update (`-AutoStart Update`) |
+
+- `-UILanguage` **musi być zgodny z ISO Windows** (ISO pl-PL → `pl-PL`). Klawiatura i ustawienia regionalne pochodzą z kroku 5 kreatora.
+- `-Edition` Enterprise / Education / Pro / ProEducation; `-ImageName`, gdy nazwa w `install.wim` jest inna
+  (`dism /Get-WimInfo /WimFile:D:\sources\install.wim`). Aktywacja później przez KMS / aktywację w Active Directory albo MAK.
+- `-WithVtpm`, gdy VM ma vTPM w czasie budowy (bez obejścia TPM) - usuń vTPM przed utworzeniem puli.
+- `-ScriptsOnly` pomija instalatory (mniejsze ISO); `-XmlOnly` zapisuje tylko `autounattend.xml`.
+- Na nośniku nie ma żadnego hasła. Hasło lokalnego Administratora po Generalize podajesz w `-Mode Generalize`.
+- Gdy instalator się zatrzyma: zły język albo nazwa edycji (sprawdź dwie opcje powyżej). Log: `X:\Windows\Panther\setupact.log`
+  (Shift+F10 w instalatorze), log kopiowania `C:\Windows\Temp\vdi-build-copy.log`.
 
 ## 3. Cykl Day-2 (co miesiąc)
 

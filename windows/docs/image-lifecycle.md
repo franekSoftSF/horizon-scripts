@@ -26,8 +26,8 @@ source of Sysprep and OOBE problems. It also carries the old OS's leftovers into
 
 | # | Step | Tool / command | Why it matters on 24H2 / 25H2 |
 |---|---|---|---|
-| 1 | VM: UEFI + Secure Boot + vTPM, VMXNET3, PVSCSI, no floppy/serial | vSphere | vTPM is required by Windows 11. It also makes **automatic device encryption** possible, see step 4 |
-| 2 | Install from a clean ISO. At the first OOBE screen press **Ctrl+Shift+F3** → **audit mode** (built-in Administrator) | – | OSOT Generalize **requires audit mode**. Do not create users and do not sign in with a Microsoft account |
+| 1 | VM: Windows 11 64-bit, UEFI + Secure Boot, **no vTPM**, VMXNET3, PVSCSI (inbox drivers since 22H2), no floppy/serial | vSphere | The golden image must not carry a vTPM: Horizon adds a unique one to every clone (Omnissa KB 85960). Without a vTPM there is also no automatic device encryption (step 4) |
+| 2 | Install from a clean ISO **unattended into audit mode**: CD 1 = Windows ISO, CD 2 = `VDI-Build.iso` (§2a). Manually: at the first OOBE screen press **Ctrl+Shift+F3** | `Scripts\New-BuildMedia.ps1` (menu **B**) | OSOT Generalize **requires audit mode**. Do not create users and do not sign in with a Microsoft account |
 | 3 | In audit mode, cancel the Sysprep dialog on every logon | – | Audit mode survives reboots |
 | 4 | **Stop device encryption / BitLocker** immediately: `PreventDeviceEncryption=1`, BDESVC disabled, C: fully decrypted | `Test-SysprepReadiness.ps1` checks it | Recent Win11 builds turn on device encryption, and Sysprep then fails when it leaves audit mode. OSOT 2606+ does this in Optimize, earlier builds do not |
 | 5 | **Block Store per-user updates**: policy `WindowsStore\AutoDownload=2`, do not open the Store | policy | A Store app updated for Administrator but not for all users fails Sysprep with `0x80073cf2` |
@@ -46,6 +46,33 @@ source of Sysprep and OOBE problems. It also carries the old OS's leftovers into
 If Sysprep fails, read `C:\Windows\System32\Sysprep\Panther\setuperr.log` and `setupact.log`.
 After a clone fails, read `C:\Windows\Panther\` and `C:\Windows\Panther\UnattendGC\`.
 `Test-SysprepReadiness.ps1` prints the last errors from these logs.
+
+### 2a. Unattended installation of a new image (`New-BuildMedia.ps1`)
+
+Run it on your PC where `C:\install` is prepared (after Configure and Download) - menu **B**, or:
+
+```
+.\Scripts\New-BuildMedia.ps1 -Edition Enterprise -UILanguage pl-PL
+```
+
+It writes `VDI-Build.iso` (UDF, built-in IMAPI2, no Windows ADK) with `autounattend.xml`, a marker file and
+the whole `install\` folder. Windows Setup finds the answer file on the second CD/DVD drive:
+
+| Pass | What happens |
+|---|---|
+| windowsPE | language, disk 0 wiped: EFI 260 MB + MSR 16 MB + Windows (no recovery partition), edition by name + generic KMS client key (GVLK), no Dynamic Update, TPM check bypassed (no vTPM, KB 85960) |
+| specialize | computer name and time zone (from `packages.json` Build), `PreventDeviceEncryption=1`, Store automatic updates off |
+| oobeSystem | no OOBE screens: **audit mode** (built-in Administrator, no password) |
+| auditUser | `install\` copied to `C:\install`, then the menu opens (`-AutoStart Menu`) or Update starts (`-AutoStart Update`) |
+
+- `-UILanguage` **must match the Windows ISO** (pl-PL ISO → `pl-PL`). Input, system and user locale come from Configure step 5.
+- `-Edition` Enterprise / Education / Pro / ProEducation; `-ImageName` when the name in `install.wim` differs
+  (`dism /Get-WimInfo /WimFile:D:\sources\install.wim`). Activation later via KMS / Active Directory activation or a MAK.
+- `-WithVtpm` when the VM has a vTPM during the build (no TPM bypass) - remove the vTPM before creating the pool.
+- `-ScriptsOnly` leaves out installers (smaller ISO); `-XmlOnly` writes only `autounattend.xml`.
+- No password is on the media. The local Administrator password for after Generalize is asked by `-Mode Generalize`.
+- If Setup stops: wrong language or edition name (check the two options above). Log: `X:\Windows\Panther\setupact.log`
+  (Shift+F10 in Setup), copy log `C:\Windows\Temp\vdi-build-copy.log`.
 
 ## 3. Day-2 cycle (monthly)
 

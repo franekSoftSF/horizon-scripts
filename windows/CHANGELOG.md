@@ -3,6 +3,11 @@
 ## VDI-ImageMaint 2.0.0 – in progress
 
 ### Added
+- **New image installation** - `Scripts\New-BuildMedia.ps1` 1.0 (EN/PL, START menu **B**): writes `VDI-Build.iso` (UDF via the
+  built-in IMAPI2, no ADK) with `autounattend.xml` + `C:\install`. With the Windows ISO on the first CD drive Setup runs
+  without questions: UEFI partitions on disk 0, edition by name + generic KMS key, TPM check bypassed (golden image without
+  vTPM, KB 85960; `-WithVtpm` to keep it), PreventDeviceEncryption + Store auto-updates off, straight into **audit mode**,
+  copies `C:\install` and opens the menu (`-AutoStart Menu|Update|None`). No password on the media. Docs: image-lifecycle §2a.
 - Configure: new step 3/8 "Java development" (now 8 steps): Temurin JDK 21 + 25 / 21 / 25 (the first one sets JAVA_HOME),
   Eclipse java/jee, workspace without prompt (University default), -Xmx, optional FSLogix exclusion of the Maven/Gradle
   caches (merged with the Graphics excludes); packages missing in older manifests are added from the template.

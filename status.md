@@ -31,6 +31,11 @@ _Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogi
       nie wskaże wydania; readiness: 26H2 WARN, 26H1 FAIL, vTPM (C21). Horizon Agent: `VDM_VC_MANAGED_AGENT=1` +
       `ADDLOCAL` z Core/NGVC wg profilu (wcześniej brakowało obu), walidacja parametrów. **Nie testowano na VM.**
 
+- [x] **Instalacja nowego obrazu** (2026-10-01): `Scripts\New-BuildMedia.ps1` (menu B) tworzy `VDI-Build.iso` z `autounattend.xml`:
+      instalacja Windows bez pytań prosto do trybu audytu (bez vTPM, bez szyfrowania, bez auto-aktualizacji Store), kopiuje
+      `C:\install` i otwiera menu. ISO testowane lokalnie (zapis w PS 5.1 i pwsh 7, montowanie: UDF, komplet plików);
+      **instalacja na VM nie była jeszcze testowana**.
+
 ## Jak testowano (bez VM)
 - Parser PS 5.1: 0 błędów we wszystkich skryptach; PSScriptAnalyzer: tylko puste bloki catch (celowe)
 - Testy funkcji w izolacji (PS 5.1): unattend.xml (poprawny XML, wszystkie fazy, hasła w formacie WSIM),
