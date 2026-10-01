@@ -54,6 +54,7 @@ $Strings = @{
         'mR' = 'vCenter: release for the pool (empty CDs, no vTPM, snapshot) - VM powered off'
         'q.osd' = 'Use the OSDCloud media (VDI-OSDCloud.iso) instead of VDI-Build.iso?'
         'mP' = 'Horizon: Push Image of the newest Gold snapshot to the pools (vcenter.json Horizon)'
+        'mH' = 'HTML report of the cycle (updates, apps, errors, seal) - opens in the browser'
         'q.push' = 'Push the image now? Users follow the logoff policy from vcenter.json'
         'choice'     = 'Select a step and press Enter'
         'i1' = 'Answer the questions. Enter accepts the default in brackets. Every file is backed up first.'
@@ -103,6 +104,7 @@ $Strings = @{
         'mR' = 'vCenter: wydanie do puli (puste CD, bez vTPM, snapshot) - VM wyłączona'
         'q.osd' = 'Użyć nośnika OSDCloud (VDI-OSDCloud.iso) zamiast VDI-Build.iso?'
         'mP' = 'Horizon: Push Image najnowszego snapshotu Gold do pul (vcenter.json Horizon)'
+        'mH' = 'Raport HTML cyklu (aktualizacje, aplikacje, błędy, Seal) - otwiera się w przeglądarce'
         'q.push' = 'Wypchnąć obraz teraz? Użytkownicy - wg polityki wylogowania z vcenter.json'
         'choice'     = 'Wybierz krok i naciśnij Enter'
         'i1' = 'Odpowiadaj na pytania. Enter przyjmuje wartość domyślną w nawiasie. Przed zmianą każdego pliku powstaje kopia.'
@@ -208,6 +210,7 @@ function Show-Menu {
     Write-Host ''
     Write-Host ('  ' + (T 'sec.tools')) -ForegroundColor Yellow
     Write-Host ('    S. {0}    U. {1}    I. {2}    V. {3}' -f (T 'mS'), (T 'mU'), (T 'mI'), (T 'mV'))
+    Write-Host ('    H. {0}' -f (T 'mH'))
     Write-Host ('    B. {0}' -f (T 'mB'))
     Write-Host ('    O. {0}' -f (T 'mO'))
     Write-Host ('    C. {0}' -f (T 'mC'))
@@ -272,6 +275,13 @@ while ($true) {
         'R' { Invoke-Tool $VCenter @('-Action', 'Release', '-InstallDir', $Root) }
         'P' { if (Read-YesNo (T 'q.push') $false) { Invoke-Tool $Push @('-Action', 'Push', '-Wait', '-InstallDir', $Root) } }
         'S' { Invoke-Tool $Tool @('-Mode', 'Status') }
+        'H' {
+            if ((Invoke-Tool $Tool @('-Mode', 'Report') -NoWait) -eq 0) {
+                $rep = @(Get-ChildItem (Join-Path $env:ProgramData 'VDI-ImageMaint\Reports') -Filter '*.html' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime) | Select-Object -Last 1
+                if ($rep) { Start-Process $rep.FullName }
+            }
+            Wait-Return
+        }
         'U' {
             Show-Info (T 'iU')
             if (Read-YesNo (T 'q.continue')) { Invoke-Tool $Tool @('-Mode', 'Unlock', '-AsSystem') }

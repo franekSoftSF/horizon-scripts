@@ -85,6 +85,21 @@ Seal -AsSystem -Shutdown → snapshot → Push Image
 ```
 No Generalize here. Also skip zeroing free space (Finalize 7) and Compact (2).
 
+### Cycle report (HTML)
+
+Every changing run (Update, Packages, Optimize, Finalize, Seal, Generalize, PostGeneralize, Unlock) is recorded in
+`%ProgramData%\VDI-ImageMaint\cycle.json` - also across reboots and the SYSTEM child processes. The Seal that ends the
+cycle writes `%ProgramData%\VDI-ImageMaint\Reports\VDI-ImageMaint_<computer>_<cycle>.html`. `-Mode Report` (menu **H**)
+writes it at any time. One self-contained page, no internet needed, light/dark, printable. Example: [report-example.html](report-example.html).
+
+It contains:
+- status (OK / warnings / errors), Windows before → after and the end of servicing, Horizon Agent support;
+- errors and warnings of all runs;
+- applications changed in the cycle (new / updated / removed);
+- Windows updates and packages with results;
+- VDI component versions (VMware Tools, Horizon Agent, DEM, App Volumes, FSLogix, Microsoft 365, Teams);
+- the Seal state (policies, services, active update tasks) and every run with its full log.
+
 ## 4. OSOT settings for fast boot and logon (Instant Clone)
 
 An Instant Clone boots by forking a running parent VM, so "fast start" really means three things:

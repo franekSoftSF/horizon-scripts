@@ -218,6 +218,7 @@ function Update-Windows {
     for ($i = 0; $i -lt $coll.Count; $i++) {
         $ur = $r.GetUpdateResult($i)
         if ($ur.ResultCode -ne 2) { Write-Log ("  ! {0}: {1} (HResult 0x{2:X8})" -f $coll.Item($i).Title, $codes[[int]$ur.ResultCode], $ur.HResult) WARN }
+        Add-CycleItem -Kind Updates -Item @{ Title = [string]$coll.Item($i).Title; Result = $codes[[int]$ur.ResultCode] }
     }
     Write-Log (T 'wu.result' $codes[[int]$r.ResultCode] $r.RebootRequired) $(if ($r.ResultCode -in 2, 3) { 'OK' } else { 'WARN' })
 }

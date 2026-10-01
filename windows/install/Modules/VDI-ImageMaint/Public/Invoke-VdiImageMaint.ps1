@@ -29,6 +29,7 @@
         Unregister-ScheduledTask -TaskName $ResumeTaskName -Confirm:$false   # we are the resumed run
     }
     $exitCode = 0
+    try { Start-CycleRun -RunMode $Mode } catch { Write-Log (T 'rep.failed' $_.Exception.Message) WARN }
     $adminOnly = @('Update', 'WingetList', 'Packages', 'PackageList', 'Optimize', 'Finalize', 'Init', 'Discover',
         'Generalize', 'PostGeneralize', 'Configure', 'Download', 'Validate')
 
@@ -73,6 +74,7 @@
                 'Seal'           { Invoke-Seal }
                 'Generalize'     { Invoke-Generalize }
                 'PostGeneralize' { Invoke-PostGeneralize }
+                'Report'         { Invoke-Report }
             }
         } catch {
             if ($_.Exception.Message -eq $script:RestartSignal) { $exitCode = 0 }   # reboot scheduled - not an error
@@ -87,6 +89,11 @@
     }
 
     $shutdownMode = ($Mode -in @('Seal', 'PostGeneralize')) -or ($Mode -eq 'Update' -and $script:SealDone)
+    # the admin run that finished Seal closes the cycle (the SYSTEM child of Seal -AsSystem only adds its run)
+    try {
+        $report = Stop-CycleRun -ExitCode $exitCode -Close:($shutdownMode -and $exitCode -eq 0 -and -not $isSystem)
+        if ($report) { Write-Log (T 'rep.written' $report) OK }
+    } catch { Write-Log (T 'rep.failed' $_.Exception.Message) WARN }
     if ($Shutdown -and $shutdownMode -and $exitCode -eq 0 -and -not $isSystem) {
         Write-Log (T 'main.shutdown') WARN
         Start-Sleep -Seconds 15

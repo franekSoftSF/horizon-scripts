@@ -375,6 +375,7 @@ function Invoke-PackagePlatform {
     foreach ($pl in $todo) {
         Write-Log ("[{0}] {1}: {2} -> {3}" -f $pl.Id, $pl.Name, $pl.Installed, $pl.Package) STEP
         $r = Install-PlannedPackage -Plan $pl -Vars $vars
+        Add-CycleItem -Kind Packages -Item @{ Id = $pl.Id; Name = $pl.Name; From = $pl.Installed; To = $pl.Package; Result = $(if ($r.Failed) { 'failed' } elseif ($r.Reboot) { 'ok (reboot)' } else { 'ok' }) }
         $script:HotfixCache = $null
         if ($r.Failed) { $errors++ }
         if ($r.Reboot -and [bool](Get-PV $pl.Pkg 'RebootAfter' $false)) {

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raport cyklu złotego obrazu - W11-GOLD-24H2</title>
+<style>
+:root { --bg:#f6f7f9; --fg:#1d2330; --muted:#667085; --card:#fff; --line:#e3e6eb; --ok:#127a3a; --okbg:#e7f6ec; --warn:#8a5a00; --warnbg:#fff4d6; --err:#b42318; --errbg:#fde8e7; --acc:#1f5fbf; }
+@media (prefers-color-scheme: dark) { :root { --bg:#14171c; --fg:#e6e8eb; --muted:#9aa3af; --card:#1d2128; --line:#2c323b; --ok:#5fd28a; --okbg:#173323; --warn:#f2c14e; --warnbg:#3a2f12; --err:#ff8a80; --errbg:#3d1c1a; --acc:#7aa7ff; } }
+* { box-sizing: border-box; }
+body { margin:0; padding:24px 16px; background:var(--bg); color:var(--fg); font:14px/1.45 "Segoe UI", system-ui, sans-serif; }
+main { max-width:1200px; margin:0 auto; }
+h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:17px; margin:28px 0 10px; border-bottom:1px solid var(--line); padding-bottom:4px; }
+.meta { color:var(--muted); margin-bottom:16px; }
+.badge { display:inline-block; padding:3px 10px; border-radius:999px; font-weight:600; font-size:13px; }
+.badge.ok { color:var(--ok); background:var(--okbg); } .badge.warn { color:var(--warn); background:var(--warnbg); } .badge.err { color:var(--err); background:var(--errbg); }
+.cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; }
+.card { background:var(--card); border:1px solid var(--line); border-left:4px solid var(--acc); border-radius:8px; padding:12px; }
+.card.ok { border-left-color:var(--ok); } .card.warn { border-left-color:var(--warn); } .card.err { border-left-color:var(--err); }
+.ct { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; } .cv { font-size:18px; font-weight:600; margin:4px 0; word-break:break-word; } .cs { color:var(--muted); font-size:12px; }
+.scroll { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:8px; }
+th, td { text-align:left; padding:6px 10px; border-bottom:1px solid var(--line); vertical-align:top; word-break:break-word; }
+th { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+tr.err td { background:var(--errbg); } tr.warn td { background:var(--warnbg); } tr.ok td:nth-child(3) { color:var(--ok); } tr.step td { font-weight:600; }
+tr.new td:nth-child(2) { color:var(--ok); } tr.removed td:nth-child(2) { color:var(--err); } tr.updated td:nth-child(2) { color:var(--acc); }
+.muted { color:var(--muted); } .warnbox { background:var(--warnbg); color:var(--warn); padding:8px 12px; border-radius:6px; }
+details { margin:6px 0; } summary { cursor:pointer; padding:6px 0; }
+footer { margin-top:32px; color:var(--muted); font-size:12px; }
+@media print { body { background:#fff; } details { display:block; } .card, table { break-inside:avoid; } }
+</style>
+</head>
+<body><main>
+<h1>Raport cyklu złotego obrazu</h1>
+<div class="meta">W11-GOLD-24H2 · 2026-10-02 08:01:00 → 2026-10-02 08:52:10 · VDI-ImageMaint 2.0.0 · <span class="badge warn">Ostrzeżenia</span></div>
+
+<div class="cards"><div class="card "><div class="ct">Windows</div><div class="cv">24H2 26100.0</div><div class="cs">wcześniej: 24H2 26100.9457 &#183; poprawki bezpieczeństwa do 2026-10-13</div></div><div class="card "><div class="ct">Horizon Agent</div><div class="cv">2506 (8.16.0.24991)</div><div class="cs">wspiera to wydanie Windows</div></div><div class="card "><div class="ct">Zmienione aplikacje</div><div class="cv">5</div><div class="cs">aktualizacje Windows 3/3 &#183; pakiety 2/2</div></div><div class="card warn"><div class="ct">Błędy / ostrzeżenia</div><div class="cv">0 / 2</div><div class="cs">ze wszystkich przebieg&#243;w cyklu</div></div><div class="card ok"><div class="ct">Seal</div><div class="cv">zamknięty</div><div class="cs">polityki 9/9 &#183; aktywne zadania aktualizacji 0</div></div></div>
+
+<h2>Błędy i ostrzeżenia (2)</h2>
+<div class="scroll"><table><thead><tr><th>Przebieg</th><th>Czas</th><th>Poziom</th><th>Komunikat</th></tr></thead><tbody><tr class="warn"><td>Update</td><td>08:12:11</td><td>WARN</td><td>Aktualizacje funkcji są pomijane. Aby przenieść obraz na nowe wydanie, ustaw Windows.TargetRelease = &quot;26H2&quot;</td></tr><tr class="warn"><td>Update</td><td>08:31:45</td><td>WARN</td><td>Wymagany restart: CBS, WindowsUpdate - restart i wznowienie (runda 1/5)</td></tr></tbody></table></div>
+
+<h2>Aplikacje zmienione w tym cyklu (5)</h2>
+<div class="scroll"><table><thead><tr><th>Aplikacja</th><th>Zmiana</th><th>Przed</th><th>Po</th></tr></thead><tbody><tr class="updated"><td>Adobe Acrobat (64-bit)</td><td>zaktualizowana</td><td>25.001.20756</td><td>25.001.20813</td></tr><tr class="new"><td>Eclipse Temurin JDK with Hotspot 21.0.9+10 (x64)</td><td>nowa</td><td></td><td>21.0.9.10</td></tr><tr class="updated"><td>Google Chrome</td><td>zaktualizowana</td><td>140.0.7339.128</td><td>141.0.7390.55</td></tr><tr class="updated"><td>Microsoft FSLogix Apps</td><td>zaktualizowana</td><td>2.9.8884.27471</td><td>26.8.1234.1</td></tr><tr class="removed"><td>Notepad++ (64-bit x64)</td><td>usunięta</td><td>8.8.5</td><td></td></tr></tbody></table></div>
+
+<h2>Aktualizacje Windows (3)</h2>
+<div class="scroll"><table><thead><tr><th>Aktualizacja</th><th>Wynik</th></tr></thead><tbody><tr><td>2026-09 Cumulative Update for Windows 11, version 24H2 for x64-based Systems (KB5124010)</td><td>Succeeded</td></tr><tr><td>Security Intelligence Update for Microsoft Defender Antivirus - KB2267602</td><td>Succeeded</td></tr><tr><td>2026-09 .NET Framework 3.5 and 4.8.1 Cumulative Update (KB5129001)</td><td>Succeeded</td></tr></tbody></table></div>
+
+<h2>Pakiety z packages.json (2)</h2>
+<div class="scroll"><table><thead><tr><th>Id</th><th>Aplikacja</th><th>Przed</th><th>Po</th><th>Wynik</th></tr></thead><tbody><tr><td>FSLogix</td><td>Microsoft FSLogix Apps</td><td>2.9.8884.27471</td><td>26.8.1234.1</td><td>ok</td></tr><tr><td>TemurinJDK21</td><td>Eclipse Temurin JDK 21</td><td>brak</td><td>21.0.9.10</td><td>ok</td></tr></tbody></table></div>
+
+<h2>Komponenty VDI</h2>
+<div class="scroll"><table><thead><tr><th>Komponent</th><th>Wersja</th></tr></thead><tbody><tr><td>VMware Tools</td><td>13.1.5.25544008</td></tr><tr><td>Omnissa Horizon Agent</td><td>8.16.0.24991</td></tr><tr><td>Omnissa Dynamic Environment Manager 2506 x64</td><td>25.6.0.1234</td></tr><tr><td>App Volumes Agent</td><td>4.16.0.55</td></tr><tr><td>Microsoft FSLogix Apps</td><td>26.8.1234.1</td></tr><tr><td>Microsoft 365 Apps</td><td>16.0.19127.20264</td></tr><tr><td>Microsoft Teams (provisioned)</td><td>25255.1305.3940.1234</td></tr></tbody></table></div>
+
+<h2>Blokada aktualizacji (Seal)</h2>
+<p>Stan: zamknięty 2026-10-02T08:47:31 &#183; ustawione polityki 9 z 9 &#183; aktywne zadania aktualizacji 0</p>
+<div class="scroll"><table><thead><tr><th>Usługa</th><th>Typ uruchomienia</th></tr></thead><tbody><tr><td>wuauserv</td><td>Disabled</td></tr><tr><td>UsoSvc</td><td>Disabled</td></tr><tr><td>WaaSMedicSvc</td><td>Disabled</td></tr><tr><td>edgeupdate</td><td>Disabled</td></tr><tr><td>gupdate</td><td>Disabled</td></tr></tbody></table></div>
+
+<h2>Przebiegi (3)</h2>
+<div class="scroll"><table><thead><tr><th>Przebieg</th><th>Użytkownik</th><th>Start</th><th>Koniec</th><th>Kod wyjścia</th></tr></thead><tbody><tr><td>Update</td><td>W11-GOLD\Administrator</td><td>2026-10-02 08:01:00</td><td>2026-10-02 08:31:50</td><td>0</td></tr><tr><td>Update</td><td>W11-GOLD\Administrator</td><td>2026-10-02 08:36:00</td><td>2026-10-02 08:41:00</td><td>0</td></tr><tr><td>Seal</td><td>NT AUTHORITY\SYSTEM</td><td>2026-10-02 08:44:00</td><td>2026-10-02 08:52:10</td><td>0</td></tr></tbody></table></div>
+<details><summary>Update - 2026-10-02 08:01:00 - W11-GOLD\Administrator (7)</summary><table><thead><tr><th>Przebieg</th><th>Czas</th><th>Poziom</th><th>Komunikat</th></tr></thead><tbody><tr class="step"><td>Update</td><td>08:01:12</td><td>STEP</td><td>UNLOCK - przywracanie usług i zadań aktualizacji</td></tr><tr class="step"><td>Update</td><td>08:01:40</td><td>STEP</td><td>Pakiety z packages.json</td></tr><tr class="ok"><td>Update</td><td>08:05:02</td><td>OK</td><td>[FSLogix] FSLogixAppsSetup.exe: kod 0</td></tr><tr class="step"><td>Update</td><td>08:09:30</td><td>STEP</td><td>Windows Update (wyszukiwanie może potrwać kilka minut)</td></tr><tr><td>Update</td><td>08:12:10</td><td>INFO</td><td>  - pominięto (zmienia wydanie Windows w obrazie): Windows 11, version 26H2</td></tr><tr class="warn"><td>Update</td><td>08:12:11</td><td>WARN</td><td>Aktualizacje funkcji są pomijane. Aby przenieść obraz na nowe wydanie, ustaw Windows.TargetRelease = &quot;26H2&quot;</td></tr><tr class="warn"><td>Update</td><td>08:31:45</td><td>WARN</td><td>Wymagany restart: CBS, WindowsUpdate - restart i wznowienie (runda 1/5)</td></tr></tbody></table></details>
+<details><summary>Update - 2026-10-02 08:36:00 - W11-GOLD\Administrator (2)</summary><table><thead><tr><th>Przebieg</th><th>Czas</th><th>Poziom</th><th>Komunikat</th></tr></thead><tbody><tr class="step"><td>Update</td><td>08:36:02</td><td>STEP</td><td>Wznowienie po restarcie</td></tr><tr class="ok"><td>Update</td><td>08:40:12</td><td>OK</td><td>Brak nowych aktualizacji Windows</td></tr></tbody></table></details>
+<details><summary>Seal - 2026-10-02 08:44:00 - NT AUTHORITY\SYSTEM (2)</summary><table><thead><tr><th>Przebieg</th><th>Czas</th><th>Poziom</th><th>Komunikat</th></tr></thead><tbody><tr class="step"><td>Seal</td><td>08:44:00</td><td>STEP</td><td>SEAL - blokada aktualizacji</td></tr><tr class="ok"><td>Seal</td><td>08:47:31</td><td>OK</td><td>Seal zakończony</td></tr></tbody></table></details>
+
+<footer>Wygenerowano 2026-10-02 00:28 &#183; logi: C:\ProgramData\VDI-ImageMaint\Logs &#183; dziennik: C:\ProgramData\VDI-ImageMaint\cycle.json</footer>
+</main></body></html>

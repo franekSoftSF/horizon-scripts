@@ -1,6 +1,6 @@
 # Status projektu VDI-ImageMaint
 
-_Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogixConfig **1.1.0** · Test-SysprepReadiness **0.1**
+_Aktualizacja: 2026-10-02_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogixConfig **1.1.0** · Test-SysprepReadiness **0.1**
 
 ## Układ repozytorium
 - `windows/` – narzędzie Windows, `linux/` – narzędzie Linux (osobna praca)
@@ -45,6 +45,10 @@ _Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogi
       do pul z `vcenter.json` (polityka wylogowania, okno czasowe, vTPM puli zachowany), Status/Cancel/List, wycofanie = starszy Gold.
       Testy z atrapą API; **nie testowano na Connection Serverze**.
 
+- [x] **Raport HTML cyklu** (2026-10-02): dziennik `cycle.json` (przebiegi przez restarty i SYSTEM), raport po Seal i `-Mode Report`
+      (menu H): status, Windows przed/po, wsparcie Horizon, błędy, zmiany aplikacji, aktualizacje, pakiety, komponenty VDI, Seal, logi.
+      Testy z danymi testowymi; **nie testowano na VM**.
+
 ## Jak testowano (bez VM)
 - Parser PS 5.1: 0 błędów we wszystkich skryptach; PSScriptAnalyzer: tylko puste bloki catch (celowe)
 - Testy funkcji w izolacji (PS 5.1): unattend.xml (poprawny XML, wszystkie fazy, hasła w formacie WSIM),
@@ -87,5 +91,5 @@ _Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogi
 4. ~~Moduł + i18n~~ ✔ (2026-10-01: `install/Modules/VDI-ImageMaint`, 407 komunikatów EN/PL, `-Language`); ~~`-Mode Download`~~ ✔ (7 pakietów, test z prawdziwym pobieraniem); ~~tłumaczenie Set-FSLogixConfig~~ ✔
 5. ~~Pester~~ ✔ (60 testów, PS 5.1 + pwsh 7, PSScriptAnalyzer bez uwag); ~~walidacja manifestu~~ ✔ (`-Mode Validate`, schemat JSON); ~~szablony XML Office~~ ✔ (10 wariantów) (`-Mode Validate`, JSON Schema)
 6. ~~Komponenty Horizon (ADDLOCAL, kolejność)~~ ✔ (restarty – test na VM), kontrola jakości klona (Teams Media Optimized, FSLogix, logowanie)
-7. Raport HTML cyklu; ~~vCenter (VM, snapshot)~~ ✔; ~~Horizon Push Image przez API~~ ✔
+7. ~~Raport HTML cyklu~~ ✔; ~~vCenter (VM, snapshot)~~ ✔; ~~Horizon Push Image przez API~~ ✔
 8. **Linux (Debian/Ubuntu)** – po zakończeniu narzędzia Windows

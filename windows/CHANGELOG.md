@@ -3,6 +3,11 @@
 ## VDI-ImageMaint 2.0.0 – in progress
 
 ### Added
+- **HTML cycle report** (`Private\Report.ps1`, EN/PL `Report.psd1`): every changing run is journaled in `cycle.json` (runs keyed by
+  Id, merged on disk - survives reboots and SYSTEM child processes; events flushed on STEP/ERR); the Seal that ends the cycle writes
+  `Reports\VDI-ImageMaint_<computer>_<cycle>.html` (self-contained, light/dark, print): status, Windows before/after + servicing end,
+  Horizon Agent support, errors/warnings, application diff, Windows updates, packages, VDI component versions, Seal state, runs with
+  full logs. New `-Mode Report` (START menu **H** opens it). `Get-AppDiff` shared with `Show-AppDiff`. Example `docs/report-example.html`.
 - **Horizon Push Image** - `Scripts\Invoke-HorizonPushImage.ps1` 1.0 (EN/PL, REST API, START menu **P**, `Horizon` section in
   `vcenter.json`): `Push` finds vCenter, golden VM and the newest `Gold*` snapshot (or `-SnapshotName`) and schedules
   `schedule-push-image` (v2) on every pool (logoff policy, `-StartTime`, stop on first error, pool vTPM kept), `-Wait` watches the

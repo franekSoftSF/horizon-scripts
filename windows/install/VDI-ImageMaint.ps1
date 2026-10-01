@@ -22,6 +22,8 @@
                      before Packages/Update (errors stop the installation) and in PackageList.
                      Editors: Modules\VDI-ImageMaint\Templates\packages.schema.json ("$schema" in packages.json).
       Status         Report: services, scheduled tasks, policies, pending reboot, seal state.
+      Report         HTML report of the current (or last) cycle -> %ProgramData%\VDI-ImageMaint\Reports\. A cycle is every
+                     changing run from Update/Packages/Optimize/Generalize to Seal; Seal writes the report automatically.
       WingetList     Dry run: what winget would update and what is skipped.
       Init           Creates the C:\install structure and the default packages.json.
       Discover       Builds manifest entries for files in C:\install that have none (x86 variants -> Ignore);
@@ -73,7 +75,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [ValidateSet('Init', 'Configure', 'Download', 'Validate', 'Discover', 'Status', 'Inventory', 'WingetList', 'PackageList', 'Packages', 'Optimize', 'Finalize', 'Unlock', 'Update', 'Seal', 'Generalize', 'PostGeneralize')]
+    [ValidateSet('Init', 'Configure', 'Download', 'Validate', 'Discover', 'Status', 'Inventory', 'WingetList', 'PackageList', 'Packages', 'Optimize', 'Finalize', 'Unlock', 'Update', 'Seal', 'Generalize', 'PostGeneralize', 'Report')]
     [string]$Mode,
 
     # --- Messages: auto (Polish Windows -> pl, otherwise en), en, pl ---

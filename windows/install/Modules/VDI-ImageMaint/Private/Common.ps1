@@ -8,6 +8,7 @@ function Write-Log {
     $color = @{ INFO = 'Gray'; OK = 'Green'; WARN = 'Yellow'; ERR = 'Red'; STEP = 'Cyan' }[$Level]
     if ($Level -eq 'STEP') { Write-Host '' }
     Write-Host ('[{0}] [{1,-4}] {2}' -f (Get-Date -Format 'HH:mm:ss'), $Level, $Message) -ForegroundColor $color
+    Add-CycleEvent $Level $Message   # cycle journal for the HTML report (no-op outside a cycle)
 }
 
 function Get-RegValue {
@@ -82,16 +83,9 @@ function Get-InstalledApps {
 
 function Show-AppDiff {
     param($Before, $After)
-    $b = @{}; foreach ($x in $Before) { $b[$x.Name] = $x.Version }
-    $a = @{}; foreach ($x in $After)  { $a[$x.Name] = $x.Version }
-    $changes = @()
-    foreach ($k in $a.Keys) {
-        if (-not $b.ContainsKey($k)) { $changes += [pscustomobject]@{ App = $k; Before = (T 'appdiff.new'); After = $a[$k] } }
-        elseif ($b[$k] -ne $a[$k])   { $changes += [pscustomobject]@{ App = $k; Before = $b[$k]; After = $a[$k] } }
-    }
-    foreach ($k in $b.Keys) {
-        if (-not $a.ContainsKey($k)) { $changes += [pscustomobject]@{ App = $k; Before = $b[$k]; After = (T 'appdiff.removed') } }
-    }
+    $changes = @(Get-AppDiff -Before $Before -After $After | ForEach-Object {
+        [pscustomobject]@{ App = $_.App; Before = $(if ($_.Kind -eq 'new') { T 'appdiff.new' } else { $_.Before }); After = $(if ($_.Kind -eq 'removed') { T 'appdiff.removed' } else { $_.After }) }
+    })
     Write-Log (T 'appdiff.step') STEP
     if ($changes.Count -eq 0) { Write-Log (T 'appdiff.none'); return }
     $changes | Sort-Object App | Format-Table -AutoSize | Out-String -Width 220 | Write-Host
