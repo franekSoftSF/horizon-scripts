@@ -34,7 +34,7 @@
     },
     "pester": {
       "status": "pass",
-      "detail": "61 tests in Windows PowerShell 5.1 and PowerShell 7 (windows/tests/Invoke-Tests.ps1)"
+      "detail": "94 tests in Windows PowerShell 5.1 and PowerShell 7 (windows/tests/Invoke-Tests.ps1)"
     }
   },
   "issues": [
@@ -147,7 +147,7 @@
       "severity": "medium",
       "file": "windows/install/VDI-ImageMaint.ps1",
       "line": 1364,
-      "status": "open",
+      "status": "fixed-2.0.0 (-Mode Validate)",
       "title": "[bool]\"false\" is True - string values in manifest misread"
     },
     {
@@ -249,7 +249,8 @@
     "Module split (install/Modules/VDI-ImageMaint) + English primary / Polish secondary, 407 keys, -Language",
     "-Mode Download: ODT, Teams bootstrapper+MSIX, FSLogix, OneDrive, LGPO, SDelete, VMware Tools (signature check, unzip, hash compare) - tested with real downloads",
     "Windows tool moved to windows/; Pester suite 60/60 in PS 5.1 and pwsh 7; PSScriptAnalyzer clean",
-    "Set-FSLogixConfig 1.1.0: English + EN/PL messages, -Language"
+    "Set-FSLogixConfig 1.1.0: English + EN/PL messages, -Language",
+    "-Mode Validate + packages.schema.json; Office XML templates (ProPlus/Business Shared x pl, en, de, fr, pl+en)"
   ],
   "osotFindings": [
     "Generalize requires audit mode; cannot be combined with Finalize; reboot required after",

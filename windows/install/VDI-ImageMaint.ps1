@@ -17,6 +17,10 @@
                      FSLogix, OneDrive, LGPO, SDelete, VMware Tools) into the right C:\install folders: signature
                      check, ZIP extraction, unchanged files kept, older versions removed. Catalog:
                      Modules\VDI-ImageMaint\Templates\downloads.json (override: C:\install\downloads.json).
+      Validate       Checks packages.json (types, allowed values, Ids, regexes, Detect fields, variables, files,
+                     OSOT Finalize steps, Teams kept by OSOT) without changing anything. Runs automatically
+                     before Packages/Update (errors stop the installation) and in PackageList.
+                     Editors: Modules\VDI-ImageMaint\Templates\packages.schema.json ("$schema" in packages.json).
       Status         Report: services, scheduled tasks, policies, pending reboot, seal state.
       WingetList     Dry run: what winget would update and what is skipped.
       Init           Creates the C:\install structure and the default packages.json.
@@ -69,7 +73,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [ValidateSet('Init', 'Configure', 'Download', 'Discover', 'Status', 'Inventory', 'WingetList', 'PackageList', 'Packages', 'Optimize', 'Finalize', 'Unlock', 'Update', 'Seal', 'Generalize', 'PostGeneralize')]
+    [ValidateSet('Init', 'Configure', 'Download', 'Validate', 'Discover', 'Status', 'Inventory', 'WingetList', 'PackageList', 'Packages', 'Optimize', 'Finalize', 'Unlock', 'Update', 'Seal', 'Generalize', 'PostGeneralize')]
     [string]$Mode,
 
     # --- Messages: auto (Polish Windows -> pl, otherwise en), en, pl ---

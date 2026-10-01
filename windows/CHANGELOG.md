@@ -3,6 +3,13 @@
 ## VDI-ImageMaint 2.0.0 – in progress
 
 ### Added
+- `-Mode Validate` (+ START menu V): types, allowed values, unique Ids, regexes, Detect fields, `{Variables}`, files,
+  OSOT Finalize steps (2/7 warnings for Instant Clone), OSOT removing Teams, FSLogixConfig without a share, Build Ids;
+  typo suggestions for field names. Runs automatically: PackageList shows the findings, Packages/Update/PostGeneralize
+  stop on errors. `Templates\packages.schema.json` + `"$schema"` in packages.json for editor hints (VS Code).
+- Office XML templates `Office\Templates`: `O365ProPlusRetail` and `O365BusinessRetail` x pl-pl, en-us, de-de, fr-fr,
+  pl-pl + en-us; all Shared Computer Activation (Business needs Business Premium), MonthlyEnterprise, no updates,
+  silent. Configure step 2 offers the same language presets (+ other code).
 - Tests: `windows/tests` (Pester 5, 60 tests, run in Windows PowerShell 5.1 and PowerShell 7 by`Invoke-Tests.ps1`):
   EN/PL key and placeholder parity, every used key defined, file encoding/CRLF/parsing, pure functions (versions, names,
   winget table, argument text, JSON), ODT XML, unattend.xml, install plan on TestDrive, seal baseline (HKCU), download

@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ems-partner.local/vdi-imagemaint/packages.schema.json",
+  "title": "VDI-ImageMaint manifest (packages.json)",
+  "description": "Packages, OSOT and image build settings for VDI-ImageMaint. The same rules are checked by -Mode Validate. Fields starting with '_' are comments.",
+  "type": "object",
+  "patternProperties": { "^[_$]": {} },
+  "additionalProperties": false,
+  "properties": {
+    "Profile": { "enum": ["University", "Business", "Graphics"], "description": "Image profile chosen in -Mode Configure." },
+    "Variables": {
+      "type": "object",
+      "description": "Values used as {Name} in Arguments. Built-in: {File} {Dir} {Log} {InstallDir}.",
+      "additionalProperties": { "type": "string" }
+    },
+    "Osot": {
+      "type": "object",
+      "patternProperties": { "^_": {} },
+      "additionalProperties": false,
+      "properties": {
+        "Optimize": { "type": "boolean", "description": "Run OSOT optimization in Seal." },
+        "Template": { "type": "string", "description": "OSOT template name or path; empty = default template." },
+        "Level": { "type": "string", "description": "e.g. recommended; empty = template selections." },
+        "SettingsFile": { "type": "string", "description": "OSOT 'Export Selections' JSON, relative to C:\\install." },
+        "CommonOptions": { "type": "array", "items": { "type": "string" }, "description": "OSOT common options, e.g. [\"-visualeffect\", \"balanced\"]. Keep --exclude MSTeams with -storeapp remove-all." },
+        "Finalize": { "$ref": "#/definitions/finalize", "description": "Day-2 OSOT Finalize steps (no 2 Compact, no 7 zeroing on Instant Clone)." },
+        "FinalizeBuild": { "$ref": "#/definitions/finalize", "description": "OSOT Finalize steps of the image build (PostGeneralize)." },
+        "Report": { "type": "boolean", "description": "Save the OSOT analysis report to the logs." }
+      }
+    },
+    "Build": {
+      "type": "object",
+      "patternProperties": { "^_": {} },
+      "additionalProperties": false,
+      "description": "Image build (-Mode Generalize -> PostGeneralize). Empty text = current system setting.",
+      "properties": {
+        "TimeZone": { "type": "string" },
+        "InputLocale": { "type": "string" },
+        "SystemLocale": { "type": "string" },
+        "UserLocale": { "type": "string" },
+        "UILanguage": { "type": "string", "description": "Must be an installed Windows language." },
+        "ComputerName": { "type": "string" },
+        "SkipRearm": { "type": "boolean" },
+        "PersistAllDeviceInstalls": { "type": "boolean" },
+        "SysprepVmMode": { "type": "boolean" },
+        "KeepBitLocker": { "type": "boolean" },
+        "AutoLogonCount": { "type": "integer", "minimum": 1 },
+        "PostGeneralizePackages": { "type": "array", "items": { "type": "string" }, "description": "Package Ids installed after Sysprep (agents)." },
+        "RemoveUserAppx": { "type": "array", "items": { "type": "string" } },
+        "AppxSettleSeconds": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "Winget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Install": { "type": "array", "items": { "type": "string" }, "description": "winget ids installed machine-wide (chosen in -Mode Configure)." }
+      }
+    },
+    "Ignore": { "type": "array", "items": { "type": "string", "format": "regex" }, "description": "Regexes of paths (relative to C:\\install) that are not packages." },
+    "Packages": { "type": "array", "items": { "$ref": "#/definitions/package" } }
+  },
+  "definitions": {
+    "finalize": { "type": "string", "pattern": "^(none|all|\\s*((\\d|1[01])\\s*)*)$" },
+    "package": {
+      "type": "object",
+      "required": ["Id", "File"],
+      "patternProperties": { "^_": {} },
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string", "description": "Unique package id." },
+        "Name": { "type": "string" },
+        "Enabled": { "type": "boolean", "description": "false = only reported. true/false WITHOUT quotes." },
+        "Order": { "type": "integer" },
+        "Type": { "enum": ["exe", "msi", "msp", "msu", "cab", "odt", "appx", "ps1"] },
+        "File": { "type": "string", "description": "File name pattern, may contain a subfolder (Apps\\Tool*.exe)." },
+        "Archive": { "type": "string", "description": "ZIP to extract first (pattern)." },
+        "Recurse": { "type": "boolean" },
+        "PreferPath": { "type": "string", "format": "regex" },
+        "ExcludePath": { "type": "string", "format": "regex" },
+        "FileInfoMatch": { "type": "string", "format": "regex" },
+        "Multiple": { "type": "boolean", "description": "Install all matching files (patches)." },
+        "Version": { "type": "string", "description": "Package version when it cannot be read from the file." },
+        "Arguments": { "type": "string", "description": "PowerShell syntax for ps1 packages; {File} {Dir} {Log} {InstallDir} + Variables." },
+        "Detect": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Type": { "enum": ["Uninstall", "Hotfix", "File", "Appx", "Registry", "Always"] },
+            "Name": { "type": "string" },
+            "Path": { "type": "string" },
+            "Value": { "type": "string" }
+          },
+          "allOf": [
+            { "if": { "properties": { "Type": { "const": "Uninstall" } } }, "then": { "required": ["Name"] } },
+            { "if": { "properties": { "Type": { "const": "File" } } }, "then": { "required": ["Path"] } },
+            { "if": { "properties": { "Type": { "const": "Appx" } } }, "then": { "required": ["Name"] } },
+            { "if": { "properties": { "Type": { "const": "Registry" } } }, "then": { "required": ["Path", "Name", "Value"] } }
+          ]
+        },
+        "RequireInstalled": { "type": "boolean", "description": "Update only - do not install when missing." },
+        "SuccessCodes": { "type": "array", "items": { "type": "integer" } },
+        "RebootCodes": { "type": "array", "items": { "type": "integer" } },
+        "RebootAfter": { "type": "boolean" },
+        "StopProcesses": { "type": "array", "items": { "type": "string" } },
+        "StopServices": { "type": "array", "items": { "type": "string" } },
+        "PreScript": { "type": "string" },
+        "PostScript": { "type": "string" },
+        "StopOnError": { "type": "boolean" },
+        "Config": { "type": "string", "description": "ODT configuration XML (odt packages), e.g. Configuration_x64.xml or Templates\\O365ProPlusRetail-Shared_pl-pl.xml." }
+      }
+    }
+  }
+}

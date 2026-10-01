@@ -30,7 +30,8 @@ _Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogi
   C09/C10 w Test-SysprepReadiness (wymaga admina)
 
 ## Decyzje do podjęcia
-1. **Licencja Office**: w `Configuration_x64.xml` jest `O365BusinessRetail` (Microsoft 365 Apps for business).
+1. ~~**Licencja i języki Office**~~ ✔ – gotowe szablony w `windows/install/Office/Templates` (ProPlus i Business Shared × PL, EN, DE, FR, PL+EN); wybór w kreatorze.
+   Dawny opis: **Licencja Office**: w `Configuration_x64.xml` jest `O365BusinessRetail` (Microsoft 365 Apps for business).
    Uczelnia (A3/A5) zwykle potrzebuje `O365ProPlusRetail`. SCA z `O365BusinessRetail` działa tylko z Business Premium.
 2. **Języki Office**: obecnie `pl-pl` + `en-gb` (pełne pakiety). Kreator proponuje jeden język + opcjonalnie tylko ProofingTools.
    Uruchom `-Mode Configure` albo podaj wybór.
@@ -44,7 +45,6 @@ _Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogi
 |---|---|---|
 | S1 | średnia | Brak kontroli ACL `C:\install` (PreScript, OSOT, zadanie SYSTEM) – eskalacja uprawnień przy zapisie przez użytkowników |
 | S4 | średnia | Wyszukiwanie WU bez `BrowseOnly=0`; wynik `Download()` niesprawdzany |
-| S6 | średnia | `[bool]"false"` = True w manifeście (rozwiąże walidacja/JSON Schema) |
 | S7 | średnia | `Get-NormalizedName` usuwa lata (VC++ 2013/2015) |
 | S8 | średnia | MSU checkpoint (24H2+) instalowane pojedynczo |
 | S10 | niska | Dry-run rozpakowuje ZIP-y; brak odświeżania rozpakowanej kopii |
@@ -55,7 +55,7 @@ _Aktualizacja: 2026-10-01_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogi
 1. ~~Git~~ ✔ · 2. ~~B1–B7~~ ✔ · 2a. ~~Generalize/PostGeneralize~~ ✔ · 2b. ~~Configure + winget~~ ✔
 3. **Test na VM** (budowa od ISO: tryb audytu → Update → Optimize → Generalize → PostGeneralize) i poprawki po teście
 4. ~~Moduł + i18n~~ ✔ (2026-10-01: `install/Modules/VDI-ImageMaint`, 407 komunikatów EN/PL, `-Language`); ~~`-Mode Download`~~ ✔ (7 pakietów, test z prawdziwym pobieraniem); ~~tłumaczenie Set-FSLogixConfig~~ ✔
-5. ~~Pester~~ ✔ (60 testów, PS 5.1 + pwsh 7, PSScriptAnalyzer bez uwag); dalej: walidacja manifestu (`-Mode Validate`, JSON Schema)
+5. ~~Pester~~ ✔ (60 testów, PS 5.1 + pwsh 7, PSScriptAnalyzer bez uwag); ~~walidacja manifestu~~ ✔ (`-Mode Validate`, schemat JSON); ~~szablony XML Office~~ ✔ (10 wariantów) (`-Mode Validate`, JSON Schema)
 6. Komponenty Horizon (ADDLOCAL, kolejność, restarty), kontrola jakości klona (Teams Media Optimized, FSLogix, logowanie)
 7. Raport HTML cyklu, vCenter/Horizon (snapshot, Push Image)
 8. **Linux (Debian/Ubuntu)** – po zakończeniu narzędzia Windows

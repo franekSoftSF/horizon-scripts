@@ -21,7 +21,7 @@ Current state and next steps: see `status.md` / `status.json` (keep both in sync
   - `windows/install/START.cmd` + `windows/install/Scripts/Start-Menu.ps1` – double-click launcher and EN/PL menu
   - `windows/install/Scripts/Set-FSLogixConfig.ps1` – FSLogix registry, redirections.xml, groups, AV exclusions (v1.1.0, EN/PL inline table)
   - `windows/install/Scripts/Test-SysprepReadiness.ps1` – read-only pre-Generalize checks (EN/PL string table = the i18n pattern to follow)
-  - `windows/install/packages.json` (manifest, customer University), `windows/install/winget-catalog.json`, `windows/install/OSOT/Optimize.json`, `windows/install/Office/*.xml`
+  - `windows/install/packages.json` (manifest, customer University), `windows/install/winget-catalog.json`, `windows/install/OSOT/Optimize.json`, `windows/install/Office/*.xml` + `Office/Templates/` (10 ODT templates)
 - Binaries are git-ignored; `windows/docs/` – EN docs, `windows/docs/pl/` – PL docs; `windows/CHANGELOG.md`
 - `windows/docs/image-lifecycle.md` – Build (with Generalize, once per feature release) vs Day-2 (no Generalize) – the design basis for OSOT work
 - On the VM everything lives in `C:\install` (script, `packages.json`, `OSOT\`, `Office\`, `Patches\`,
@@ -46,7 +46,8 @@ Current state and next steps: see `status.md` / `status.json` (keep both in sync
 - Watch out for `"$var:"` in strings (use `"${var}:"`), `continue` inside `switch`, array unrolling on `return`.
 - Operations idempotent; every seal change recorded in `seal-state.json` and reversed by Unlock.
 - **OSOT never as SYSTEM** (HKCU → Default User sync); **winget never as SYSTEM**.
-- Do not change the `packages.json` format in a backward-incompatible way.
+- Do not change the `packages.json` format in a backward-incompatible way. New manifest fields: add them to
+  `$ValidationRules` (Validate.ps1) AND `Templates/packages.schema.json` (a test compares them).
 - Logging via `Write-Log` (INFO/OK/WARN/ERR/STEP).
 - Never `exit` inside module functions: after scheduling a reboot call `Stop-ForRestart` (throws `RestartSignal`,
   the entry point returns 0). Module functions use `$script:EntryScript` instead of `$PSCommandPath`.

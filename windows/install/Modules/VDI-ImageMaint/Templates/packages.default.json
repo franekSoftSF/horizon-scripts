@@ -1,4 +1,5 @@
 {
+  "$schema": "./Modules/VDI-ImageMaint/Templates/packages.schema.json",
   "_description": "VDI-ImageMaint manifest. Everything lives in C:\\install: the tool, this file, OSOT and the packages (any subfolder - the search is recursive). Enabled=false = package is only reported. Packages run in Order. Run -Mode Configure to fill it in step by step.",
   "Profile": "University",
   "Variables": {
@@ -48,7 +49,8 @@
   },
   "Ignore": [
     "(?i)\\\\Optional Components\\\\",
-    "(?i)x86\\.msi$"
+    "(?i)x86\\.msi$",
+    "(?i)^Apps\\\\Eclipse\\\\"
   ],
   "Packages": [
     {
@@ -251,6 +253,44 @@
       "Detect": {
         "Type": "File",
         "Path": "C:\\Program Files\\Tool\\tool.exe"
+      }
+    },
+    {
+      "Id": "TemurinJDK21",
+      "Name": "Eclipse Temurin JDK 21 LTS (JAVA_HOME, PATH, .jar; fixed folder jdk-21)",
+      "Enabled": false,
+      "Order": 60,
+      "Type": "msi",
+      "File": "Apps\\Java\\OpenJDK21U-jdk_x64_windows_hotspot_*.msi",
+      "Arguments": "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome INSTALLDIR=\"C:\\Program Files\\Eclipse Adoptium\\jdk-21\"",
+      "Detect": {
+        "Type": "Uninstall",
+        "Name": "^Eclipse Temurin JDK with Hotspot 21\\."
+      }
+    },
+    {
+      "Id": "TemurinJDK25",
+      "Name": "Eclipse Temurin JDK 25 LTS (no JAVA_HOME/PATH; fixed folder jdk-25)",
+      "Enabled": false,
+      "Order": 61,
+      "Type": "msi",
+      "File": "Apps\\Java\\OpenJDK25U-jdk_x64_windows_hotspot_*.msi",
+      "Arguments": "ADDLOCAL=FeatureMain INSTALLDIR=\"C:\\Program Files\\Eclipse Adoptium\\jdk-25\"",
+      "Detect": {
+        "Type": "Uninstall",
+        "Name": "^Eclipse Temurin JDK with Hotspot 25\\."
+      }
+    },
+    {
+      "Id": "EclipseJava",
+      "Name": "Eclipse IDE for Java Developers (ZIP -> C:\\Program Files\\Eclipse\\java; the script compares the release)",
+      "Enabled": false,
+      "Order": 62,
+      "Type": "ps1",
+      "File": "Scripts\\Install-Eclipse.ps1",
+      "Arguments": "-Source '{InstallDir}\\Apps\\Eclipse' -Package java",
+      "Detect": {
+        "Type": "Always"
       }
     }
   ]

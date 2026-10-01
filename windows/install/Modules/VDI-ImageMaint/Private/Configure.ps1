@@ -69,12 +69,13 @@ function New-OdtConfigXml {
     param(
         [string]$Product, [string]$Channel, [string]$Language,
         [ValidateSet('None', 'Proofing', 'Full')][string]$ExtraMode = 'None', [string]$ExtraLanguage = '',
-        [string[]]$ExcludeApps = @(), [string]$AppSettingsXml = ''
+        [string[]]$ExcludeApps = @(), [string]$AppSettingsXml = '',
+        [string]$Comment = "VDI-ImageMaint -Mode Configure, $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
     )
     $e = { param($s) [Security.SecurityElement]::Escape([string]$s) }
     $sb = New-Object System.Text.StringBuilder
     [void]$sb.AppendLine('<Configuration>')
-    [void]$sb.AppendLine("  <!-- VDI-ImageMaint -Mode Configure, $(Get-Date -Format 'yyyy-MM-dd HH:mm'). No SourcePath: /download saves next to setup.exe, /configure installs from there. -->")
+    [void]$sb.AppendLine("  <!-- $Comment. Shared Computer Activation (non-persistent VDI). No SourcePath: /download saves next to setup.exe, /configure installs from there. -->")
     [void]$sb.AppendLine(('  <Add OfficeClientEdition="64" Channel="{0}">' -f (& $e $Channel)))
     [void]$sb.AppendLine(('    <Product ID="{0}">' -f (& $e $Product)))
     [void]$sb.AppendLine(('      <Language ID="{0}" />' -f (& $e $Language)))
@@ -120,11 +121,19 @@ function Invoke-ConfigureOffice {
     $pi = Read-Choice (T 'cfg.license') @((T 'cfg.license.ent'), (T 'cfg.license.bus')) $(if ($ImageProfile -eq 'Business') { 1 } else { 0 })
     $channels = @('MonthlyEnterprise', 'Current', 'SemiAnnual')
     $ci = Read-Choice (T 'cfg.channel') @((T 'cfg.channel.mec'), (T 'cfg.channel.cc'), (T 'cfg.channel.sac'))
-    $lang = (Read-Value (T 'cfg.lang') ((Get-Culture).Name.ToLower())).ToLower()
-    $xi = Read-Choice (T 'cfg.lang2') @((T 'cfg.lang2.none'), (T 'cfg.lang2.proof'), (T 'cfg.lang2.full'))
-    $extraMode = @('None', 'Proofing', 'Full')[$xi]
-    $extraLang = ''
-    if ($extraMode -ne 'None') { $extraLang = (Read-Value (T 'cfg.lang2.code') $(if ($lang -eq 'en-us') { 'pl-pl' } else { 'en-us' })).ToLower() }
+    # The same language variants as Office\Templates; "other" accepts any ODT language code
+    $presets = @('pl-pl', 'en-us', 'de-de', 'fr-fr', 'pl-pl+en-us', '')
+    $defLang = [Math]::Max(0, [array]::IndexOf($presets, (Get-Culture).Name.ToLower()))
+    $li = Read-Choice (T 'cfg.lang') @((T 'cfg.lang.pl'), (T 'cfg.lang.en'), (T 'cfg.lang.de'), (T 'cfg.lang.fr'), (T 'cfg.lang.plen'), (T 'cfg.lang.other')) $defLang
+    $extraMode = 'None'; $extraLang = ''
+    if ($presets[$li] -eq 'pl-pl+en-us') {
+        $lang = 'pl-pl'; $extraMode = 'Full'; $extraLang = 'en-us'
+    } else {
+        $lang = $(if ($presets[$li]) { $presets[$li] } else { (Read-Value (T 'cfg.lang.code') 'it-it').ToLower() })
+        $xi = Read-Choice (T 'cfg.lang2') @((T 'cfg.lang2.none'), (T 'cfg.lang2.proof'), (T 'cfg.lang2.full'))
+        $extraMode = @('None', 'Proofing', 'Full')[$xi]
+        if ($extraMode -ne 'None') { $extraLang = (Read-Value (T 'cfg.lang2.code') $(if ($lang -eq 'en-us') { 'pl-pl' } else { 'en-us' })).ToLower() }
+    }
 
     # Always excluded: OneDrive (installed per machine separately), Teams (new Teams = MSIX), Skype/Lync, Groove, Bing
     $always = @('Groove', 'Lync', 'OneDrive', 'Teams', 'Bing')

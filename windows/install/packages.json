@@ -1,4 +1,5 @@
 {
+  "$schema": "./Modules/VDI-ImageMaint/Templates/packages.schema.json",
   "_opis": "Manifest VDI-ImageMaint dla obrazu uczelni. Wszystko w C:\\install. Enabled=false = pakiet tylko raportowany. Kolejność wg Order.",
   "Variables": {
     "AppVolumesManager": "appvolumes.domena.local",
@@ -33,7 +34,8 @@
   },
   "Ignore": [
     "(?i)\\\\Optional Components\\\\",
-    "(?i)x86\\.msi$"
+    "(?i)x86\\.msi$",
+    "(?i)^Apps\\\\Eclipse\\\\"
   ],
   "Packages": [
     {
@@ -139,6 +141,36 @@
       "Recurse": true,
       "FileInfoMatch": "Office",
       "Config": "Configuration_x64.xml",
+      "Detect": { "Type": "Always" }
+    },
+    {
+      "Id": "TemurinJDK21",
+      "Name": "Eclipse Temurin JDK 21 LTS (JAVA_HOME, PATH, .jar; stały folder jdk-21)",
+      "Enabled": true,
+      "Order": 60,
+      "Type": "msi",
+      "File": "Apps\\Java\\OpenJDK21U-jdk_x64_windows_hotspot_*.msi",
+      "Arguments": "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome INSTALLDIR=\"C:\\Program Files\\Eclipse Adoptium\\jdk-21\"",
+      "Detect": { "Type": "Uninstall", "Name": "^Eclipse Temurin JDK with Hotspot 21\\." }
+    },
+    {
+      "Id": "TemurinJDK25",
+      "Name": "Eclipse Temurin JDK 25 LTS (bez JAVA_HOME/PATH; stały folder jdk-25)",
+      "Enabled": true,
+      "Order": 61,
+      "Type": "msi",
+      "File": "Apps\\Java\\OpenJDK25U-jdk_x64_windows_hotspot_*.msi",
+      "Arguments": "ADDLOCAL=FeatureMain INSTALLDIR=\"C:\\Program Files\\Eclipse Adoptium\\jdk-25\"",
+      "Detect": { "Type": "Uninstall", "Name": "^Eclipse Temurin JDK with Hotspot 25\\." }
+    },
+    {
+      "Id": "EclipseJava",
+      "Name": "Eclipse IDE for Java Developers (ZIP -> C:\\Program Files\\Eclipse\\java; skrypt porównuje wydanie)",
+      "Enabled": true,
+      "Order": 62,
+      "Type": "ps1",
+      "File": "Scripts\\Install-Eclipse.ps1",
+      "Arguments": "-Source '{InstallDir}\\Apps\\Eclipse' -Package java",
       "Detect": { "Type": "Always" }
     }
   ]

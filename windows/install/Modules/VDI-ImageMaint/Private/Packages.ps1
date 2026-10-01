@@ -350,6 +350,8 @@ function Invoke-PackagePlatform {
     $m = Get-PackageManifest
     if (-not $m) { $script:PackageRunResult = 'error'; return }
     Write-Log (T 'pkg.manifest' (Get-ManifestPath))
+    # a misread manifest must not install anything; the plan shows all findings
+    if ($DryRun) { [void](Test-Manifest -Show) } else { Assert-ManifestValid }
 
     $vars = @{ InstallDir = $InstallDir }
     $mv = Get-PV $m 'Variables'

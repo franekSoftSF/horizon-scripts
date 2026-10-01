@@ -44,7 +44,7 @@ $Strings = @{
         'm7' = 'Generalize (Sysprep) and finish the build automatically'
         'm8' = 'Everything automatically: download, update, reboots, seal, shut down'
         'm9' = 'Seal only (block updates, finalize) - after manual changes'
-        'mS' = 'Status'; 'mU' = 'Unlock'; 'mI' = 'Inventory'; 'mL' = 'Open logs'; 'mQ' = 'Quit'
+        'mS' = 'Status'; 'mU' = 'Unlock'; 'mI' = 'Inventory'; 'mV' = 'Check manifest'; 'mL' = 'Open logs'; 'mQ' = 'Quit'
         'choice'     = 'Select a step and press Enter'
         'i1' = 'Answer the questions. Enter accepts the default in brackets. Every file is backed up first.'
         'i2' = 'Downloads the packages that need no login into the right folders, checks their signatures and extracts the archives. Packages that need a login (OSOT, Horizon agents) are listed at the end.'
@@ -86,7 +86,7 @@ $Strings = @{
         'm7' = 'Generalize (Sysprep) i automatyczne dokończenie budowy'
         'm8' = 'Wszystko automatycznie: pobranie, aktualizacja, restarty, zamknięcie, wyłączenie'
         'm9' = 'Tylko zamknięcie obrazu (Seal) - po ręcznych zmianach'
-        'mS' = 'Stan'; 'mU' = 'Odblokuj'; 'mI' = 'Spis pakietów'; 'mL' = 'Otwórz logi'; 'mQ' = 'Wyjście'
+        'mS' = 'Stan'; 'mU' = 'Odblokuj'; 'mI' = 'Spis pakietów'; 'mV' = 'Sprawdź manifest'; 'mL' = 'Otwórz logi'; 'mQ' = 'Wyjście'
         'choice'     = 'Wybierz krok i naciśnij Enter'
         'i1' = 'Odpowiadaj na pytania. Enter przyjmuje wartość domyślną w nawiasie. Przed zmianą każdego pliku powstaje kopia.'
         'i2' = 'Pobiera pakiety niewymagające logowania do właściwych folderów, sprawdza podpisy i rozpakowuje archiwa. Pakiety wymagające logowania (OSOT, agenty Horizon) zostaną wypisane na końcu.'
@@ -190,7 +190,8 @@ function Show-Menu {
     }
     Write-Host ''
     Write-Host ('  ' + (T 'sec.tools')) -ForegroundColor Yellow
-    Write-Host ('    S. {0}    U. {1}    I. {2}    L. {3}    Q. {4}' -f (T 'mS'), (T 'mU'), (T 'mI'), (T 'mL'), (T 'mQ'))
+    Write-Host ('    S. {0}    U. {1}    I. {2}    V. {3}' -f (T 'mS'), (T 'mU'), (T 'mI'), (T 'mV'))
+    Write-Host ('    L. {0}    Q. {1}' -f (T 'mL'), (T 'mQ'))
     Write-Host ''
 }
 
@@ -246,6 +247,7 @@ while ($true) {
             if (Read-YesNo (T 'q.continue')) { Invoke-Tool $Tool @('-Mode', 'Unlock', '-AsSystem') }
         }
         'I' { Invoke-Tool $Tool @('-Mode', 'Inventory') }
+        'V' { Invoke-Tool $Tool @('-Mode', 'Validate') }
         'L' {
             if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
             Start-Process explorer.exe -ArgumentList "`"$LogDir`""

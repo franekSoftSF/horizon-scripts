@@ -30,7 +30,7 @@
     }
     $exitCode = 0
     $adminOnly = @('Update', 'WingetList', 'Packages', 'PackageList', 'Optimize', 'Finalize', 'Init', 'Discover',
-        'Generalize', 'PostGeneralize', 'Configure', 'Download')
+        'Generalize', 'PostGeneralize', 'Configure', 'Download', 'Validate')
 
     if ($AsSystem -and -not $isSystem) {
         if ($Mode -in $adminOnly) { throw (T 'main.adminOnly' $Mode) }
@@ -57,6 +57,7 @@
                 'PackageList'    { Invoke-PackagePlatform -DryRun; Install-WingetApps -DryRun; Write-Log 'OSOT' STEP; Show-OsotConfig }
                 'Configure'      { Invoke-Configure }
                 'Download'       { Invoke-Download }
+                'Validate'       { Invoke-Validate }
                 'Init'           { Invoke-Init }
                 'Discover'       { Invoke-Discover }
                 'Optimize'       { Show-OsotConfig; Save-SealBaseline; Invoke-OsotSealPre }
