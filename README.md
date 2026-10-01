@@ -1,5 +1,7 @@
 # Horizon Scripts – VDI-ImageMaint
 
+> Wersja polska: [README.pl.md](README.pl.md).
+
 Golden-image maintenance tooling for **Omnissa Horizon Instant Clone** desktops:
 
 | Tool | Platform | Folder |
