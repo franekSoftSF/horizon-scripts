@@ -20,8 +20,10 @@ TRUESSO_ENABLE="no"
 SMARTCARD_ENABLE="no"
 CERT_CA_FILES="enterprise-root-ca.pem enterprise-issuing-ca.pem"
 
-# FIDO2 redirection - experimental
+# USB redirection (USB 3.0, VHCI driver), FIDO2 via USB, audio-in
+USB_ENABLE="yes"
 FIDO_ENABLE="no"
+AUDIO_IN_ENABLE="yes"
 
 # NFS home directories
 NFS_ENABLE="yes"
@@ -29,8 +31,13 @@ NFS_SERVER="nfs.example.edu"
 NFS_EXPORT="/export/home"
 NFS_SEC="krb5p"
 
-# Horizon Linux Agent
-HORIZON_AGENT_ARGS="-A yes"
+# Horizon Linux Agent (put Omnissa-horizonagent-linux-x86_64-*.tar.gz in Horizon/)
+HORIZON_CS_FQDN="cs01.ad.example.edu"
+
+# Horizon Recording (put Horizon.Recording.Linux.Agent-*.tar.gz in Horizon/)
+REC_ENABLE="no"
+REC_SERVER_URL="https://rec.example.edu:9443"
+REC_USERNAME="rec-register"
 
 # Session Collaboration (mode "collab" asks; these are the offered defaults)
 COLLAB_SERVER_URL="https://uag.example.edu"

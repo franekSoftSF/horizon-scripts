@@ -36,14 +36,15 @@ MSG[menu_prompt]='Choose:'
 MSG[menu_step_failed]='Step "%s" did not finish - see the log.'
 MSG[usage_text]='Usage: sudo %s <mode> [options]
 
-Build (once):   prepare -> domain -> nfs -> agent -> reboot -> apps -> optimize -> collab -> check -> seal
+Build (once):   prepare -> domain -> nfs -> agent -> reboot -> recording -> apps -> optimize -> collab -> check -> seal
 Monthly:        update --then-seal       Reverse a seal: unlock
 
 Modes:
   prepare    base packages, MATE + LightDM, locale, keyboard, time zone, NTP
   domain     krb5.conf, SSSD, realm join of the golden image, sudo, True SSO / smart card
   nfs        NFSv4 home directories with Kerberos (autofs, rpc.gssd, idmapd)
-  agent      install/upgrade Horizon Linux Agent from Horizon/ (OfflineJoinDomain=sssd), RunOnce
+  agent      install/upgrade Horizon agent (version-aware; dependencies, USB VHCI driver, audio), RunOnce
+  recording  Horizon Recording Agent (-t template mode; asks for the server password)
   apps       run apps/*.sh --install (e.g. Eclipse)
   optimize   VDI tuning (services, MATE dconf, LightDM, journald, sysctl, I/O, polkit)
   collab     Session Collaboration settings - asks for each value (UAG link)
@@ -59,7 +60,7 @@ Options:
   --lang en-US|pl-PL
   --revert        with optimize: undo all optimizations
   --then-seal     with update: seal when no reboot is pending
-  --force         with seal: seal despite failed checks
+  --force         seal despite failed checks; rerun a done step; reinstall or downgrade agents
   -y, --yes       answer yes to questions
 '
 
@@ -91,7 +92,7 @@ MSG[agent_installer_missing]='install_viewagent.sh not found in %s.'
 MSG[agent_install_failed]='Horizon Linux Agent installation failed.'
 MSG[agent_conf_missing]='Agent configuration directory (/etc/omnissa or /etc/vmware) not found.'
 MSG[agent_configured]='Agent configured for Instant Clone (OfflineJoinDomain=sssd, RunOnceScript): %s'
-MSG[agent_done]='Horizon Linux Agent ready.'
+MSG[agent_done]='Horizon Linux Agent %s ready.'
 
 # --- optimize ---
 MSG[step_optimize]='OPTIMIZE - VDI tuning'
@@ -204,6 +205,49 @@ MSG[chk_fido_bad]='fido2-token missing - run mode agent with FIDO_ENABLE=yes bef
 MSG[step_fido]='FIDO - FIDO2 redirection test (run inside a Horizon session on a clone)'
 MSG[fido_tools_missing_sealed]='fido2-token is missing and the image is sealed - set FIDO_ENABLE=yes and rebuild.'
 MSG[fido_found]='FIDO2 devices visible in this session: %s - redirection works at device level.'
-MSG[fido_none]='No FIDO2 device visible - redirection is not active (key plugged into the client? agent/client feature enabled?).'
+MSG[fido_none]='No FIDO2 device visible - connect the key through USB redirection in the Horizon client (USB_ENABLE/FIDO_ENABLE, VHCI driver).'
 MSG[menu_domain]='2. Active Directory: Kerberos, SSSD, join (+ True SSO / smart card)'
 MSG[menu_fido]='Test FIDO2 redirection (inside a session on a clone)'
+
+# --- 0.2.0: versions, agent dependencies, USB VHCI, Recording ---
+MSG[step_already_done]='Step %s already done by version %s (%s) with the same configuration - skipped (--force runs it again).'
+MSG[step_rerun]='Step %s was done by version %s - running again for %s or a changed configuration.'
+MSG[agent_version_unknown]='Horizon agent is installed but its version was not recorded by this tool - running the installer as an upgrade.'
+MSG[agent_downgrade]='Installed agent %s is newer than the archive %s - refused (use --force to downgrade).'
+MSG[agent_up_to_date]='Horizon agent %s already installed with the same options (%s) - installer not run.'
+MSG[agent_action]='Agent %s: installed %s, archive %s, options: %s'
+MSG[agent_blast_running]='BlastServer is running (active session) - log off all sessions or reboot, then run the upgrade (Omnissa prerequisite).'
+MSG[vhci_downloading]='Downloading the USB VHCI driver source: %s'
+MSG[vhci_source_missing]='USB VHCI source %s missing and download from %s failed - copy it to Horizon/.'
+MSG[vhci_present]='USB VHCI driver %s already installed for kernel %s.'
+MSG[vhci_patch_missing]='VHCI patch %s not found in the agent archive.'
+MSG[vhci_secure_boot]='UEFI Secure Boot is on: the VHCI modules must be signed and the MOK enrolled (see the Omnissa VHCI steps).'
+MSG[vhci_building]='Building USB VHCI driver %s for kernel %s (DKMS).'
+MSG[vhci_patch_failed]='Applying %s to the VHCI source failed.'
+MSG[vhci_build_failed]='USB VHCI modules are not available for kernel %s after the DKMS build.'
+MSG[vhci_done]='USB VHCI driver %s installed for kernel %s (rebuilt automatically for new kernels).'
+MSG[step_recording]='RECORDING - Horizon Recording Agent'
+MSG[rec_disabled]='REC_ENABLE is not "yes" - skipped.'
+MSG[rec_url_invalid]='REC_SERVER_URL "%s" must be https://<server>:9443.'
+MSG[rec_needs_agent]='Install the Horizon agent first (mode agent) - the Recording Agent requires it.'
+MSG[rec_archive_missing]='No Horizon.Recording.Linux.Agent-*.tar.gz in %s.'
+MSG[rec_up_to_date]='Horizon Recording Agent %s already installed - skipped (--force reinstalls).'
+MSG[rec_downgrade]='Installed Recording Agent %s is newer than the archive %s - refused (use --force).'
+MSG[rec_installing]='Recording Agent: installed %s, archive %s, server %s (template mode -t).'
+MSG[rec_password_prompt]='Password of %s on the Horizon Recording Server:'
+MSG[rec_password_missing]='No password given - nothing installed.'
+MSG[rec_installer_missing]='install.sh not found in %s.'
+MSG[rec_install_failed]='Horizon Recording Agent installation failed - see the output above.'
+MSG[rec_done]='Horizon Recording Agent %s installed.'
+MSG[domain_discover_failed]='realm discover %s failed - check DNS before joining.'
+MSG[chk_deps_ok]='Agent dependency packages installed.'
+MSG[chk_deps_missing]='Agent dependency packages missing:%s (mode agent).'
+MSG[chk_vhci_ok]='USB VHCI driver available for kernel %s.'
+MSG[chk_vhci_bad]='USB VHCI driver missing for kernel %s - USB redirection will not work (mode agent / dkms autoinstall).'
+MSG[chk_rec_ok]='Horizon Recording Agent service enabled.'
+MSG[chk_rec_bad]='Horizon Recording Agent service missing or disabled (mode recording).'
+MSG[chk_cs_ok]='Connection Server %s resolves in DNS.'
+MSG[chk_cs_bad]='Connection Server %s does not resolve - the agent cannot reach the broker.'
+MSG[menu_recording]='Horizon Recording Agent (asks for the server password)'
+MSG[update_agent_newer]='Newer Horizon agent in Horizon/: %s -> %s - upgrading.'
+MSG[update_rec_newer]='Newer Horizon Recording Agent in Horizon/: %s -> %s - upgrading.'

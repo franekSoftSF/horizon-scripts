@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-01",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",
@@ -10,32 +10,86 @@
     "fido2": "experimental probe (mode fido)",
     "homes": "NFSv4 sec=krb5p via autofs"
   },
-  "languages": { "primary": "en-US", "secondary": "pl-PL", "i18nImplemented": true },
-  "profiles": ["university", "business"],
-  "modes": ["prepare", "domain", "nfs", "agent", "apps", "optimize", "collab", "check", "seal", "unlock", "update", "fido", "status"],
+  "languages": {
+    "primary": "en-US",
+    "secondary": "pl-PL",
+    "i18nImplemented": true
+  },
+  "profiles": [
+    "university",
+    "business"
+  ],
+  "modes": [
+    "prepare",
+    "domain",
+    "nfs",
+    "agent",
+    "recording",
+    "apps",
+    "optimize",
+    "collab",
+    "check",
+    "seal",
+    "unlock",
+    "update",
+    "fido",
+    "status"
+  ],
   "apps": [
-    { "name": "eclipse-java", "script": "apps/eclipse-java.sh", "version": "1.0.0", "jdk": "Temurin 25",
-      "docs": "docs/linux-eclipse-java.md", "tested": "debian:12 container (online + offline archive)", "vm": "not-tested" }
+    {
+      "name": "eclipse-java",
+      "script": "apps/eclipse-java.sh",
+      "version": "1.0.0",
+      "jdk": "Temurin 25",
+      "docs": "docs/linux-eclipse-java.md",
+      "tested": "debian:12 container (online + offline archive)",
+      "vm": "not-tested"
+    }
   ],
   "checks": {
-    "unitTests": { "status": "pass", "passed": 25, "failed": 0, "where": "debian:12 container" },
-    "shellcheck": { "status": "pass", "findings": 0 },
-    "sealPackageLock": { "status": "pass", "where": "debian:12 container", "detail": "apt install/update and dpkg -i refused; unlock restores" },
-    "collab": { "status": "pass", "where": "debian:12 container, fake /etc/omnissa" },
-    "vm": { "status": "not-tested" }
+    "unitTests": {
+      "status": "pass",
+      "passed": 27,
+      "failed": 0,
+      "where": "debian:12 container"
+    },
+    "shellcheck": {
+      "status": "pass",
+      "findings": 0
+    },
+    "sealPackageLock": {
+      "status": "pass",
+      "where": "debian:12 container",
+      "detail": "apt install/update and dpkg -i refused; unlock restores"
+    },
+    "collab": {
+      "status": "pass",
+      "where": "debian:12 container, fake /etc/omnissa"
+    },
+    "vm": {
+      "status": "not-tested"
+    },
+    "agentVersioning": {
+      "status": "pass",
+      "where": "debian:12 container, fake archives",
+      "detail": "install, skip, upgrade, refuse downgrade, refuse with BlastServer running"
+    }
   },
   "toVerify": [
     "viewagent-custom.conf / config key names for agent 2506 (OfflineJoinDomain, RunOnceScript, CollaborationEnable, collaboration.*)",
-    "install_viewagent.sh arguments",
     "realm join + own sssd.conf vs ClonePrep OfflineJoinDomain=sssd on a clone",
     "True SSO on Linux agent 2506: anything beyond SSSD pam_cert_auth + PKINIT",
     "FIDO2 redirection support and install switch in Linux agent 2506",
     "NFS krb5p mount on a clone after SSO logon",
-    "polkit power rule hides MATE shutdown buttons"
+    "polkit power rule hides MATE shutdown buttons",
+    "VHCI DKMS build with PRE_BUILD hcd.h on a real Debian 12 kernel; Secure Boot signing",
+    "gnome-shell-extension-appindicator on a MATE image",
+    "Horizon Recording -t registration on the golden image and on clones"
   ],
   "plan": [
     "VM test: ISO build -> seal -> Instant Clone pool -> logon, NFS, collaboration via UAG",
     "fixes after test, 0.2.0",
     "HTML cycle report"
-  ]
+  ],
+  "docsSource": "Desktops and Applications in Omnissa Horizon 8, PDF version 2606 (user) + docs.omnissa.com Vmulti/2506"
 }

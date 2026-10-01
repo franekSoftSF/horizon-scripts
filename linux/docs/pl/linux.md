@@ -20,7 +20,7 @@ Katalog `linux/` w repozytorium to kompletny `/opt/vdi-imagemaint` na VM.
 | `files/runonce.sh` | skrypt uruchamiany na każdym klonie (`/usr/local/sbin/vdi-imagemaint-runonce.sh`) |
 | `certs/` | certyfikaty CA (PEM) do True SSO / logowania kartą (poza gitem) |
 | `apps/*.sh` | opcjonalne instalatory aplikacji, uruchamia je tryb `apps` – np. [Eclipse + Java](../../../docs/pl/linux-eclipse-java.md) |
-| `Horizon/` | Horizon Linux Agent `*linux*.tar.gz` (poza gitem) |
+| `Horizon/` | `Omnissa-horizonagent-linux-x86_64-*.tar.gz`, `Horizon.Recording.Linux.Agent-*.tar.gz`, `vhci-hcd-1.15.tar.gz` (poza gitem) |
 
 Na VM logi są w `/var/log/vdi-imagemaint/`, a stan w `/var/lib/vdi-imagemaint/`. Każda sekcja (`build`,
 `optimize`, `seal`) ma własny plik `<sekcja>-state.json`, a oryginał każdego zmienianego pliku jest
@@ -36,6 +36,7 @@ sudo ./vdi-imagemaint.sh domain      # krb5, SSSD, realm join (pyta o hasło), T
 sudo ./vdi-imagemaint.sh nfs         # autofs + NFSv4 sec=krb5p, idmapd, fragment SSSD
 sudo ./vdi-imagemaint.sh agent       # agent Horizon, OfflineJoinDomain=sssd, RunOnceScript
 sudo reboot
+sudo ./vdi-imagemaint.sh recording   # Horizon Recording Agent (opcjonalnie, pyta o hasło)
 sudo ./vdi-imagemaint.sh apps        # apps/*.sh --install (Eclipse ...)
 sudo ./vdi-imagemaint.sh optimize
 sudo ./vdi-imagemaint.sh collab      # pyta o każde ustawienie Session Collaboration
@@ -47,6 +48,57 @@ sudo ./vdi-imagemaint.sh seal        # najpierw check, potem wyłączenie -> sna
 Włącz obraz wzorcowy i uruchom `sudo ./vdi-imagemaint.sh update --then-seal`. Narzędzie odblokuje obraz,
 wykona `apt full-upgrade` i zamknie go ponownie. Jeśli nowe jądro wymaga restartu, uruchom VM ponownie,
 a potem wykonaj `seal`.
+
+## Wersje i ponowne uruchomienia
+
+- Każdy krok budowy (`prepare`, `domain`, `nfs`) jest zapisywany w `build-state.json` razem z wersją
+  narzędzia, czasem i odciskiem konfiguracji. Ponowne uruchomienie przy tej samej wersji narzędzia i
+  niezmienionej konfiguracji jest pomijane. `--force` wykonuje krok jeszcze raz.
+- `status` pokazuje wykonane kroki, wersję i opcje agenta, sterownik VHCI i Recording.
+
+## Agent Horizon: zależności, USB 3.0, dźwięk, aktualizacja
+
+Źródło: „Desktops and Applications in Omnissa Horizon 8” (PDF w wersji 2606 od użytkownika) oraz strony
+Horizon 8 2506. Wersje Debiana: 12.10 i 11.11 dla 2506 (KB 87277); 12.13 i 13.3 dla 2606.
+
+- **Zależności** (instalowane przed agentem):
+  - `gnome-shell-extension-appindicator` i `libnss3-tools`. Bez nich instalator agenta się zatrzymuje.
+  - `pulseaudio-utils` do dźwięku (wejście i wyjście) w Debianie 12.x.
+  - `open-vm-tools` i `krb5-user`.
+- **Przełączniki instalatora** wynikają z ustawień: `-A yes -M yes`, `-a` (mikrofon, `AUDIO_IN_ENABLE`),
+  `-U` (USB, `USB_ENABLE`), `-T` (True SSO) i `-m` (karta). Inne udokumentowane przełączniki wpisz w
+  `HORIZON_AGENT_EXTRA_ARGS`, np. `--webcam`.
+- **USB 3.0 / VHCI** zgodnie z kolejnością z dokumentacji dla archiwum tar.gz: rozpakowanie archiwum
+  agenta, instalacja sterownika VHCI, potem agent z `-U yes`. Kroki:
+  - Źródła VHCI (`vhci-hcd-1.15.tar.gz`) pochodzą z `Horizon/`; jeśli ich tam nie ma, narzędzie pobiera
+    je z SourceForge, z adresu podanego w dokumentacji.
+  - Narzędzie nakłada łatkę `resources/vhci/patch/vhci.patch` z archiwum agenta.
+  - Kopia `hcd.h` wymagana dla Debiana jest wykonywana jako skrypt `PRE_BUILD` w DKMS.
+  - DKMS razem z `linux-headers-amd64` przebudowuje sterownik dla każdego nowego jądra zainstalowanego
+    przez `update`. Dokumentacja wymaga przebudowy po każdej zmianie jądra.
+  - Przy włączonym Secure Boot moduły trzeba podpisać i zarejestrować klucz MOK. Narzędzie tylko ostrzega.
+- **FIDO2** działa przez przekierowanie USB (KB 6001193). `FIDO_ENABLE` wymusza USB, a `FIDO_VIDPID`
+  ustawia `viewusb.IncludeVidPid` w `/etc/omnissa/config`.
+- **Wersja i aktualizacja**: wersja jest odczytywana z nazwy archiwum `...-YYMM-y.y.y-build.tar.gz`
+  i zapisywana po instalacji (Omnissa nie dokumentuje pliku z wersją). Zachowanie:
+  - Ta sama wersja i te same opcje: instalator nie jest uruchamiany.
+  - Ta sama wersja, inne opcje: instalator uruchamia się ponownie z nowymi opcjami.
+  - Nowsze archiwum: aktualizacja. Zgodnie z dokumentacją instalator dostaje ponownie wszystkie opcje
+    funkcji, bo archiwum tar.gz ich nie zachowuje. BlastServer nie może działać. Potem wymagany jest
+    restart, na który czekają `check` i `seal`.
+  - Starsze archiwum: odmowa, chyba że użyjesz `--force`.
+  - `update` sam aktualizuje agenta i Recording, gdy w `Horizon/` są nowsze archiwa (`UPDATE_AGENTS`).
+
+## Horizon Recording (tryb `recording`)
+
+Recording Agent wymaga Horizon 8 2306 lub nowszego, wcześniej zainstalowanego agenta Horizon i otwartego
+portu 9443 na serwerze. Narzędzie:
+- uruchamia `install.sh -u https://<serwer>:9443 -n <użytkownik> -p <hasło> -t` z archiwum
+  `Horizon.Recording.Linux.Agent-x.x.x.x.tar.gz`. `-t` jest wymagane dla Instant Clone; `-s <odcisk>` jest opcjonalne;
+- pyta o hasło albo bierze je z `VDI_REC_PASSWORD`. Hasło nigdy nie jest zapisywane, a w logu jest maskowane;
+- kontroluje wersję tak samo jak przy agencie: ta sama wersja jest pomijana, nowsza oznacza aktualizację
+  (potem restart), starsza jest odrzucana;
+- nie usuwa podczas seal tokenu parowania `/etc/omnissa/horizonrecording/pairingdata.json`.
 
 ## Co zmieniają tryby
 

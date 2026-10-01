@@ -145,6 +145,41 @@ mode_check() {
         check_result WARN L17 chk_not_optimized
     fi
 
+    local pkg missing=""
+    for pkg in $AGENT_DEPENDENCIES; do pkg_installed "$pkg" || missing+=" $pkg"; done
+    if [[ -z $missing ]]; then
+        check_result OK L20 chk_deps_ok
+    else
+        check_result ERR L20 chk_deps_missing "$missing"
+    fi
+
+    if [[ $USB_ENABLE == yes || $FIDO_ENABLE == yes ]]; then
+        local k
+        k=$(newest_kernel)
+        if vhci_installed_for "$(uname -r)" && { [[ -z $k ]] || vhci_installed_for "$k"; }; then
+            check_result OK L21 chk_vhci_ok "$(uname -r)"
+        else
+            check_result ERR L21 chk_vhci_bad "${k:-$(uname -r)}"
+        fi
+    fi
+
+    if [[ $REC_ENABLE == yes ]]; then
+        if [[ $(unit_enabled_state "$REC_SERVICE") == enabled ]]; then
+            check_result OK L22 chk_rec_ok
+        else
+            check_result ERR L22 chk_rec_bad
+        fi
+    fi
+
+    local cs
+    for cs in $HORIZON_CS_FQDN; do
+        if getent hosts "$cs" >/dev/null; then
+            check_result OK L23 chk_cs_ok "$cs"
+        else
+            check_result ERR L23 chk_cs_bad "$cs"
+        fi
+    done
+
     logt STEP chk_summary "$CHECK_ERR" "$CHECK_WARN"
     ((CHECK_ERR == 0))
 }
@@ -158,5 +193,15 @@ mode_status() {
             log INFO "${f}: $(jq -c '{units: (.units|length), files: (.files|length)} + (del(.units,.files))' "$(state_file "$f")")"
         fi
     done
+    if [[ -s $(state_file build) ]]; then
+        local line
+        while IFS= read -r line; do
+            log INFO "$line"
+        done < <(jq -r '(.steps // {} | to_entries[] | "step \(.key): \(.value.version) \(.value.at)"),
+            (if .agent then "agent: \(.agent.version) [\(.agent.args)] \(.agent.at)" else empty end),
+            (if .vhci then "vhci: \(.vhci.version) (kernel \(.vhci.kernel))" else empty end),
+            (if .recording then "recording: \(.recording.version) \(.recording.server)" else empty end)' \
+            "$(state_file build)")
+    fi
     if is_sealed; then logt WARN status_sealed; else logt INFO status_unsealed; fi
 }

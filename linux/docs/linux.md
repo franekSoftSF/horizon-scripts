@@ -19,7 +19,7 @@ The repository folder `linux/` is the complete `/opt/vdi-imagemaint` on the VM.
 | `files/runonce.sh` | per-clone script, installed as `/usr/local/sbin/vdi-imagemaint-runonce.sh` |
 | `certs/` | CA certificates (PEM) for True SSO / smart card logon (not in git) |
 | `apps/*.sh` | optional application installers, run by mode `apps` – e.g. [Eclipse + Java](../../docs/linux-eclipse-java.md) |
-| `Horizon/` | Horizon Linux Agent `*linux*.tar.gz` (not in git) |
+| `Horizon/` | `Omnissa-horizonagent-linux-x86_64-*.tar.gz`, `Horizon.Recording.Linux.Agent-*.tar.gz`, `vhci-hcd-1.15.tar.gz` (not in git) |
 | `tests/run-tests.sh` | offline tests |
 
 On the VM, logs are in `/var/log/vdi-imagemaint/` and state is in `/var/lib/vdi-imagemaint/`. There is one
@@ -35,6 +35,7 @@ sudo ./vdi-imagemaint.sh domain      # krb5, SSSD, realm join (asks for the join
 sudo ./vdi-imagemaint.sh nfs         # autofs + NFSv4 sec=krb5p, idmapd, SSSD snippet
 sudo ./vdi-imagemaint.sh agent       # Horizon agent, OfflineJoinDomain=sssd, RunOnceScript
 sudo reboot
+sudo ./vdi-imagemaint.sh recording   # Horizon Recording Agent (optional, asks for the password)
 sudo ./vdi-imagemaint.sh apps        # apps/*.sh --install (Eclipse ...)
 sudo ./vdi-imagemaint.sh optimize
 sudo ./vdi-imagemaint.sh collab      # asks for every Session Collaboration value
@@ -45,6 +46,59 @@ sudo ./vdi-imagemaint.sh seal        # runs check first, then powers off -> snap
 
 Power on the golden image, then run `sudo ./vdi-imagemaint.sh update --then-seal`. The tool unlocks the
 image, runs `apt full-upgrade`, and seals it again. If a new kernel needs a reboot, reboot and then run `seal`.
+
+## Versions and re-runs
+
+- Each build step (`prepare`, `domain`, `nfs`) is recorded in `build-state.json` with the tool version,
+  the time and a fingerprint of the configuration. If you run the step again with the same tool version
+  and an unchanged configuration, it is skipped. `--force` runs it again.
+- `status` shows the recorded steps, the agent version and options, the VHCI driver and Recording.
+
+## Horizon agent: dependencies, USB 3.0, audio, upgrade
+
+The source is "Desktops and Applications in Omnissa Horizon 8" (PDF, version 2606, provided by the user)
+and the Horizon 8 2506 pages. Debian versions: 12.10 and 11.11 for 2506 (KB 87277); 12.13 and 13.3 for 2606.
+
+- **Dependencies** (installed before the agent):
+  - `gnome-shell-extension-appindicator` and `libnss3-tools`. Without them, the agent installer stops.
+  - `pulseaudio-utils` for audio in/out on Debian 12.x.
+  - `open-vm-tools` and `krb5-user`.
+- **Installer options** come from the settings: `-A yes -M yes`, `-a` (audio-in, `AUDIO_IN_ENABLE`),
+  `-U` (USB, `USB_ENABLE`), `-T` (True SSO) and `-m` (smart card). Add more documented options in
+  `HORIZON_AGENT_EXTRA_ARGS`, for example `--webcam`.
+- **USB 3.0 / VHCI** follows the documented order for the tarball installer: unpack the agent tarball,
+  install the VHCI driver, then install the agent with `-U yes`. The steps:
+  - The VHCI source (`vhci-hcd-1.15.tar.gz`) comes from `Horizon/`; if it is not there, the tool downloads
+    it from the SourceForge link given in the docs.
+  - The tool applies `resources/vhci/patch/vhci.patch` from the agent tarball.
+  - The Debian `hcd.h` copy step runs as a DKMS `PRE_BUILD` script.
+  - DKMS plus `linux-headers-amd64` rebuilds the driver for every new kernel that `update` installs.
+    The docs require a rebuild after each kernel change.
+  - With Secure Boot on, the modules must be signed and the MOK key enrolled. The tool only warns about this.
+- **FIDO2** keys work through USB redirection (KB 6001193). `FIDO_ENABLE` forces USB on, and
+  `FIDO_VIDPID` sets `viewusb.IncludeVidPid` in `/etc/omnissa/config`.
+- **Version and upgrade**: the version is read from the archive name `...-YYMM-y.y.y-build.tar.gz`
+  and recorded after installation (Omnissa documents no version file). The behaviour:
+  - Same version and options: the installer is not run.
+  - Same version with different options: the installer runs again with the new options.
+  - Newer archive: upgrade. As the docs require, the installer runs again with all feature options, because
+    the tarball does not keep them. BlastServer must not be running. A reboot is required afterwards, and
+    `check`/`seal` wait for it.
+  - Older archive: refused unless you pass `--force`.
+  - `update` upgrades the agent and Recording automatically when `Horizon/` contains newer archives
+    (`UPDATE_AGENTS`).
+
+## Horizon Recording (mode `recording`)
+
+The Recording Agent needs Horizon 8 2306 or later, the Horizon agent installed first, and port 9443 open
+on the server. The tool:
+- runs `install.sh -u https://<server>:9443 -n <user> -p <password> -t` from
+  `Horizon.Recording.Linux.Agent-x.x.x.x.tar.gz`. `-t` is required for instant clones; `-s <thumbprint>`
+  is optional;
+- asks for the password, or reads it from `VDI_REC_PASSWORD`. The password is never stored and is masked in the log;
+- tracks the version the same way as for the agent: same version is skipped, a newer one is an upgrade
+  (then a reboot), and an older one is refused;
+- leaves the pairing token `/etc/omnissa/horizonrecording/pairingdata.json` alone during seal.
 
 ## What each mode changes
 

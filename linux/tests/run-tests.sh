@@ -134,6 +134,34 @@ if command -v jq >/dev/null 2>&1; then
 
         state_update seal '.sealed = true'
         is_sealed || { echo "is_sealed"; exit 1; }
+
+        # --- versions, agent flags, step tracking, password redaction
+        . "$ROOT/lib/domain.sh"; . "$ROOT/lib/vhci.sh"; . "$ROOT/lib/agent.sh"; . "$ROOT/lib/recording.sh"
+        [[ $(agent_archive_version /x/Omnissa-horizonagent-linux-x86_64-2506-8.16.0-16536825.tar.gz) == 2506-8.16.0-16536825 ]] ||
+            { echo "agent archive version"; exit 1; }
+        [[ -z $(agent_archive_version /x/other.tar.gz) ]] || { echo "agent archive version (no match)"; exit 1; }
+        [[ $(recording_archive_version Horizon.Recording.Linux.Agent-1.2.3.45.tar.gz) == 1.2.3.45 ]] || { echo "rec version"; exit 1; }
+        [[ $(version_cmp 2506-8.16.0-100 2506-8.16.0-100) == 0 ]] || { echo "cmp eq"; exit 1; }
+        [[ $(version_cmp 2412-8.14.0-999 2506-8.16.0-100) == -1 ]] || { echo "cmp lt"; exit 1; }
+        [[ $(version_cmp 2506-8.16.1-1 2506-8.16.0-999) == 1 ]] || { echo "cmp gt"; exit 1; }
+        [[ $(version_cmp 1.10.0.1 1.9.0.1) == 1 ]] || { echo "cmp numeric"; exit 1; }
+        USB_ENABLE=no FIDO_ENABLE=yes AUDIO_IN_ENABLE=yes TRUESSO_ENABLE=yes SMARTCARD_ENABLE=no HORIZON_AGENT_EXTRA_ARGS="--webcam"
+        [[ $(agent_args) == "-A yes -M yes -a yes -U yes -T yes -m no --webcam" ]] || { echo "agent_args: $(agent_args)"; exit 1; }
+
+        CONF_FILE="$SANDBOX/local.conf"; PROFILE=university
+        STEP_RUNS=0
+        # shellcheck disable=SC2317  # called indirectly by run_step
+        step_fn() { STEP_RUNS=$((STEP_RUNS + 1)); }
+        run_step prepare step_fn 2>/dev/null
+        run_step prepare step_fn 2>/dev/null
+        [[ $STEP_RUNS == 1 ]] || { echo "run_step should skip the second run ($STEP_RUNS)"; exit 1; }
+        FORCE=1 run_step prepare step_fn 2>/dev/null
+        [[ $STEP_RUNS == 2 ]] || { echo "run_step --force"; exit 1; }
+        echo '# changed' >>"$CONF_FILE"
+        run_step prepare step_fn 2>/dev/null
+        [[ $STEP_RUNS == 3 ]] || { echo "run_step after config change"; exit 1; }
+
+        [[ $(printf 'pass=a&b/c*d\nok\n' | rec_redact 'a&b/c*d') == $'pass=********\nok' ]] || { echo "rec_redact"; exit 1; }
     ) 2>"$SANDBOX/err2" && ok "tracked files + state" || fail "tracked files + state: $(cat "$SANDBOX/err2")"
 else
     printf 'skip tracked files + state (jq not installed)\n'

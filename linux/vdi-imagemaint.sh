@@ -3,7 +3,7 @@
 # on Omnissa Horizon Instant Clone (Horizon Linux Agent, SSSD offline domain join,
 # True SSO / smart card, NFSv4 + Kerberos home directories).
 #
-# Build (once):  prepare -> domain -> nfs -> agent -> (reboot) -> apps -> optimize -> collab -> check -> seal
+# Build (once):  prepare -> domain -> nfs -> agent -> (reboot) -> recording -> apps -> optimize -> collab -> check -> seal
 # Day-2 (monthly): update --then-seal          Reverse a seal: unlock
 #
 # Usage: sudo ./vdi-imagemaint.sh <mode> [options]   (no mode = interactive menu)
@@ -15,7 +15,7 @@ VDI_ROOT=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
 
 # shellcheck source=lib/common.sh
 . "${VDI_ROOT}/lib/common.sh"
-for _lib in base domain nfs agent collab optimize update seal check; do
+for _lib in base domain nfs vhci agent recording collab optimize update seal check; do
     # shellcheck disable=SC1090
     . "${VDI_ROOT}/lib/${_lib}.sh"
 done
@@ -27,7 +27,7 @@ usage() {
 
 menu() {
     local choice
-    local -a modes=(prepare domain nfs agent apps optimize collab check seal update unlock fido status)
+    local -a modes=(prepare domain nfs agent recording apps optimize collab check seal update unlock fido status)
     while true; do
         printf '\n%s\n' "$(t menu_title "$VDI_VERSION" "$PROFILE")"
         local i=1 m
@@ -50,10 +50,11 @@ menu() {
 
 dispatch() {
     case $1 in
-        prepare) mode_prepare ;;
-        domain) mode_domain ;;
-        nfs) mode_nfs ;;
+        prepare) run_step prepare mode_prepare ;;
+        domain) run_step domain mode_domain ;;
+        nfs) run_step nfs mode_nfs ;;
         agent) mode_agent ;;
+        recording) mode_recording ;;
         apps) mode_apps ;;
         optimize) mode_optimize ;;
         collab) mode_collab ;;

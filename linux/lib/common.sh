@@ -2,7 +2,7 @@
 # VDI-ImageMaint for Linux - shared helpers: config, i18n, logging, state, tracked changes.
 # Sourced by vdi-imagemaint.sh; expects VDI_ROOT to be set.
 
-VDI_VERSION="0.1.0"
+VDI_VERSION="0.2.0"
 STATE_DIR="/var/lib/vdi-imagemaint"
 LOG_DIR="/var/log/vdi-imagemaint"
 LOG_FILE="${LOG_DIR}/vdi-imagemaint-$(date +%Y%m%d).log"
@@ -184,6 +184,30 @@ state_get() {
     jq -r "$@" "$filter" "$f"
 }
 
+# Fingerprint of the effective configuration (defaults + profile + local file).
+config_fingerprint() {
+    cat "${VDI_ROOT}/conf/defaults.conf" "${VDI_ROOT}/conf/profile-${PROFILE}.conf" \
+        "$CONF_FILE" 2>/dev/null | sha256sum | cut -c1-16
+}
+
+# run_step MODE FUNCTION - skip a build step already done by this tool version with the
+# same configuration (use --force to run it again); record it when it succeeds.
+run_step() {
+    local mode=$1 fn=$2 fp done_ver done_fp done_at
+    fp=$(config_fingerprint)
+    done_ver=$(state_get build '.steps[$m].version // empty' --arg m "$mode")
+    done_fp=$(state_get build '.steps[$m].config // empty' --arg m "$mode")
+    done_at=$(state_get build '.steps[$m].at // empty' --arg m "$mode")
+    if [[ $done_ver == "$VDI_VERSION" && $done_fp == "$fp" && ${FORCE:-0} != 1 ]]; then
+        logt OK step_already_done "$mode" "$done_ver" "$done_at"
+        return 0
+    fi
+    [[ -n $done_ver ]] && logt INFO step_rerun "$mode" "$done_ver" "$VDI_VERSION"
+    "$fn"
+    state_update build '.steps[$m] = {version: $v, config: $c, at: $d}' \
+        --arg m "$mode" --arg v "$VDI_VERSION" --arg c "$fp" --arg d "$(date -Is)"
+}
+
 is_sealed() {
     [[ $(state_get seal '.sealed // false') == "true" ]]
 }
@@ -335,8 +359,17 @@ newest_kernel() {
     printf '%s' "$k"
 }
 
+# mark_reboot_required - an installer asked for a restart (Horizon agent, Recording agent).
+mark_reboot_required() {
+    state_update build '.rebootRequiredSince = $d' --arg d "$(date +%s)"
+}
+
 reboot_pending() {
     [[ -e /run/reboot-required ]] && return 0
+    local since boot
+    since=$(state_get build '.rebootRequiredSince // empty')
+    boot=$(date -d "$(uptime -s 2>/dev/null || echo now)" +%s 2>/dev/null || echo 0)
+    [[ -n $since && $since -ge $boot ]] && return 0
     local k
     k=$(newest_kernel)
     [[ -n $k && $k != "$(uname -r)" ]]

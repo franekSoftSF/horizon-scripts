@@ -1,9 +1,12 @@
 # shellcheck shell=bash
-# Mode "domain": Kerberos + SSSD + realmd/adcli on the golden image - the base the
-# Horizon agent needs for Instant Clone offline domain join (OfflineJoinDomain=sssd):
-# the image is joined once, ClonePrep then creates a computer account + keytab per clone.
-# Optional: certificate logon for Horizon True SSO and smart card redirection
-# (SSSD pam_cert_auth + PKINIT, so a certificate logon still gets a Kerberos TGT for NFS).
+# Mode "domain": Kerberos + SSSD + realmd/adcli on the golden image, following
+# "Configure SSSD Offline Domain Join for Linux Desktops" (Horizon 8 docs): the image
+# is joined once with SSSD, OfflineJoinDomain=sssd (mode agent) makes ClonePrep create
+# a computer account + keytab per clone.
+# Optional certificate logon, following "Configure True SSO with SSSD on Ubuntu/Debian
+# Desktops" and "Configure Smart Card Redirection With SSSD for Ubuntu/Debian Desktops":
+# CA chain in /etc/sssd/pki/sssd_auth_ca_db.pem, [pam] pam_cert_auth, certmap rule,
+# PKINIT in krb5.conf (a certificate logon still gets a TGT for the NFS krb5 homes).
 
 SSSD_CA_DB="/etc/sssd/pki/sssd_auth_ca_db.pem"
 
@@ -28,12 +31,16 @@ mode_domain() {
     require_conf AD_DOMAIN AD_JOIN_USER
     domain_defaults
 
+    # Package list of the Debian True SSO / smart card SSSD procedures (superset of the plain join).
     apt_install --no-install-recommends sssd sssd-ad sssd-tools libnss-sss libpam-sss \
         realmd adcli krb5-user samba-common-bin libsasl2-modules-gssapi-mit
     if cert_logon_enabled; then
-        apt_install --no-install-recommends pcscd opensc p11-kit krb5-pkinit libpam-sss
-        run systemctl enable --now pcscd.socket
+        apt_install --no-install-recommends libpam-pkcs11 krb5-pkinit
         domain_install_ca
+    fi
+    if [[ $SMARTCARD_ENABLE == yes ]]; then
+        apt_install pcscd pcsc-tools pkg-config libpam-pkcs11 opensc libengine-pkcs11-openssl libnss3-tools
+        run systemctl enable --now pcscd.socket
     fi
 
     domain_write_krb5
@@ -43,6 +50,7 @@ mode_domain() {
     if domain_is_joined; then
         logt OK domain_already_joined "$AD_DOMAIN"
     else
+        run realm discover "$AD_DOMAIN" || logt WARN domain_discover_failed "$AD_DOMAIN"
         domain_join
     fi
 
@@ -53,6 +61,9 @@ mode_domain() {
         run pam-auth-update --disable mkhomedir || true
     else
         run pam-auth-update --enable mkhomedir
+    fi
+    if [[ $SMARTCARD_ENABLE == yes ]]; then
+        run pam-auth-update --disable sss-smart-card-required --enable sss-smart-card-optional
     fi
     run systemctl enable sssd.service
     run systemctl restart sssd.service
@@ -85,10 +96,17 @@ domain_install_ca() {
 }
 
 domain_write_krb5() {
-    local pkinit=""
+    local realms=""
     if cert_logon_enabled; then
-        pkinit="    pkinit_anchors = FILE:${SSSD_CA_DB}
-    pkinit_eku_checking = kpServerAuth"
+        # KDCs come from DNS (dns_lookup_kdc); KRB5_KDC pins one for PKINIT if needed.
+        realms="
+[realms]
+    ${AD_REALM} = {
+        pkinit_anchors = FILE:${SSSD_CA_DB}
+        pkinit_eku_checking = kpServerAuth${KRB5_KDC:+
+        kdc = ${KRB5_KDC}
+        pkinit_kdc_hostname = ${KRB5_KDC}}
+    }"
     fi
     write_file build /etc/krb5.conf 0644 <<EOF
 ${MANAGED_MARK}
@@ -102,7 +120,7 @@ ${MANAGED_MARK}
     forwardable = true
     # FILE caches in /tmp are what rpc.gssd looks for (NFS sec=krb5*)
     default_ccache_name = FILE:/tmp/krb5cc_%{uid}
-${pkinit}
+${realms}
 
 [domain_realm]
     .${AD_DOMAIN} = ${AD_REALM}
@@ -146,7 +164,7 @@ domain_join() {
 }
 
 domain_write_sssd() {
-    local access homedir pam_section="" cert_opts=""
+    local access homedir pam_section="" cert_opts="" certmap=""
     if [[ -n $AD_ACCESS_GROUPS ]]; then
         access="access_provider = simple
 simple_allow_groups = ${AD_ACCESS_GROUPS}"
@@ -164,8 +182,15 @@ simple_allow_groups = ${AD_ACCESS_GROUPS}"
         pam_section="
 [pam]
 pam_cert_auth = True
+pam_p11_allowed_services = +gdm-hzncred
 pam_cert_db_path = ${SSSD_CA_DB}
 p11_child_timeout = 30"
+        certmap="
+[certmap/${AD_DOMAIN}/truesso]
+matchrule = <EKU>msScLogin
+maprule = (|(userPrincipal={subject_principal})(samAccountName={subject_principal.short_name}))
+domains = ${AD_DOMAIN}
+priority = 10"
     fi
     write_file build /etc/sssd/sssd.conf 0600 <<EOF
 ${MANAGED_MARK}
@@ -193,11 +218,14 @@ default_shell = /bin/bash
 ldap_id_mapping = $([[ $SSSD_ID_MAPPING == false ]] && echo False || echo True)
 use_fully_qualified_names = $([[ $SSSD_FQ_NAMES == true ]] && echo True || echo False)
 ${homedir}
-# GPO-based access control is not evaluated per clone; keep it informative only.
+# Horizon SSO logs in through the gdm-hzncred PAM service.
+ad_gpo_map_interactive = +gdm-hzncred
+# Documented for Debian 12 (sssd bug 1934997) and for the cloned VMs.
 ad_gpo_access_control = permissive
 dyndns_update = $([[ $SSSD_DYNDNS == true ]] && echo True || echo False)
 dyndns_refresh_interval = 43200
 dyndns_update_ptr = False
+${certmap}
 EOF
     chown root:root /etc/sssd/sssd.conf
 }

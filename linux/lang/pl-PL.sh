@@ -36,14 +36,15 @@ MSG[menu_prompt]='Wybierz:'
 MSG[menu_step_failed]='Krok "%s" nie zakończył się - zobacz log.'
 MSG[usage_text]='Użycie: sudo %s <tryb> [opcje]
 
-Budowa (raz):   prepare -> domain -> nfs -> agent -> restart -> apps -> optimize -> collab -> check -> seal
+Budowa (raz):   prepare -> domain -> nfs -> agent -> restart -> recording -> apps -> optimize -> collab -> check -> seal
 Co miesiąc:     update --then-seal       Cofnięcie zamknięcia: unlock
 
 Tryby:
   prepare    pakiety bazowe, MATE + LightDM, locale, klawiatura, strefa czasowa, NTP
   domain     krb5.conf, SSSD, realm join obrazu, sudo, True SSO / karta
   nfs        katalogi domowe NFSv4 z Kerberosem (autofs, rpc.gssd, idmapd)
-  agent      instalacja/aktualizacja Horizon Linux Agent z Horizon/ (OfflineJoinDomain=sssd), RunOnce
+  agent      instalacja/aktualizacja agenta Horizon (z kontrolą wersji; zależności, sterownik USB VHCI, dźwięk), RunOnce
+  recording  Horizon Recording Agent (tryb szablonu -t; pyta o hasło do serwera)
   apps       uruchamia apps/*.sh --install (np. Eclipse)
   optimize   strojenie VDI (usługi, dconf MATE, LightDM, journald, sysctl, I/O, polkit)
   collab     ustawienia Session Collaboration - pyta o każdą wartość (link UAG)
@@ -59,7 +60,7 @@ Opcje:
   --lang en-US|pl-PL
   --revert        z optimize: cofnij wszystkie optymalizacje
   --then-seal     z update: zamknij obraz, jeśli nie trzeba restartu
-  --force         z seal: zamknij mimo błędów kontroli
+  --force         seal mimo błędów kontroli; ponowne wykonanie kroku; reinstalacja lub obniżenie wersji agentów
   -y, --yes       odpowiadaj "tak" na pytania
 '
 
@@ -91,7 +92,7 @@ MSG[agent_installer_missing]='Nie znaleziono install_viewagent.sh w %s.'
 MSG[agent_install_failed]='Instalacja Horizon Linux Agent nie powiodła się.'
 MSG[agent_conf_missing]='Nie znaleziono katalogu konfiguracji agenta (/etc/omnissa ani /etc/vmware).'
 MSG[agent_configured]='Agent skonfigurowany dla Instant Clone (OfflineJoinDomain=sssd, RunOnceScript): %s'
-MSG[agent_done]='Horizon Linux Agent gotowy.'
+MSG[agent_done]='Horizon Linux Agent %s gotowy.'
 
 # --- optimize ---
 MSG[step_optimize]='OPTIMIZE - strojenie VDI'
@@ -204,6 +205,49 @@ MSG[chk_fido_bad]='Brak fido2-token - przed seal wykonaj tryb agent z FIDO_ENABL
 MSG[step_fido]='FIDO - test przekierowania FIDO2 (uruchom w sesji Horizon na klonie)'
 MSG[fido_tools_missing_sealed]='Brak fido2-token, a obraz jest zamknięty - ustaw FIDO_ENABLE=yes i przebuduj.'
 MSG[fido_found]='Urządzenia FIDO2 widoczne w tej sesji: %s - przekierowanie działa na poziomie urządzenia.'
-MSG[fido_none]='Brak widocznego urządzenia FIDO2 - przekierowanie nieaktywne (klucz w kliencie? funkcja włączona w agencie/kliencie?).'
+MSG[fido_none]='Brak widocznego urządzenia FIDO2 - podłącz klucz przez przekierowanie USB w kliencie Horizon (USB_ENABLE/FIDO_ENABLE, sterownik VHCI).'
 MSG[menu_domain]='2. Active Directory: Kerberos, SSSD, dołączenie (+ True SSO / karta)'
 MSG[menu_fido]='Test przekierowania FIDO2 (w sesji na klonie)'
+
+# --- 0.2.0: versions, agent dependencies, USB VHCI, Recording ---
+MSG[step_already_done]='Krok %s wykonany już wersją %s (%s) z tą samą konfiguracją - pominięto (--force wykona ponownie).'
+MSG[step_rerun]='Krok %s wykonała wersja %s - wykonuję ponownie dla %s lub zmienionej konfiguracji.'
+MSG[agent_version_unknown]='Agent Horizon jest zainstalowany, ale to narzędzie nie zapisało jego wersji - uruchamiam instalator jako aktualizację.'
+MSG[agent_downgrade]='Zainstalowany agent %s jest nowszy niż archiwum %s - odmowa (--force, aby obniżyć wersję).'
+MSG[agent_up_to_date]='Agent Horizon %s już zainstalowany z tymi samymi opcjami (%s) - instalator nie został uruchomiony.'
+MSG[agent_action]='Agent %s: zainstalowany %s, archiwum %s, opcje: %s'
+MSG[agent_blast_running]='Działa BlastServer (aktywna sesja) - wyloguj wszystkie sesje lub zrestartuj VM, potem uruchom aktualizację (wymóg Omnissa).'
+MSG[vhci_downloading]='Pobieram źródła sterownika USB VHCI: %s'
+MSG[vhci_source_missing]='Brak źródeł USB VHCI %s, a pobranie z %s nie powiodło się - skopiuj plik do Horizon/.'
+MSG[vhci_present]='Sterownik USB VHCI %s już zainstalowany dla jądra %s.'
+MSG[vhci_patch_missing]='Nie znaleziono łatki VHCI %s w archiwum agenta.'
+MSG[vhci_secure_boot]='Włączony UEFI Secure Boot: moduły VHCI trzeba podpisać i zarejestrować klucz MOK (kroki VHCI w dokumentacji Omnissa).'
+MSG[vhci_building]='Buduję sterownik USB VHCI %s dla jądra %s (DKMS).'
+MSG[vhci_patch_failed]='Nałożenie %s na źródła VHCI nie powiodło się.'
+MSG[vhci_build_failed]='Po budowie DKMS brak modułów USB VHCI dla jądra %s.'
+MSG[vhci_done]='Sterownik USB VHCI %s zainstalowany dla jądra %s (dla nowych jąder przebudowuje się sam).'
+MSG[step_recording]='RECORDING - Horizon Recording Agent'
+MSG[rec_disabled]='REC_ENABLE nie jest "yes" - pominięto.'
+MSG[rec_url_invalid]='REC_SERVER_URL "%s" musi mieć postać https://<serwer>:9443.'
+MSG[rec_needs_agent]='Najpierw zainstaluj agenta Horizon (tryb agent) - wymaga go Recording Agent.'
+MSG[rec_archive_missing]='Brak Horizon.Recording.Linux.Agent-*.tar.gz w %s.'
+MSG[rec_up_to_date]='Horizon Recording Agent %s już zainstalowany - pominięto (--force instaluje ponownie).'
+MSG[rec_downgrade]='Zainstalowany Recording Agent %s jest nowszy niż archiwum %s - odmowa (--force).'
+MSG[rec_installing]='Recording Agent: zainstalowany %s, archiwum %s, serwer %s (tryb szablonu -t).'
+MSG[rec_password_prompt]='Hasło konta %s na serwerze Horizon Recording:'
+MSG[rec_password_missing]='Nie podano hasła - nic nie zainstalowano.'
+MSG[rec_installer_missing]='Nie znaleziono install.sh w %s.'
+MSG[rec_install_failed]='Instalacja Horizon Recording Agent nie powiodła się - zobacz komunikaty powyżej.'
+MSG[rec_done]='Horizon Recording Agent %s zainstalowany.'
+MSG[domain_discover_failed]='realm discover %s nie powiódł się - sprawdź DNS przed dołączeniem.'
+MSG[chk_deps_ok]='Pakiety zależności agenta zainstalowane.'
+MSG[chk_deps_missing]='Brak pakietów zależności agenta:%s (tryb agent).'
+MSG[chk_vhci_ok]='Sterownik USB VHCI dostępny dla jądra %s.'
+MSG[chk_vhci_bad]='Brak sterownika USB VHCI dla jądra %s - przekierowanie USB nie zadziała (tryb agent / dkms autoinstall).'
+MSG[chk_rec_ok]='Usługa Horizon Recording Agent włączona.'
+MSG[chk_rec_bad]='Brak usługi Horizon Recording Agent lub jest wyłączona (tryb recording).'
+MSG[chk_cs_ok]='Connection Server %s rozwiązuje się w DNS.'
+MSG[chk_cs_bad]='Connection Server %s nie rozwiązuje się - agent nie połączy się z brokerem.'
+MSG[menu_recording]='Horizon Recording Agent (pyta o hasło do serwera)'
+MSG[update_agent_newer]='Nowszy agent Horizon w Horizon/: %s -> %s - aktualizuję.'
+MSG[update_rec_newer]='Nowszy Horizon Recording Agent w Horizon/: %s -> %s - aktualizuję.'

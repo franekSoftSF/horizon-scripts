@@ -21,6 +21,11 @@ mode_update() {
     [[ $before != "$after" ]] && logt WARN update_new_kernel "$before" "$after"
     logt OK update_done
 
+    # Newer Horizon / Recording archives in Horizon/ -> upgrade them in the same cycle.
+    if [[ $UPDATE_AGENTS == yes ]]; then
+        update_agents
+    fi
+
     if reboot_pending; then
         logt WARN reboot_needed
         [[ ${THEN_SEAL:-0} == 1 ]] && logt WARN update_seal_after_reboot
@@ -28,5 +33,29 @@ mode_update() {
     fi
     if [[ ${THEN_SEAL:-0} == 1 ]]; then
         mode_seal
+    fi
+}
+
+update_agents() {
+    local archive version installed
+    archive=$(agent_find_archive)
+    if [[ -n $archive && -f $archive ]] && agent_installed; then
+        version=$(agent_archive_version "$archive")
+        installed=$(state_get build '.agent.version // empty')
+        if [[ -n $version && -n $installed && $(version_cmp "$installed" "$version") == -1 ]]; then
+            logt INFO update_agent_newer "$installed" "$version"
+            mode_agent
+        fi
+    fi
+    if [[ $REC_ENABLE == yes ]]; then
+        archive=$(recording_find_archive)
+        installed=$(state_get build '.recording.version // empty')
+        if [[ -n $archive && -f $archive && -n $installed ]]; then
+            version=$(recording_archive_version "$archive")
+            if [[ -n $version && $(version_cmp "$installed" "$version") == -1 ]]; then
+                logt INFO update_rec_newer "$installed" "$version"
+                mode_recording
+            fi
+        fi
     fi
 }

@@ -1,6 +1,6 @@
 # Status – VDI-ImageMaint dla Linuksa
 
-_Aktualizacja: 2026-10-01_ · wersja **0.1.0** · Debian 12 + MATE · Horizon 2506 Instant Clone
+_Aktualizacja: 2026-10-01_ · wersja **0.2.0** · Debian 12 + MATE · Horizon 2506 Instant Clone
 
 ## Zrobione
 - [x] Szkielet: `vdi-imagemaint.sh` (menu + tryby), `lib/common.sh` (konfiguracja, i18n EN/PL, log, śledzenie zmian w JSON)
@@ -14,20 +14,27 @@ _Aktualizacja: 2026-10-01_ · wersja **0.1.0** · Debian 12 + MATE · Horizon 25
 - [x] True SSO / karta: pcscd, OpenSC, krb5-pkinit, CA z `certs/` → SSSD, `pam_cert_auth`, `pkinit_anchors`, parametry agenta `-T`/`-m`
 - [x] `fido`: eksperymentalny test przekierowania FIDO2 w sesji na klonie (`fido2-token -L`)
 
+- [x] 0.2.0: kontrola wersji (kroki pomijane przy tej samej wersji i konfiguracji), wersja/upgrade agenta, zależności z dokumentacji,
+      USB 3.0 (VHCI + DKMS), FIDO2 przez USB, dźwięk (pulseaudio-utils, -a), tryb `recording`, `update` aktualizuje agentów,
+      SSSD/True SSO/karta zgodnie z dokumentacją 2606 (PDF od użytkownika)
+
 ## Jak testowano (bez VM)
-- Kontener `debian:12` (Docker): 25/25 testów (`tests/run-tests.sh`), shellcheck 0 uwag
+- Kontener `debian:12` (Docker): 27/27 testów (`tests/run-tests.sh`), shellcheck 0 uwag
 - Integracja w kontenerze: po seal `apt install`/`apt update`/`dpkg -i` odrzucone (kody 100/100/2) z komunikatem PL,
   `dpkg -l` działa; po unlock instalacja działa, pliki blokady usunięte
 - `collab -y` i interaktywnie (odrzuca `http://`, przyjmuje `https://`) na atrapie `/etc/omnissa`
 - `domain` z True SSO: baza CA SSSD, `pam_cert_auth`, `certificate_verification`, `pkinit_anchors`; zły PEM → kod 1
 - `fido` bez klucza: instaluje fido2-tools, zgłasza brak urządzenia
+- Agent na sztucznych archiwach: instalacja → pominięcie → upgrade → odmowa starszej wersji → blokada przy działającym BlastServer
 - `help`, `status`, `check` (PL), nieznany tryb/opcja → kod 2
 - **Nie testowano na VM**: prepare, nfs, agent, optimize (systemd, dconf, polkit), seal z wyłączeniem, RunOnce na klonie
 
 ## Do weryfikacji na VM / w dokumentacji Omnissa
 1. Klucze `viewagent-custom.conf` i `config` dla agenta 2506 (`OfflineJoinDomain`, `RunOnceScript*`, `CollaborationEnable`,
    `collaboration.serverUrl/enableEmail/enableControlPassing/maxCollabors`) oraz katalog `/etc/omnissa` vs `/etc/vmware`
-2. Parametry `install_viewagent.sh` (domyślnie tylko `-A yes`)
+2. Budowa VHCI przez DKMS z PRE_BUILD (hcd.h) na prawdziwym jądrze Debiana 12; Secure Boot (podpis MOK) – tylko ostrzeżenie
+8. `gnome-shell-extension-appindicator` w MATE (wymagany przez instalator agenta, ciągnie gnome-shell)
+9. Recording: rejestracja z `-t` na obrazie i działanie na klonach
 3. `realm join` + nasz sssd.conf a ClonePrep z OfflineJoinDomain=sssd na klonie (konto komputera, keytab, dyndns)
 4. Montowanie NFS krb5p na klonie po logowaniu SSO (bilet w FILE:/tmp, rpc.gssd)
 5. True SSO na Linuksie: czy agent 2506 wymaga dodatkowych ustawień poza SSSD/PKINIT (Enrollment Server, szablon certyfikatu)
