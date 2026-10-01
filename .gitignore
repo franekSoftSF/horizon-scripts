@@ -16,3 +16,8 @@ windows/install/Office/Data/
 # Customer-specific data stays local
 windows/install/packages.local.json
 *.bak_*
+# Linux tool: customer config and agent archives stay local
+linux/vdi-imagemaint.conf
+*.tar.gz
+*.deb
+linux/certs/

@@ -1,0 +1,37 @@
+{
+  "updated": "2026-10-01",
+  "version": "0.1.0",
+  "platform": {
+    "os": "Debian 12 bookworm",
+    "desktop": "MATE + LightDM",
+    "horizon": "2506 Instant Clone",
+    "adJoin": "SSSD + realm join on the golden image (mode domain), Horizon offline join per clone",
+    "certLogon": "True SSO / smart card optional (pam_cert_auth, PKINIT)",
+    "fido2": "experimental probe (mode fido)",
+    "homes": "NFSv4 sec=krb5p via autofs"
+  },
+  "languages": { "primary": "en-US", "secondary": "pl-PL", "i18nImplemented": true },
+  "profiles": ["university", "business"],
+  "modes": ["prepare", "domain", "nfs", "agent", "apps", "optimize", "collab", "check", "seal", "unlock", "update", "fido", "status"],
+  "checks": {
+    "unitTests": { "status": "pass", "passed": 25, "failed": 0, "where": "debian:12 container" },
+    "shellcheck": { "status": "pass", "findings": 0 },
+    "sealPackageLock": { "status": "pass", "where": "debian:12 container", "detail": "apt install/update and dpkg -i refused; unlock restores" },
+    "collab": { "status": "pass", "where": "debian:12 container, fake /etc/omnissa" },
+    "vm": { "status": "not-tested" }
+  },
+  "toVerify": [
+    "viewagent-custom.conf / config key names for agent 2506 (OfflineJoinDomain, RunOnceScript, CollaborationEnable, collaboration.*)",
+    "install_viewagent.sh arguments",
+    "realm join + own sssd.conf vs ClonePrep OfflineJoinDomain=sssd on a clone",
+    "True SSO on Linux agent 2506: anything beyond SSSD pam_cert_auth + PKINIT",
+    "FIDO2 redirection support and install switch in Linux agent 2506",
+    "NFS krb5p mount on a clone after SSO logon",
+    "polkit power rule hides MATE shutdown buttons"
+  ],
+  "plan": [
+    "VM test: ISO build -> seal -> Instant Clone pool -> logon, NFS, collaboration via UAG",
+    "fixes after test, 0.2.0",
+    "HTML cycle report"
+  ]
+}

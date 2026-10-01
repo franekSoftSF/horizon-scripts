@@ -1,0 +1,99 @@
+# VDI-ImageMaint dla Linuksa (Debian 12, MATE, Instant Clone)
+
+Narzędzie do obrazu wzorcowego **Debian 12 (bookworm) + MATE** dla **Omnissa Horizon 2506 Instant Clone**.
+Obraz wzorcowy ma SSSD, a agent Horizon dołącza każdy klon do domeny (offline join). Opcjonalnie działa
+logowanie przez True SSO lub kartę, jest też eksperymentalny test przekierowania FIDO2. Katalogi domowe
+są na NFSv4 z Kerberosem. Cykl jest ten sam co w wersji Windows: **budowa → Update → Optimize → Seal**,
+cofany przez **Unlock**. Profile: `university` i `business`. Komunikaty są po angielsku i po polsku.
+
+## Układ
+
+Katalog `linux/` w repozytorium to kompletny `/opt/vdi-imagemaint` na VM.
+
+| Ścieżka | Do czego |
+|---|---|
+| `vdi-imagemaint.sh` | punkt wejścia (bez argumentów = menu) |
+| `vdi-imagemaint.conf.example` | skopiuj do `vdi-imagemaint.conf` (poza gitem) i dostosuj |
+| `conf/defaults.conf`, `conf/profile-*.conf` | wszystkie ustawienia z wartościami domyślnymi oraz domyślne wartości profili |
+| `lib/*.sh` | jeden plik na tryb + `common.sh` (konfiguracja, i18n, log, śledzenie zmian) |
+| `lang/en-US.sh`, `lang/pl-PL.sh` | tabele komunikatów (główny jest angielski) |
+| `files/runonce.sh` | skrypt uruchamiany na każdym klonie (`/usr/local/sbin/vdi-imagemaint-runonce.sh`) |
+| `certs/` | certyfikaty CA (PEM) do True SSO / logowania kartą (poza gitem) |
+| `apps/*.sh` | opcjonalne instalatory aplikacji (np. Eclipse), uruchamia je tryb `apps` |
+| `Horizon/` | Horizon Linux Agent `*linux*.tar.gz` (poza gitem) |
+
+Na VM logi są w `/var/log/vdi-imagemaint/`, a stan w `/var/lib/vdi-imagemaint/`. Każda sekcja (`build`,
+`optimize`, `seal`) ma własny plik `<sekcja>-state.json`, a oryginał każdego zmienianego pliku jest
+zapisywany jeden raz.
+
+## Budowa (raz na obraz)
+
+```bash
+sudo cp -r linux /opt/vdi-imagemaint && cd /opt/vdi-imagemaint
+sudo cp vdi-imagemaint.conf.example vdi-imagemaint.conf && sudo nano vdi-imagemaint.conf
+sudo ./vdi-imagemaint.sh prepare     # pakiety, MATE + LightDM, locale, czas (NTP = AD)
+sudo ./vdi-imagemaint.sh domain      # krb5, SSSD, realm join (pyta o hasło), True SSO / karta
+sudo ./vdi-imagemaint.sh nfs         # autofs + NFSv4 sec=krb5p, idmapd, fragment SSSD
+sudo ./vdi-imagemaint.sh agent       # agent Horizon, OfflineJoinDomain=sssd, RunOnceScript
+sudo reboot
+sudo ./vdi-imagemaint.sh apps        # apps/*.sh --install (Eclipse ...)
+sudo ./vdi-imagemaint.sh optimize
+sudo ./vdi-imagemaint.sh collab      # pyta o każde ustawienie Session Collaboration
+sudo ./vdi-imagemaint.sh seal        # najpierw check, potem wyłączenie -> snapshot
+```
+
+## Co miesiąc
+
+Włącz obraz wzorcowy i uruchom `sudo ./vdi-imagemaint.sh update --then-seal`. Narzędzie odblokuje obraz,
+wykona `apt full-upgrade` i zamknie go ponownie. Jeśli nowe jądro wymaga restartu, uruchom VM ponownie,
+a potem wykonaj `seal`.
+
+## Co zmieniają tryby
+
+- **domain**: zapisuje `krb5.conf`, `sssd.conf` i `smb.conf` i dołącza obraz wzorcowy przez `realm join`
+  (adcli). Nadaje sudo grupom AD. Przy `OfflineJoinDomain=sssd` agent Horizon tworzy potem konto
+  komputera i keytab dla każdego klona. Bilety są w `FILE:/tmp/krb5cc_%U`, bo rpc.gssd nie czyta KCM.
+  - **True SSO / karta** (`TRUESSO_ENABLE`, `SMARTCARD_ENABLE`): instaluje pcscd, OpenSC i krb5-pkinit
+    i zapisuje łańcuch CA z `certs/` do `/etc/sssd/pki/sssd_auth_ca_db.pem`. Ustawia `pam_cert_auth`
+    i dodaje `pkinit_anchors` do krb5.conf, więc logowanie certyfikatem też daje bilet TGT i NFS krb5p
+    działa. Agent jest instalowany z `-T yes` / `-m yes`.
+  - **FIDO2** (`FIDO_ENABLE`, eksperymentalnie): `fido2-tools` jest instalowane przed seal. Uruchom
+    `fido` w sesji Horizon na klonie, z kluczem włożonym do klienta. Tryb pokaże urządzenia FIDO2
+    widoczne w pulpicie.
+- **optimize** (cofnięcie: `optimize --revert`):
+  - Wyłącza zbędne usługi, np. bluetooth, ModemManager, avahi, plocate, fwupd, anacron i exim4.
+    Maskuje uśpienie i hibernację.
+  - Ustawia MATE przez dconf: bez kompozycji i animacji, jednolite tło, bez oszczędzania energii.
+    W Caja na NFS wyłącza miniatury, podglądy i liczniki elementów. Wyłącza dźwięki zdarzeń.
+  - LightDM: ukrywa listę użytkowników i wyłącza konto gościa.
+  - System: journald w RAM, strojenie sysctl, harmonogram I/O `none` oraz opcjonalnie `/tmp` w RAM.
+  - polkit: użytkownik nie może wyłączyć, zrestartować ani uśpić klona.
+- **seal** (cofnięcie: `unlock`):
+  - Wykonuje `check`, wyłącza timery apt i unattended-upgrades oraz maskuje PackageKit.
+  - Czyści cache, logi, bilety Kerberos, cache SSSD i dzierżawy DHCP. Usuwa klucze hosta SSH; skrypt
+    RunOnce tworzy nowe na każdym klonie.
+  - **Blokuje zmiany pakietów dla wszystkich aż do unlock**: dpkg `pre-invoke` i apt
+    `Update::Pre-Invoke` odrzucają `apt update`, `apt install` i `dpkg -i`. Zapytania o pakiety
+    nadal działają.
+  - **Ukrywa okienka przed użytkownikami**: polkit odmawia akcji PackageKit i apt bez pytania o hasło
+    i zezwala na colord, więc nie pojawia się okno „wymagane uwierzytelnienie”. Wyłącza powiadomienia
+    housekeeping MATE i powiadomienia sieci oraz zrzuty pamięci.
+- **collab** pyta o każdą wartość; `-y` bierze wartości domyślne z konfiguracji. Do
+  `viewagent-custom.conf` zapisuje `CollaborationEnable`, a do pliku `config` agenta
+  `collaboration.serverUrl` (link w zaproszeniach, np. adres UAG), `enableEmail`, `enableControlPassing`
+  i `maxCollabors`.
+
+## Ograniczenia
+
+- **Teams**: agent Linux nie ma Media Optimization for Teams. Profil `business` instaluje Edge, więc
+  Teams działa jako aplikacja webowa.
+- **FIDO2**: do sprawdzenia, czy agent Linux 2506 przekierowuje urządzenia FIDO2 (tryb `fido`).
+  Ewentualny przełącznik instalatora wpisz w `HORIZON_AGENT_ARGS_FIDO`.
+- **GPO**: ADSys jest tylko dla Ubuntu (większość funkcji wymaga Ubuntu Pro) i nie ma go w Debianie 12.
+  `samba-gpupdate` wymaga konta maszyny Samba/winbind, którego offline join z SSSD nie tworzy.
+  Uprawnienia do logowania daje SSSD `ad_gpo_access_control`, a ustawienia – to narzędzie.
+- Przełączniki instalatora (`-T`, `-m`) i nazwy kluczy agenta (`OfflineJoinDomain`, `RunOnceScript`, `CollaborationEnable`, `collaboration.*`)
+  pochodzą z dokumentacji Horizon Linux Agent. Sprawdź je dla wdrażanej wersji agenta.
+- Klony Instant Clone powstają przez fork, a nie przez uruchomienie systemu. Wszystko, co ma się różnić
+  między klonami, należy do `files/runonce.sh` albo `/etc/vdi-imagemaint/runonce.local`. Wszystkie klony
+  mają ten sam `/etc/machine-id`.

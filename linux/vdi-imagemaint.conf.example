@@ -1,0 +1,36 @@
+# shellcheck shell=bash disable=SC2034
+# VDI-ImageMaint for Linux - customer configuration.
+# Copy to vdi-imagemaint.conf (git-ignored) and adjust. Every setting and its
+# default is listed in conf/defaults.conf; set here only what differs.
+
+PROFILE="university"              # university | business
+VDI_LANG=""                       # en-US | pl-PL | empty = from $LANG
+
+# Active Directory (SSSD on the golden image; Horizon clones the join)
+AD_DOMAIN="ad.example.edu"
+AD_WORKGROUP="AD"
+AD_JOIN_USER="join.example"
+AD_COMPUTER_OU="OU=VDI-Linux,OU=Computers,DC=ad,DC=example,DC=edu"
+AD_ACCESS_GROUPS="VDI-Linux-Users"
+AD_SUDO_GROUPS="VDI-Linux-Admins"
+SSSD_ID_MAPPING="true"            # must give the same UIDs as the NFS server sees
+
+# Certificate logon (put the CA PEM files in certs/)
+TRUESSO_ENABLE="no"
+SMARTCARD_ENABLE="no"
+CERT_CA_FILES="enterprise-root-ca.pem enterprise-issuing-ca.pem"
+
+# FIDO2 redirection - experimental
+FIDO_ENABLE="no"
+
+# NFS home directories
+NFS_ENABLE="yes"
+NFS_SERVER="nfs.example.edu"
+NFS_EXPORT="/export/home"
+NFS_SEC="krb5p"
+
+# Horizon Linux Agent
+HORIZON_AGENT_ARGS="-A yes"
+
+# Session Collaboration (mode "collab" asks; these are the offered defaults)
+COLLAB_SERVER_URL="https://uag.example.edu"

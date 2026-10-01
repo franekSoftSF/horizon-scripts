@@ -1,0 +1,209 @@
+# shellcheck shell=bash disable=SC2034,SC2154  # MSG is declared -A by load_lang
+# VDI-ImageMaint for Linux - polska tabela komunikatów (drugi język).
+# Te same klucze co en-US.sh; brakujący klucz = tekst angielski.
+
+# --- common ---
+MSG[start_banner]='VDI-ImageMaint dla Linuksa %s - tryb: %s, profil: %s, język: %s'
+MSG[err_root]='Uruchom jako root (sudo).'
+MSG[err_unexpected]='Nieoczekiwany błąd (kod %s) w linii %s: %s'
+MSG[err_unknown_option]='Nieznana opcja: %s'
+MSG[err_profile]='Nieznany profil "%s" (dozwolone: university, business).'
+MSG[conf_missing]='Ustawienie %s jest puste lub ma wartość przykładową - ustaw je w %s'
+MSG[prompt_yes_no]='%s [t/N]:'
+MSG[installing_dep]='Instaluję wymagane narzędzie: %s'
+MSG[unit_absent]='Jednostka %s nie jest zainstalowana - pominięto.'
+MSG[unit_restore_failed]='Nie udało się ponownie włączyć %s.'
+MSG[unit_restored]='Przywrócono %s (stan pierwotny: %s).'
+MSG[file_unchanged]='Bez zmian: %s'
+MSG[file_written]='Zapisano: %s'
+MSG[file_restored]='Przywrócono: %s'
+MSG[os_unsupported]='Wspierany system to Debian 12 (bookworm); wykryto: %s'
+MSG[reboot_needed]='Przed kolejnym krokiem wymagany jest restart.'
+
+# --- menu / usage ---
+MSG[menu_title]='=== VDI-ImageMaint dla Linuksa %s (profil: %s) ==='
+MSG[menu_prepare]='1. System bazowy: pakiety, MATE + LightDM, locale, czas'
+MSG[menu_nfs]='3. Katalogi domowe NFSv4 + Kerberos (autofs)'
+MSG[menu_agent]='4. Horizon Linux Agent (Instant Clone, offline join) - potem restart'
+MSG[menu_optimize]='6. Optymalizacja VDI (odwracalna: optimize --revert)'
+MSG[menu_check]='8. Kontrola gotowości (tylko odczyt)'
+MSG[menu_seal]='9. Zamknięcie (Seal) przed snapshotem (blokada pakietów, cisza dla użytkowników)'
+MSG[menu_update]='Co miesiąc: odblokuj, apt full-upgrade (potem ponownie Seal)'
+MSG[menu_unlock]='Cofnij zamknięcie (Seal)'
+MSG[menu_status]='Pokaż stan narzędzia'
+MSG[menu_quit]='Wyjście'
+MSG[menu_prompt]='Wybierz:'
+MSG[menu_step_failed]='Krok "%s" nie zakończył się - zobacz log.'
+MSG[usage_text]='Użycie: sudo %s <tryb> [opcje]
+
+Budowa (raz):   prepare -> domain -> nfs -> agent -> restart -> apps -> optimize -> collab -> check -> seal
+Co miesiąc:     update --then-seal       Cofnięcie zamknięcia: unlock
+
+Tryby:
+  prepare    pakiety bazowe, MATE + LightDM, locale, klawiatura, strefa czasowa, NTP
+  domain     krb5.conf, SSSD, realm join obrazu, sudo, True SSO / karta
+  nfs        katalogi domowe NFSv4 z Kerberosem (autofs, rpc.gssd, idmapd)
+  agent      instalacja/aktualizacja Horizon Linux Agent z Horizon/ (OfflineJoinDomain=sssd), RunOnce
+  apps       uruchamia apps/*.sh --install (np. Eclipse)
+  optimize   strojenie VDI (usługi, dconf MATE, LightDM, journald, sysctl, I/O, polkit)
+  collab     ustawienia Session Collaboration - pyta o każdą wartość (link UAG)
+  check      kontrola gotowości tylko do odczytu (kod 1 przy błędach)
+  seal       check + sprzątanie + blokada pakietów + cisza dla użytkowników, potem wyłączenie
+  unlock     cofnięcie seal
+  update     odblokowanie (jeśli zamknięty), apt full-upgrade, autoremove
+  fido       test przekierowania FIDO2 w sesji na klonie
+  status     wersja, profil, zapisane zmiany
+
+Opcje:
+  --config PLIK   plik konfiguracji (domyślnie: vdi-imagemaint.conf obok narzędzia)
+  --lang en-US|pl-PL
+  --revert        z optimize: cofnij wszystkie optymalizacje
+  --then-seal     z update: zamknij obraz, jeśli nie trzeba restartu
+  --force         z seal: zamknij mimo błędów kontroli
+  -y, --yes       odpowiadaj "tak" na pytania
+'
+
+# --- prepare ---
+MSG[step_prepare]='PREPARE - system bazowy'
+MSG[ask_continue_unsupported]='Ten system nie jest wspierany. Kontynuować mimo to?'
+MSG[locale_set]='Locale: %s, domyślne %s, klawiatura %s'
+MSG[time_set]='Strefa czasowa %s, NTP: %s'
+MSG[desktop_install]='Instaluję pulpit: %s'
+MSG[edge_install]='Instaluję Microsoft Edge (packages.microsoft.com)'
+MSG[prepare_done]='System bazowy gotowy.'
+
+# --- DNS ---
+MSG[dns_srv_missing]='Nie znaleziono rekordu DNS %s - sprawdź serwery DNS tej maszyny.'
+
+# --- nfs ---
+MSG[step_nfs]='NFS - katalogi domowe (NFSv4 + Kerberos)'
+MSG[nfs_disabled]='NFS_ENABLE nie jest "yes" - pominięto.'
+MSG[nfs_no_keytab]='Brak /etc/krb5.keytab na obrazie wzorcowym - katalogi NFS można przetestować dopiero na klonie (keytab tworzy offline join Horizon).'
+MSG[nfs_server_resolves]='Serwer NFS %s rozwiązuje się w DNS.'
+MSG[nfs_server_unresolved]='Serwer NFS %s nie rozwiązuje się w DNS.'
+MSG[nfs_done]='Katalogi domowe: %s montowane na żądanie pod %s (sec=%s).'
+
+# --- agent ---
+MSG[step_agent]='AGENT - Horizon Linux Agent'
+MSG[agent_archive_missing]='Brak archiwum Horizon Linux Agent (*linux*.tar.gz) w %s.'
+MSG[agent_installing]='Instaluję %s z parametrami: %s'
+MSG[agent_installer_missing]='Nie znaleziono install_viewagent.sh w %s.'
+MSG[agent_install_failed]='Instalacja Horizon Linux Agent nie powiodła się.'
+MSG[agent_conf_missing]='Nie znaleziono katalogu konfiguracji agenta (/etc/omnissa ani /etc/vmware).'
+MSG[agent_configured]='Agent skonfigurowany dla Instant Clone (OfflineJoinDomain=sssd, RunOnceScript): %s'
+MSG[agent_done]='Horizon Linux Agent gotowy.'
+
+# --- optimize ---
+MSG[step_optimize]='OPTIMIZE - strojenie VDI'
+MSG[autostart_disabled]='Wyłączono autostart: %s'
+MSG[optimize_done]='Optymalizacja zakończona (cofnięcie: optimize --revert).'
+MSG[step_optimize_revert]='OPTIMIZE --revert - cofanie optymalizacji'
+MSG[optimize_reverted]='Optymalizacje cofnięte.'
+
+# --- update ---
+MSG[step_update]='UPDATE - pakiety'
+MSG[update_unlocking]='Obraz jest zamknięty - najpierw odblokowuję.'
+MSG[update_new_kernel]='Nowe jądro %s -> %s: sprawdź, czy agent Horizon je wspiera.'
+MSG[update_done]='Pakiety zaktualizowane.'
+MSG[update_seal_after_reboot]='Uruchom ponownie, potem wykonaj: seal'
+
+# --- seal / unlock ---
+MSG[step_seal]='SEAL - przygotowanie do snapshotu'
+MSG[seal_blocked]='Seal przerwany: popraw wyniki ERR powyżej (lub użyj --force).'
+MSG[seal_forced]='Seal kontynuowany mimo błędów kontroli (--force).'
+MSG[seal_ssh_keys_removed]='Usunięto klucze hosta SSH - każdy klon wygeneruje własne.'
+MSG[seal_cleaning]='Czyszczenie cache, logów, biletów i dzierżaw DHCP.'
+MSG[seal_cleaned]='Sprzątanie zakończone.'
+MSG[seal_done]='Obraz zamknięty. Wyłącz maszynę i wykonaj snapshot dla puli Instant Clone.'
+MSG[ask_poweroff]='Wyłączyć teraz?'
+MSG[step_unlock]='UNLOCK - cofanie seal'
+MSG[unlock_not_sealed]='Obraz nie jest zamknięty - przywracam to, co zapisano.'
+MSG[unlock_done]='Seal cofnięty - obraz można zmieniać.'
+
+# --- check / status ---
+MSG[step_check]='CHECK - gotowość'
+MSG[chk_os_ok]='Debian 12.'
+MSG[chk_os_bad]='System to nie Debian 12 - nietestowane.'
+MSG[chk_reboot_pending]='Oczekuje restart (działa jądro %s, zainstalowane %s).'
+MSG[chk_reboot_none]='Restart nie jest wymagany.'
+MSG[chk_dpkg_broken]='dpkg zgłasza uszkodzone lub niedoinstalowane pakiety (dpkg --audit).'
+MSG[chk_dpkg_ok]='Baza pakietów spójna.'
+MSG[chk_agent_ok]='Usługa agenta Horizon %s włączona.'
+MSG[chk_agent_missing]='Brak usługi agenta Horizon lub jest wyłączona.'
+MSG[chk_agent_conf_missing]='Nie znaleziono viewagent-custom.conf.'
+MSG[chk_offlinejoin_ok]='OfflineJoinDomain=sssd.'
+MSG[chk_offlinejoin_bad]='W %s nie ustawiono OfflineJoinDomain=sssd.'
+MSG[chk_runonce_ok]='RunOnceScript %s istnieje.'
+MSG[chk_runonce_bad]='RunOnceScript "%s" nie istnieje lub nie jest wykonywalny.'
+MSG[chk_sssd_ok]='SSSD działa.'
+MSG[chk_sssd_bad]='SSSD nie działa.'
+MSG[chk_time_ok]='Czas zsynchronizowany (NTP).'
+MSG[chk_time_bad]='Czas niezsynchronizowany - Kerberos nie działa przy różnicy powyżej 5 minut.'
+MSG[chk_dns_ok]='Rekordy DNS SRV dla %s znalezione.'
+MSG[chk_desktop_ok]='LightDM + sesja MATE.'
+MSG[chk_desktop_bad]='LightDM nie jest menedżerem logowania albo brak sesji MATE.'
+MSG[chk_nfs_ok]='Katalogi domowe NFS skonfigurowane pod %s.'
+MSG[chk_nfs_bad]='Niekompletna konfiguracja NFS (autofs, /etc/auto.vdi-home lub Domain w idmapd).'
+MSG[chk_vmtools_ok]='open-vm-tools działa.'
+MSG[chk_vmtools_bad]='open-vm-tools nie działa.'
+MSG[chk_held]='Wstrzymane pakiety: %s'
+MSG[chk_local_users]='Istnieją konta lokalne (zostaw tylko konto administratora budowy): %s'
+MSG[chk_disk_low]='Tylko %s MB wolnego na /.'
+MSG[chk_disk_ok]='%s MB wolnego na /.'
+MSG[chk_optimized]='Optymalizacja zastosowana.'
+MSG[chk_not_optimized]='Optymalizacja niezastosowana (tryb optimize).'
+MSG[chk_summary]='Wynik: błędy: %s, ostrzeżenia: %s.'
+MSG[step_status]='STATUS'
+MSG[status_line]='Wersja %s, profil %s, konfiguracja %s'
+MSG[status_sealed]='Obraz jest ZAMKNIĘTY (sealed).'
+MSG[status_unsealed]='Obraz nie jest zamknięty.'
+
+# --- collab / apps / seal additions ---
+MSG[menu_apps]='5. Dodatkowe aplikacje (apps/*.sh, np. Eclipse)'
+MSG[menu_collab]='7. Session Collaboration (pyta o każde ustawienie, link UAG)'
+MSG[seal_guard_msg]='Obraz VDI jest zamknięty - zmiany pakietów zablokowane. Uruchom: vdi-imagemaint.sh unlock (lub update)'
+MSG[seal_packages_blocked]='Zmiany pakietów zablokowane (apt update, apt install, dpkg -i) do czasu unlock.'
+MSG[seal_users_quiet]='Użytkownicy pulpitu nie zobaczą okien pakietów, colord ani błędów systemu.'
+MSG[tmpfs_next_boot]='/tmp w pamięci RAM od następnego uruchomienia.'
+MSG[step_collab]='COLLAB - Horizon Session Collaboration'
+MSG[collab_q_enable]='Włączyć Session Collaboration? (tak/nie)'
+MSG[collab_q_url]='Link w zaproszeniach - adres zewnętrzny, np. UAG (https://..., puste = domyślny agenta)'
+MSG[collab_q_email]='Zezwolić na zaproszenia e-mailem? (tak/nie)'
+MSG[collab_q_control]='Zezwolić współpracownikom na przejęcie klawiatury/myszy? (tak/nie)'
+MSG[collab_q_max]='Maksymalna liczba współpracowników w sesji'
+MSG[collab_invalid]='Niepoprawna wartość - spróbuj ponownie (obecnie domyślnie: %s).'
+MSG[collab_summary]='Collaboration: włączone=%s, link=%s, e-mail=%s, przekazywanie sterowania=%s, maks.=%s'
+MSG[collab_q_apply]='Zapisać te ustawienia w konfiguracji agenta w %s?'
+MSG[collab_cancelled]='Nic nie zmieniono.'
+MSG[collab_done]='Zapisano: %s, %s'
+MSG[collab_restart]='Uruchom ponownie agenta (lub VM), aby zmiana zadziałała; klony dostaną ją z następnym Push Image.'
+MSG[step_apps]='APPS - dodatkowe aplikacje'
+MSG[apps_running]='Uruchamiam %s --install'
+MSG[apps_done]='%s zakończony.'
+MSG[apps_failed]='%s nie powiódł się - zobacz komunikaty powyżej.'
+MSG[apps_none]='Brak skryptów aplikacji w %s.'
+
+# --- domain / certificate logon / FIDO ---
+MSG[step_domain]='DOMAIN - Active Directory (SSSD) dla offline join Instant Clone'
+MSG[dns_srv_ok]='Kontrolery domeny %s znalezione w DNS.'
+MSG[domain_already_joined]='Już dołączono do %s.'
+MSG[domain_joining]='Dołączanie do %s jako %s (komputer: %s) - podaj hasło, gdy pojawi się pytanie.'
+MSG[domain_join_failed]='Dołączenie do %s nie powiodło się - zobacz komunikaty powyżej.'
+MSG[sudoers_invalid]='Wpis sudoers dla "%s" jest niepoprawny - nie zapisano.'
+MSG[domain_done]='Domena %s skonfigurowana.'
+MSG[agent_not_joined]='Obraz wzorcowy nie jest w domenie %s - najpierw wykonaj krok domain.'
+MSG[chk_joined_ok]='Obraz wzorcowy w domenie %s, keytab obecny.'
+MSG[chk_joined_bad]='Brak dołączenia do %s lub brak /etc/krb5.keytab (tryb domain).'
+MSG[cert_ca_missing]='Nie znaleziono certyfikatu CA %s (CERT_CA_FILES).'
+MSG[cert_ca_invalid]='%s nie jest certyfikatem PEM.'
+MSG[cert_ca_none]='True SSO / karta włączone, ale CERT_CA_FILES jest puste.'
+MSG[chk_cert_ok]='Logowanie certyfikatem gotowe (baza CA SSSD, pam_cert_auth, pcscd).'
+MSG[chk_cert_bad]='Logowanie certyfikatem niekompletne: brak bazy CA SSSD, pam_cert_auth lub pcscd.socket (tryb domain).'
+MSG[chk_fido_ok]='fido2-token obecny do testu przekierowania FIDO2.'
+MSG[chk_fido_bad]='Brak fido2-token - przed seal wykonaj tryb agent z FIDO_ENABLE=yes.'
+MSG[step_fido]='FIDO - test przekierowania FIDO2 (uruchom w sesji Horizon na klonie)'
+MSG[fido_tools_missing_sealed]='Brak fido2-token, a obraz jest zamknięty - ustaw FIDO_ENABLE=yes i przebuduj.'
+MSG[fido_found]='Urządzenia FIDO2 widoczne w tej sesji: %s - przekierowanie działa na poziomie urządzenia.'
+MSG[fido_none]='Brak widocznego urządzenia FIDO2 - przekierowanie nieaktywne (klucz w kliencie? funkcja włączona w agencie/kliencie?).'
+MSG[menu_domain]='2. Active Directory: Kerberos, SSSD, dołączenie (+ True SSO / karta)'
+MSG[menu_fido]='Test przekierowania FIDO2 (w sesji na klonie)'
