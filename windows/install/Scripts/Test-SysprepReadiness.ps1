@@ -41,6 +41,8 @@
     Sources: Omnissa TechZone "Manually creating optimized Windows images for Horizon VMs",
     Omnissa KB 77253, Microsoft Q&A on 24H2 Sysprep AppX failures.
 #>
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'InstallDir',
+    Justification = 'Used inside the C17 Invoke-Check scriptblock')]
 [CmdletBinding()]
 param(
     [ValidateSet('auto', 'en', 'pl')]

@@ -29,21 +29,12 @@
     },
     "psScriptAnalyzer": {
       "version": "1.25.0",
-      "total": 132,
-      "byRule": {
-        "PSAvoidUsingPositionalParameters": 79,
-        "PSUseSingularNouns": 17,
-        "PSUseShouldProcessForStateChangingFunctions": 16,
-        "PSAvoidUsingEmptyCatchBlock": 8,
-        "PSAvoidUsingWriteHost": 8,
-        "PSAvoidOverwritingBuiltInCmdlets": 2,
-        "PSShouldProcess": 1,
-        "PSUseDeclaredVarsMoreThanAssignments": 1
-      }
+      "total": 0,
+      "detail": "windows/PSScriptAnalyzerSettings.psd1"
     },
     "pester": {
-      "status": "none",
-      "detail": "no tests yet"
+      "status": "pass",
+      "detail": "60 tests in Windows PowerShell 5.1 and PowerShell 7 (windows/tests/Invoke-Tests.ps1)"
     }
   },
   "issues": [
@@ -256,7 +247,8 @@
     "START.cmd + Start-Menu.ps1 (EN/PL), Update -ThenSeal",
     "Graphics profile, OneDrive per-machine, docs/profiles-gpo.md",
     "Module split (install/Modules/VDI-ImageMaint) + English primary / Polish secondary, 407 keys, -Language",
-    "-Mode Download: ODT, Teams bootstrapper+MSIX, FSLogix, OneDrive, LGPO, SDelete, VMware Tools (signature check, unzip, hash compare) - tested with real downloads"
+    "-Mode Download: ODT, Teams bootstrapper+MSIX, FSLogix, OneDrive, LGPO, SDelete, VMware Tools (signature check, unzip, hash compare) - tested with real downloads",
+    "Windows tool moved to windows/; Pester suite 60/60 in PS 5.1 and pwsh 7; PSScriptAnalyzer clean"
   ],
   "osotFindings": [
     "Generalize requires audit mode; cannot be combined with Finalize; reboot required after",

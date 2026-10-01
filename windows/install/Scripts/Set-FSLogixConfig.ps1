@@ -82,6 +82,7 @@ function Write-Log {
 }
 
 function Set-Reg {
+    [CmdletBinding(SupportsShouldProcess)]
     param([string]$Path, [string]$Name, $Value, [ValidateSet('DWord', 'String', 'MultiString', 'ExpandString')][string]$Type = 'DWord')
     $cur = $null
     $key = Get-Item -LiteralPath $Path -ErrorAction SilentlyContinue

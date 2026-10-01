@@ -3,6 +3,11 @@
 ## VDI-ImageMaint 2.0.0 – in progress
 
 ### Added
+- Tests: `windows/tests` (Pester 5, 60 tests, run in Windows PowerShell 5.1 and PowerShell 7 by`Invoke-Tests.ps1`):
+  EN/PL key and placeholder parity, every used key defined, file encoding/CRLF/parsing, pure functions (versions, names,
+  winget table, argument text, JSON), ODT XML, unattend.xml, install plan on TestDrive, seal baseline (HKCU), download
+  helpers (mocked network and signatures), mode/handler consistency; PSScriptAnalyzer with `windows/PSScriptAnalyzerSettings.psd1`.
+- Set-FSLogixConfig: `Set-Reg` is an advanced function with ShouldProcess (-WhatIf flows through it).
 - `-Mode Download`: Office Deployment Tool, Teams bootstrapper + MSIX, FSLogix ZIP, OneDrive, LGPO.exe, sdelete64.exe and
   VMware Tools are downloaded into the right folders - Authenticode publisher check (every EXE inside the FSLogix ZIP),
   ZIP extraction, SHA-256 compare (unchanged files kept), older versions removed; manual items listed at the end.

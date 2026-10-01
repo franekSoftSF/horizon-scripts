@@ -57,7 +57,7 @@ Current state and next steps: see `status.md` / `status.json` (keep both in sync
 # parse under both engines
 powershell.exe -NoProfile -Command "[System.Management.Automation.Language.Parser]::ParseFile('<file>',[ref]`$null,[ref]`$e); `$e"
 Invoke-ScriptAnalyzer -Path windows/install -Recurse         # PSScriptAnalyzer 1.25 installed
-Invoke-Pester windows/tests                            # Pester 5.9 installed
+.\windows\tests\Invoke-Tests.ps1                     # Pester 5 in PS 5.1 + pwsh 7, then PSScriptAnalyzer (must be all green)
 ```
 Nothing here can be run end-to-end locally (needs admin, VM, Horizon). Say clearly what was only
 statically checked vs. tested on the VM.

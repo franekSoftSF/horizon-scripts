@@ -1,6 +1,9 @@
 ﻿# Paths, update-blocking definitions and module state.
 # The entry script (VDI-ImageMaint.ps1) copies its parameters into module scope in Invoke-VdiImageMaint,
 # so functions read $InstallDir, $WingetAll, ... exactly as in the single-file version.
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '',
+    Justification = 'Module-scope configuration read by the other Private files')]
+param()
 
 $script:ToolVersion = '2.0.0'
 
