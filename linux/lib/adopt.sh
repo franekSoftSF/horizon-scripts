@@ -65,14 +65,22 @@ adopt_detect_homes() {
 }
 
 # Best effort only: Omnissa documents no version file for the tarball install.
+# 1. a version string in the installed agent's small text files
+# 2. the newest installer next to the tool or in HORIZON_EXTRA_DIRS (e.g. /install) -
+#    usually the one that was installed; the user confirms it
 adopt_guess_agent_version() {
-    local d
+    local d v=""
     for d in /usr/lib/omnissa/viewagent /usr/lib/vmware/viewagent; do
         [[ -d $d ]] || continue
-        find "$d" -maxdepth 3 -type f \( -iname '*version*' -o -iname '*build*' -o -iname '*.txt' \) -size -64k \
-            -exec grep -hoE '\b2[0-9]{3}-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\b' {} + 2>/dev/null | sort -V | tail -n1
-        return 0
+        v=$(find "$d" -maxdepth 3 -type f \( -iname '*version*' -o -iname '*build*' -o -iname '*.txt' \) -size -64k \
+            -exec grep -hoE '\b2[0-9]{3}-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\b' {} + 2>/dev/null | sort -V | tail -n1 || true)
+        break
     done
+    if [[ -z $v ]]; then
+        d=$(agent_find_archive)
+        [[ -n $d ]] && v=$(agent_archive_version "$d")
+    fi
+    printf '%s' "$v"
 }
 
 adopt_detect_agent() {

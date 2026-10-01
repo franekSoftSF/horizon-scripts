@@ -1,6 +1,6 @@
 # Status – VDI-ImageMaint dla Linuksa
 
-_Aktualizacja: 2026-10-02_ · wersja **0.4.0** · Debian 12 + MATE · Horizon 2506 Instant Clone
+_Aktualizacja: 2026-10-02_ · wersja **0.4.1** · Debian 12 + MATE · Horizon 2506 Instant Clone
 
 ## Zrobione
 - [x] Szkielet: `vdi-imagemaint.sh` (menu + tryby), `lib/common.sh` (konfiguracja, i18n EN/PL, log, śledzenie zmian w JSON)
@@ -27,6 +27,9 @@ _Aktualizacja: 2026-10-02_ · wersja **0.4.0** · Debian 12 + MATE · Horizon 25
       L23 rozpoznaje wartości przykładowe, menu nie zgłasza wyników check jako błędu kroku
 
 - [x] 0.4.0: automatyczna aktualizacja narzędzia z GitHuba przy każdym uruchomieniu (AUTO_UPGRADE, --no-upgrade, tryb self-update), odświeżanie skryptu klona
+
+- [x] 0.4.1: instalatory także w `/install` (HORIZON_EXTRA_DIRS) i jako rozpakowane katalogi; VHCI z rozpakowanego katalogu, wykrycie nałożonej łatki;
+      adopt proponuje wersję agenta z nazwy instalatora
 
 ## Jak testowano (bez VM)
 - Kontener `debian:12` (Docker): 29/29 testów (`tests/run-tests.sh`), shellcheck 0 uwag

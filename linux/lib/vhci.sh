@@ -10,8 +10,15 @@
 
 VHCI_DKMS_NAME="usb-vhci-hcd"
 
+# VHCI source: unpacked folder or .tar.gz in the source dirs, else downloaded to Horizon/.
 vhci_source_archive() {
-    local f="${VDI_ROOT}/Horizon/vhci-hcd-${VHCI_VERSION}.tar.gz"
+    local f
+    f=$(find_sources "vhci-hcd-${VHCI_VERSION}" d | head -n1 || true)
+    [[ -n $f && -f ${f}/Makefile ]] && { printf '%s' "$f"; return 0; }
+    f=$(find_sources "vhci-hcd-${VHCI_VERSION}.tar.gz" f | head -n1 || true)
+    [[ -n $f && -s $f ]] && { printf '%s' "$f"; return 0; }
+    install -d "${VDI_ROOT}/Horizon"
+    f="${VDI_ROOT}/Horizon/vhci-hcd-${VHCI_VERSION}.tar.gz"
     if [[ ! -s $f ]]; then
         logt INFO vhci_downloading "$VHCI_URL"
         curl -fsSL -o "$f" "$VHCI_URL" || {
@@ -49,12 +56,21 @@ vhci_install() {
     archive=$(vhci_source_archive) || return 1
 
     src=$(mktemp -d /tmp/vdi-vhci.XXXXXX)
-    tar -xzf "$archive" -C "$src"
-    (cd "${src}/vhci-hcd-${VHCI_VERSION}" && patch -p1 <"$patch") >/dev/null || {
+    if [[ -d $archive ]]; then
+        cp -r "$archive" "${src}/vhci-hcd-${VHCI_VERSION}"
+        (cd "${src}/vhci-hcd-${VHCI_VERSION}" && make clean >/dev/null 2>&1) || true
+    else
+        tar -xzf "$archive" -C "$src"
+    fi
+    logt INFO vhci_source "$archive"
+    # An unpacked folder may already carry the Omnissa patch (done by hand before).
+    if (cd "${src}/vhci-hcd-${VHCI_VERSION}" && patch -p1 -R --dry-run -s <"$patch") >/dev/null 2>&1; then
+        logt INFO vhci_already_patched
+    elif ! (cd "${src}/vhci-hcd-${VHCI_VERSION}" && patch -p1 <"$patch") >/dev/null; then
         logt ERR vhci_patch_failed "$patch"
         rm -rf "$src"
         return 1
-    }
+    fi
 
     if dkms status "${VHCI_DKMS_NAME}/${VHCI_VERSION}" 2>/dev/null | grep -q .; then
         run dkms remove "${VHCI_DKMS_NAME}/${VHCI_VERSION}" --all || true
@@ -111,15 +127,19 @@ mode_usb() {
     done
     if [[ -z $patch ]]; then
         archive=$(agent_find_archive)
-        if [[ -z $archive || ! -f $archive ]]; then
-            logt ERR usb_no_patch "${VDI_ROOT}/Horizon"
+        if [[ -z $archive || ! -e $archive ]]; then
+            logt ERR usb_no_patch "$(source_dirs | tr '\n' ' ')"
             exit 1
         fi
-        work=$(mktemp -d /tmp/vdi-usb.XXXXXX)
-        tar -xzf "$archive" -C "$work"
-        patch=$(find "$work" -path '*resources/vhci/patch/vhci.patch' -print -quit)
+        if [[ -d $archive ]]; then
+            patch=$(find "$archive" -path '*resources/vhci/patch/vhci.patch' -print -quit)
+        else
+            work=$(mktemp -d /tmp/vdi-usb.XXXXXX)
+            tar -xzf "$archive" -C "$work"
+            patch=$(find "$work" -path '*resources/vhci/patch/vhci.patch' -print -quit)
+        fi
         if [[ -z $patch ]]; then
-            rm -rf "$work"
+            [[ -n $work ]] && rm -rf "$work"
             logt ERR vhci_patch_missing "$archive"
             exit 1
         fi
