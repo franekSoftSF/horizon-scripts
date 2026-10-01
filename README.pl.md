@@ -177,6 +177,11 @@ linux/tests/run-tests.sh             # testy offline (uruchamiane w kontenerze d
 | Narzędzie dla Linuksa | [linux.md](linux/docs/pl/linux.md) | [en](linux/docs/linux.md) |
 | Java / Eclipse w Linuksie | [linux-eclipse-java.md](docs/pl/linux-eclipse-java.md) | [en](docs/linux-eclipse-java.md) |
 
+## Licencja
+
+[MIT](LICENSE) © 2026 franekSoftSF. Instalatory i narzędzia firm trzecich (Omnissa OSOT, Horizon Agent, FSLogix,
+Microsoft 365 Apps, …) nie są częścią repozytorium i mają własne licencje.
+
 ## Zastrzeżenie
 
 Omnissa Horizon, Microsoft 365, FSLogix i inne nazwy produktów należą do ich właścicieli. Projekt nie jest

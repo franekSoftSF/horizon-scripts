@@ -171,6 +171,11 @@ linux/tests/run-tests.sh             # offline tests (run in a debian:12 contain
 | Linux tool | [linux.md](linux/docs/linux.md) | [pl](linux/docs/pl/linux.md) |
 | Java / Eclipse on Linux | [linux-eclipse-java.md](docs/linux-eclipse-java.md) | [pl](docs/pl/linux-eclipse-java.md) |
 
+## License
+
+[MIT](LICENSE) © 2026 franekSoftSF. Third-party installers and tools (Omnissa OSOT, Horizon Agent, FSLogix,
+Microsoft 365 Apps, …) are not part of this repository and keep their own licenses.
+
 ## Disclaimer
 
 Omnissa Horizon, Microsoft 365, FSLogix and other product names belong to their owners. This project is not
