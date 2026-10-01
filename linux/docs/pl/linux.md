@@ -63,6 +63,17 @@ curl -fsSL https://raw.githubusercontent.com/franekSoftSF/horizon-scripts/main/l
 To samo polecenie aktualizuje narzędzie. Wymieniane są tylko pliki narzędzia; `vdi-imagemaint.conf`,
 `Horizon/`, `certs/` i `apps/*.conf` zostają bez zmian. Opcje: `--version 0.3.0`, `--dir <ścieżka>`, `--lang pl-PL`.
 
+### Automatyczna aktualizacja
+
+Przy każdym uruchomieniu narzędzie sprawdza na GitHubie, czy jest nowsze wydanie `linux-v*`. Jeśli tak,
+instaluje je w miejscu (z kontrolą SHA-256 i zachowaniem plików lokalnych) i uruchamia to samo polecenie
+ponownie w nowej wersji. Odświeża też zainstalowany skrypt klona. Gdy GitHub jest niedostępny, narzędzie
+działa dalej na zainstalowanej wersji.
+
+- `AUTO_UPGRADE="yes"` (domyślnie), `"ask"` albo `"no"` w `vdi-imagemaint.conf`;
+- `--no-upgrade` pomija aktualizację w jednym uruchomieniu;
+- `self-update` sprawdza GitHub od razu, także przy `AUTO_UPGRADE="no"`.
+
 ## Istniejący obraz wzorcowy (tryb `adopt`)
 
 Jeśli obraz był budowany bez tego narzędzia, zacznij od `adopt`:

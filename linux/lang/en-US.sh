@@ -57,6 +57,7 @@ Modes:
   update     unlock if sealed, apt full-upgrade, autoremove
   fido       FIDO2 redirection test inside a session on a clone
   status     tool version, profile, recorded changes
+  self-update  check GitHub now and upgrade the tool (also when AUTO_UPGRADE=no)
 
 Options:
   --config FILE   configuration file (default: vdi-imagemaint.conf next to the tool)
@@ -65,6 +66,7 @@ Options:
   --then-seal     with update: seal when no reboot is pending
   --force         seal despite failed checks; rerun a done step; reinstall or downgrade agents
   -y, --yes       answer yes to questions
+  --no-upgrade    skip the automatic tool upgrade for this run
 '
 
 # --- prepare ---
@@ -312,3 +314,14 @@ MSG[menu_usb]='USB redirection driver (VHCI) only - also for an adopted image'
 MSG[adopt_runonce_set]='Per-clone script %s set as RunOnceScript in %s (new SSH host keys and SSSD/NFS refresh on every clone).'
 MSG[chk_conf_example]='Example values still in the configuration:%s - set them in %s.'
 MSG[chk_conf_example_detected]='Example values still in the configuration:%s - the values found on this image are in %s (copy them over).'
+
+# --- 0.4.0: self-update ---
+MSG[selfupdate_unreachable]='GitHub not reachable - continuing with the installed version.'
+MSG[selfupdate_current]='VDI-ImageMaint %s is the newest release.'
+MSG[selfupdate_available]='Newer VDI-ImageMaint release: %s -> %s.'
+MSG[selfupdate_q]='Upgrade the tool to %s now?'
+MSG[selfupdate_failed]='Upgrade to %s failed - continuing with the installed version.'
+MSG[selfupdate_done]='Tool upgraded to %s - starting the command again with the new version.'
+MSG[selfupdate_runonce]='Per-clone script %s updated to this tool version.'
+MSG[step_selfupdate]='SELF-UPDATE - check GitHub for a newer release'
+MSG[menu_self-update]='Upgrade this tool from GitHub now'

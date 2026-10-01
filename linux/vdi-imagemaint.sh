@@ -16,7 +16,7 @@ VDI_ROOT=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
 
 # shellcheck source=lib/common.sh
 . "${VDI_ROOT}/lib/common.sh"
-for _lib in base domain nfs vhci agent recording adoptconf adopt collab optimize update seal check; do
+for _lib in base domain nfs vhci agent recording adoptconf adopt selfupdate collab optimize update seal check; do
     # shellcheck disable=SC1090
     . "${VDI_ROOT}/lib/${_lib}.sh"
 done
@@ -28,7 +28,7 @@ usage() {
 
 menu() {
     local choice
-    local -a modes=(adopt prepare domain nfs agent usb recording apps optimize collab check seal update unlock fido status)
+    local -a modes=(adopt prepare domain nfs agent usb recording apps optimize collab check seal update unlock fido status self-update)
     while true; do
         printf '\n%s\n' "$(t menu_title "$VDI_VERSION" "$PROFILE")"
         local i=1 m
@@ -69,6 +69,7 @@ dispatch() {
         check) mode_check || exit 1 ;;
         fido) mode_fido ;;
         status) mode_status ;;
+        self-update) mode_self_update ;;
         *)
             usage >&2
             exit 2
@@ -78,7 +79,7 @@ dispatch() {
 
 main() {
     MODE=menu
-    local -a rest=()
+    local -a rest=() orig_args=("$@")
     while (($#)); do
         case $1 in
             -h | --help) MODE=help ;;
@@ -88,6 +89,7 @@ main() {
             --then-seal) THEN_SEAL=1 ;;
             --revert) REVERT=1 ;;
             -y | --yes) ASSUME_YES=1 ;;
+            --no-upgrade) NO_UPGRADE=1 ;;
             -*) rest+=("$1") ;;
             *) MODE=$1 ;;
         esac
@@ -113,6 +115,9 @@ main() {
 
     trap 'on_error $LINENO' ERR
     init_runtime
+    # Newer release on GitHub -> upgrade in place and start this command again.
+    [[ $MODE == self-update ]] || self_update "${orig_args[@]}"
+    selfupdate_sync_runonce
     ensure_jq
     if [[ $MODE == menu ]]; then
         menu

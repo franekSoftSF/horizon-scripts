@@ -1,5 +1,9 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.4.0 – 2026-10-02
+- Automatic tool upgrade: every run checks the newest linux-v* GitHub release; a newer one is installed in place through get-vdi-imagemaint.sh (SHA-256, local files kept) and the same command restarts with it. AUTO_UPGRADE=yes|ask|no, --no-upgrade, mode self-update. Offline runs continue unchanged.
+- The installed per-clone script is refreshed when the tool version changes it.
+
 ## 0.3.2 – 2026-10-02
 - New mode `usb`: USB VHCI driver only (patch from the installed agent or the agent archive), for adopted images - no agent reinstall.
 - check: missing agent installer dependencies are a warning when the agent is already installed; example Connection Server names are reported as "set the configuration", not as a DNS error.
