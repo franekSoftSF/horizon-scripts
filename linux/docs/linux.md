@@ -69,6 +69,12 @@ If you have an image that was built without this tool, run `adopt` before anythi
 sudo ./vdi-imagemaint.sh adopt
 ```
 
+You do not need to copy or edit `vdi-imagemaint.conf.example` first: `adopt` creates `vdi-imagemaint.conf`
+from what it finds. The only question is the profile (university or business). The file covers locale, time zone,
+keyboard, AD domain and workgroup, SSSD names and ID mapping, NFS server, export and `sec=` from fstab or autofs,
+SSO, USB, smart card, True SSO, Collaboration and Recording. If a `vdi-imagemaint.conf` already exists, it is left
+unchanged: the detected values go to `vdi-imagemaint.conf.detected` and the differences are listed.
+
 1. **Detects** the current state:
    - desktop sessions and the display manager;
    - the domain join method (SSSD or winbind/Samba) and the machine keytab;

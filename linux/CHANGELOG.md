@@ -1,5 +1,9 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.3.1 – 2026-10-02
+- `adopt` creates `vdi-imagemaint.conf` from the detected settings (locale, time zone, keyboard, AD domain/workgroup, SSSD names and ID mapping, NFS from fstab/autofs, SSO, USB, smart card, True SSO, Collaboration, Recording); asks only for the profile. An existing configuration is never overwritten: detected values go to `vdi-imagemaint.conf.detected` and differences are listed.
+- `get-vdi-imagemaint.sh` points existing images to `adopt`.
+
 ## 0.3.0 – 2026-10-01
 - New mode `adopt` for existing golden images: detects desktop/display manager, join method (SSSD / winbind), home directories and the Horizon agent; previews prepare/domain/nfs/agent changes as diffs (secrets masked, nothing written); marks kept steps as adopted (never rerun, also after tool upgrades, unless --force); records the agent version without reinstalling; keeps a non-SSSD OfflineJoinDomain and chains an existing RunOnceScript.
 - `check` accepts adopted desktop, join service (sssd / winbind) and home directories.

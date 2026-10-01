@@ -79,8 +79,10 @@ cp -a "${WORK}/vdi-imagemaint/." "${DEST}/"
 chown -R root:root "$DEST"
 
 if [[ ! -f ${DEST}/vdi-imagemaint.conf ]]; then
-    msg "Next: cp %s/vdi-imagemaint.conf.example %s/vdi-imagemaint.conf, edit it, then run sudo %s/vdi-imagemaint.sh" \
-        "Dalej: cp %s/vdi-imagemaint.conf.example %s/vdi-imagemaint.conf, uzupełnij, potem sudo %s/vdi-imagemaint.sh" \
+    msg "Existing golden image: sudo %s/vdi-imagemaint.sh adopt  (creates vdi-imagemaint.conf from what it finds)" \
+        "Istniejący obraz: sudo %s/vdi-imagemaint.sh adopt  (tworzy vdi-imagemaint.conf z wykrytych ustawień)" "$DEST"
+    msg "New image: cp %s/vdi-imagemaint.conf.example %s/vdi-imagemaint.conf, edit it, then sudo %s/vdi-imagemaint.sh" \
+        "Nowy obraz: cp %s/vdi-imagemaint.conf.example %s/vdi-imagemaint.conf, uzupełnij, potem sudo %s/vdi-imagemaint.sh" \
         "$DEST" "$DEST" "$DEST"
 else
     msg "Your vdi-imagemaint.conf, Horizon/ and certs/ were kept." "Twój vdi-imagemaint.conf, Horizon/ i certs/ zostały zachowane."

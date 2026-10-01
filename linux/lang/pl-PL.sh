@@ -41,7 +41,7 @@ Istniejący obraz: adopt -> agent/recording/apps -> optimize -> collab -> check 
 Co miesiąc:     update --then-seal       Cofnięcie zamknięcia: unlock
 
 Tryby:
-  adopt      istniejący obraz: wykrycie, podgląd (diff), zachowanie kroków, zapis wersji agenta
+  adopt      istniejący obraz: wykrycie, utworzenie vdi-imagemaint.conf, podgląd (diff), zachowanie kroków, zapis wersji agenta
   prepare    pakiety bazowe, MATE + LightDM, locale, klawiatura, strefa czasowa, NTP
   domain     krb5.conf, SSSD, realm join obrazu, sudo, True SSO / karta
   nfs        katalogi domowe NFSv4 z Kerberosem (autofs, rpc.gssd, idmapd)
@@ -290,3 +290,12 @@ MSG[chk_join_service_bad]='%s nie działa.'
 MSG[chk_desktop_adopted]='Przejęty pulpit z menedżerem logowania %s (nie testowane LightDM + MATE).'
 MSG[chk_nfs_adopted]='Katalogi domowe przejęte z istniejącego obrazu (%s).'
 MSG[menu_adopt]='0. Istniejący obraz: wykryj, pokaż różnice, zachowaj (adopt)'
+
+# --- 0.3.1: adopt creates the configuration ---
+MSG[adopt_q_profile]='Profil tego obrazu - university lub business [%s]:'
+MSG[adopt_config_title]='KONFIGURACJA - ustawienia wykryte na tym obrazie'
+MSG[adopt_config_header]='Utworzone przez VDI-ImageMaint %s adopt dnia %s (%s) z ustawień znalezionych na tym obrazie.'
+MSG[adopt_config_header2]='Pozostałe ustawienia biorą się z conf/defaults.conf i profilu; tu możesz je dopisać lub zmienić.'
+MSG[adopt_config_created]='Konfiguracja utworzona z wykrytych ustawień: %s'
+MSG[adopt_config_exists]='%s już istnieje i nie została zmieniona - wykryte wartości zapisano w %s'
+MSG[adopt_config_diff]='różnica: %s: w konfiguracji %s, wykryto %s'

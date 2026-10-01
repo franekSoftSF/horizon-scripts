@@ -1,7 +1,8 @@
 # shellcheck shell=bash
 # Mode "adopt": take over an EXISTING golden image without rebuilding it.
 #   1. detect what is there (desktop / display manager, domain join method, home
-#      directories, Horizon agent, RunOnceScript)
+#      directories, Horizon agent, RunOnceScript) and write vdi-imagemaint.conf from it
+#      (lib/adoptconf.sh) - no hand-written configuration needed
 #   2. preview what prepare / domain / nfs / agent configuration would change
 #      (diff of every file, nothing written)
 #   3. mark the chosen steps as "adopted": run_step never runs them again (only --force),
@@ -138,6 +139,7 @@ mode_adopt() {
     adopt_detect_domain
     adopt_detect_homes
     adopt_detect_agent
+    adopt_config
     adopt_preview
 
     logt STEP adopt_decide_title
