@@ -89,6 +89,19 @@ mode_check() {
         check_result ERR L08 chk_join_service_bad "$join_svc"
     fi
 
+    if kerberos_applies; then
+        if kerberos_testjoin; then
+            check_result OK L24 chk_testjoin_ok "$AD_DOMAIN"
+        else
+            check_result ERR L24 chk_testjoin_bad "$AD_DOMAIN"
+        fi
+        if [[ -f $KRB_SSSD_SNIPPET && -f $KRB_SSSD_DROPIN ]]; then
+            check_result OK L25 chk_krb_hardened
+        else
+            check_result WARN L25 chk_krb_not_hardened
+        fi
+    fi
+
     if cert_logon_enabled; then
         if [[ -s $SSSD_CA_DB ]] && grep -q '^pam_cert_auth = True' /etc/sssd/sssd.conf 2>/dev/null &&
             [[ $(unit_enabled_state pcscd.socket) == enabled ]]; then

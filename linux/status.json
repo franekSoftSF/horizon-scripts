@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-02",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",
@@ -23,6 +23,7 @@
     "adopt",
     "prepare",
     "domain",
+    "kerberos",
     "nfs",
     "agent",
     "recording",
@@ -97,7 +98,8 @@
     "VHCI DKMS build with PRE_BUILD hcd.h on a real Debian 12 kernel; Secure Boot signing",
     "gnome-shell-extension-appindicator on a MATE image",
     "Horizon Recording -t registration on the golden image and on clones",
-    "adopt on a real existing golden image (agent version detection is best effort)"
+    "adopt on a real existing golden image (agent version detection is best effort)",
+    "machine password rotation via adcli update on the golden image; clones after a long power-off"
   ],
   "plan": [
     "VM test: ISO build -> seal -> Instant Clone pool -> logon, NFS, collaboration via UAG",
@@ -123,6 +125,13 @@
         "agent 2506 vhci.patch does not apply to /install/vhci-hcd-1.15"
       ],
       "fixedIn": "0.4.2"
+    },
+    {
+      "date": "2026-10-02",
+      "found": [
+        "logons fail with SSSD after the golden image was powered off (Kerberos)"
+      ],
+      "fixedIn": "0.5.0"
     }
   ]
 }

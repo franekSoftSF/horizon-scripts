@@ -25,6 +25,8 @@ mode_update() {
     if [[ $UPDATE_AGENTS == yes ]]; then
         update_agents
     fi
+    # Fresh machine password right before the new snapshot (see lib/kerberos.sh).
+    kerberos_rotate
 
     if reboot_pending; then
         logt WARN reboot_needed

@@ -44,6 +44,7 @@ Modes:
   adopt      existing image: detect, create vdi-imagemaint.conf, preview (diff), keep steps, record agent version
   prepare    base packages, MATE + LightDM, locale, keyboard, time zone, NTP
   domain     krb5.conf, SSSD, realm join of the golden image, sudo, True SSO / smart card
+  kerberos   SSSD/Kerberos safety: no automatic machine password change, wait for time sync, ticket renewal
   nfs        NFSv4 home directories with Kerberos (autofs, rpc.gssd, idmapd)
   agent      install/upgrade Horizon agent (version-aware; dependencies, USB VHCI driver, audio), RunOnce
   usb        USB VHCI driver only (adopted image, agent not reinstalled)
@@ -328,3 +329,16 @@ MSG[menu_self-update]='Upgrade this tool from GitHub now'
 MSG[vhci_source]='VHCI source: %s'
 MSG[vhci_already_patched]='The VHCI source already has the Omnissa patch - not applied again.'
 MSG[vhci_patch_no_fit]='The agent VHCI patch does not fit %s (changed or patched for another agent version) - trying the next source; details in the log.'
+
+# --- 0.5.0: Kerberos/SSSD robustness ---
+MSG[step_kerberos]='KERBEROS - machine password, time sync and ticket renewal for SSSD'
+MSG[krb_not_sssd]='No SSSD join on this image - Kerberos settings skipped.'
+MSG[krb_harden]='Kerberos/SSSD safety settings for %s (no automatic machine password change, SSSD waits for time sync, ticket renewal).'
+MSG[krb_hardened]='Kerberos/SSSD safety settings active.'
+MSG[krb_rotated]='Machine account password rotated (if older than %s days) - the new snapshot carries a current keytab.'
+MSG[krb_rotate_failed]='Machine account password could not be rotated (adcli update) - check with: adcli testjoin.'
+MSG[chk_testjoin_ok]='Machine account in %s accepts this keytab (adcli testjoin).'
+MSG[chk_testjoin_bad]='Machine account in %s does NOT accept this keytab - logons will fail. Rejoin (mode domain --force) or "adcli update", then take a new snapshot.'
+MSG[chk_krb_hardened]='Kerberos/SSSD safety settings present.'
+MSG[chk_krb_not_hardened]='Kerberos/SSSD safety settings missing - run mode kerberos.'
+MSG[menu_kerberos]='Kerberos/SSSD: machine password, time sync, ticket renewal (fix logon after power-off)'

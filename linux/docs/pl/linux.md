@@ -113,6 +113,21 @@ Jeśli `check` zgłasza L21 (brak sterownika USB VHCI) na przejętym obrazie, ur
 Po `adopt` używaj `check`, potem `agent` (aktualizacja), `recording`, `apps`, `optimize`, `collab` i `seal` jak zwykle.
 Dokumentacja zaleca budowę obrazu ze świeżej instalacji, nigdy z klona.
 
+## Logowanie nie działa po wyłączeniu obrazu (Kerberos / SSSD)
+
+Objaw: obraz wzorcowy był przez jakiś czas wyłączony albo wrócono do snapshotu i logowanie przestaje działać.
+Wynika to z działania SSSD i Kerberosa z AD; dokumentacja Omnissa tego nie opisuje.
+
+| Przyczyna | Co robi narzędzie (tryb `kerberos`, wykonywany też przez `domain` i `adopt`) |
+|---|---|
+| SSSD sam zmienia hasło konta komputera co 30 dni. AD akceptuje tylko bieżące i poprzednie hasło, więc starszy snapshot lub keytab jest odrzucany. | `ad_maximum_machine_account_password_age = 0` w `/etc/sssd/conf.d/60-vdi-imagemaint-kerberos.conf`. `update` zmienia hasło świadomie (`adcli update`, gdy starsze niż `MACHINE_PASSWORD_DAYS`=25) tuż przed nowym snapshotem. |
+| SSSD startuje przed synchronizacją zegara, a Kerberos nie działa przy różnicy powyżej 5 minut. | `sssd.service` czeka na `time-sync.target` (`systemd-time-wait-sync`, najwyżej 90 s). Skrypt klona synchronizuje czas przed restartem SSSD i NFS. |
+| Bilety użytkowników wygasają w długich sesjach i katalogi NFS krb5 przestają działać. | Odnawialne bilety (7 dni), odnawiane przez SSSD co 60 minut. |
+
+`check` L24 wykonuje `adcli testjoin` i blokuje `seal`, gdy AD nie akceptuje już keytabu. Naprawa:
+`domain --force` (ponowne dołączenie) albo `adcli update`, potem nowy snapshot. Nie wracaj do snapshotów
+starszych niż jedna zmiana hasła. Na klonach `runonce.log` pokazuje synchronizację czasu i wpisy keytabu.
+
 ## Wersje i ponowne uruchomienia
 
 - Każdy krok budowy (`prepare`, `domain`, `nfs`) jest zapisywany w `build-state.json` razem z wersją
