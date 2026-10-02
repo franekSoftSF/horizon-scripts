@@ -170,8 +170,11 @@ mode_adopt() {
         --arg dm "$ADOPT_DM" --argjson s "$(printf '%s\n' "${adopted[@]}" | jq -R . | jq -sc 'map(select(length > 0))')"
 
     adopt_agent
-    # Same Kerberos/SSSD safety net as a built image (conf.d + drop-ins, sssd.conf untouched).
-    kerberos_harden
+    # Same Kerberos/SSSD safety net as a built image (conf.d + drop-ins, sssd.conf untouched);
+    # rolled back automatically when SSSD does not accept it.
+    if [[ $ADOPT_JOIN == sssd ]] && ask_yes "$(t adopt_q_kerberos)" yes; then
+        kerberos_harden || true
+    fi
     logt OK adopt_done "${adopted[*]:-none}"
 }
 

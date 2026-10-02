@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-02",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",
@@ -132,6 +132,13 @@
         "logons fail with SSSD after the golden image was powered off (Kerberos)"
       ],
       "fixedIn": "0.5.0"
+    },
+    {
+      "date": "2026-10-02",
+      "found": [
+        "golden image could not be logged on to after the Kerberos step / rejoin advice - restored from snapshot"
+      ],
+      "fixedIn": "0.5.1 (safety net, real domain, no wait without timesyncd)"
     }
   ]
 }

@@ -68,7 +68,7 @@ mode_domain() {
     run systemctl enable sssd.service
     run systemctl restart sssd.service
     run sss_cache -E || true
-    kerberos_harden
+    kerberos_harden || true
     logt OK domain_done "$AD_DOMAIN"
 }
 
