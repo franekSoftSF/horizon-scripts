@@ -121,8 +121,11 @@ stop working. This follows from how SSSD and Kerberos behave with AD; the Omniss
 | SSSD starts before the clock is synchronised, and Kerberos fails above 5 minutes of skew. | `sssd.service` waits for `time-sync.target` (`systemd-time-wait-sync`, at most 90 s). The per-clone script syncs time before restarting SSSD and NFS. |
 | User tickets expire in long sessions, and the NFS krb5 homes stop working. | Renewable tickets (7 days), renewed every 60 minutes by SSSD. |
 
-`check` L24 runs `adcli testjoin` and blocks `seal` when AD no longer accepts the keytab. Fix it with
-`domain --force` (rejoin) or `adcli update`, then take a new snapshot. Do not go back to snapshots that are
+`check` L24 runs `adcli testjoin` and blocks `seal` when AD no longer accepts the keytab. Fix it by restoring a
+snapshot whose keytab AD accepts, or by rejoining (back up `/etc/sssd/sssd.conf` first: `realm join` writes its own),
+then take a new snapshot. The settings use the domain from `sssd.conf` (never an example value). After writing them the
+tool runs `sssctl config-check` and restarts SSSD; if either fails, everything is rolled back. SSSD waits for the clock
+only when `systemd-timesyncd` keeps it. Do not go back to snapshots that are
 more than one password rotation old. On clones, `runonce.log` shows the time sync and the keytab entries.
 
 ## Versions and re-runs

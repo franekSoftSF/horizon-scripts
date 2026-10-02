@@ -1,5 +1,8 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.5.1 – 2026-10-02
+- Safety after a VM incident (logons broken on a golden image): Kerberos settings use the SSSD domain from sssd.conf, never an example AD_DOMAIN; after writing them `sssctl config-check` and an SSSD restart must pass, otherwise everything is rolled back automatically; SSSD waits for time sync only when systemd-timesyncd keeps the clock; adopt asks before applying them; machine password rotation never runs on a keytab AD already rejects; L24 no longer suggests `domain --force`.
+
 ## 0.5.0 – 2026-10-02
 - Kerberos/SSSD robustness (logons failing after the image was powered off): no automatic machine password change (ad_maximum_machine_account_password_age = 0, conf.d snippet); update rotates it with adcli before the snapshot (MACHINE_PASSWORD_ROTATION, MACHINE_PASSWORD_DAYS); sssd waits for time-sync.target (systemd-time-wait-sync, 90 s cap); renewable user tickets. Applied by domain and adopt, mode kerberos.
 - Per-clone script: synchronises time before restarting SSSD/NFS and logs the keytab entries.

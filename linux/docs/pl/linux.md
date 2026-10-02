@@ -124,8 +124,11 @@ Wynika to z działania SSSD i Kerberosa z AD; dokumentacja Omnissa tego nie opis
 | SSSD startuje przed synchronizacją zegara, a Kerberos nie działa przy różnicy powyżej 5 minut. | `sssd.service` czeka na `time-sync.target` (`systemd-time-wait-sync`, najwyżej 90 s). Skrypt klona synchronizuje czas przed restartem SSSD i NFS. |
 | Bilety użytkowników wygasają w długich sesjach i katalogi NFS krb5 przestają działać. | Odnawialne bilety (7 dni), odnawiane przez SSSD co 60 minut. |
 
-`check` L24 wykonuje `adcli testjoin` i blokuje `seal`, gdy AD nie akceptuje już keytabu. Naprawa:
-`domain --force` (ponowne dołączenie) albo `adcli update`, potem nowy snapshot. Nie wracaj do snapshotów
+`check` L24 wykonuje `adcli testjoin` i blokuje `seal`, gdy AD nie akceptuje już keytabu. Naprawa: przywróć
+snapshot z keytabem akceptowanym przez AD albo dołącz ponownie (najpierw kopia `/etc/sssd/sssd.conf`, bo `realm join`
+zapisuje własny), potem nowy snapshot. Ustawienia używają domeny z `sssd.conf` (nigdy wartości przykładowej). Po zapisie
+narzędzie uruchamia `sssctl config-check` i restartuje SSSD; jeśli coś się nie powiedzie, wszystko jest wycofywane.
+SSSD czeka na zegar tylko wtedy, gdy synchronizuje go `systemd-timesyncd`. Nie wracaj do snapshotów
 starszych niż jedna zmiana hasła. Na klonach `runonce.log` pokazuje synchronizację czasu i wpisy keytabu.
 
 ## Wersje i ponowne uruchomienia

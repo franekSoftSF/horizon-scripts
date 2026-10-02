@@ -90,12 +90,14 @@ mode_check() {
     fi
 
     if kerberos_applies; then
+        local kdom
+        kdom=$(krb_domain || echo "?")
         if kerberos_testjoin; then
-            check_result OK L24 chk_testjoin_ok "$AD_DOMAIN"
+            check_result OK L24 chk_testjoin_ok "$kdom"
         else
-            check_result ERR L24 chk_testjoin_bad "$AD_DOMAIN"
+            check_result ERR L24 chk_testjoin_bad "$kdom"
         fi
-        if [[ -f $KRB_SSSD_SNIPPET && -f $KRB_SSSD_DROPIN ]]; then
+        if [[ -f $KRB_SSSD_SNIPPET ]]; then
             check_result OK L25 chk_krb_hardened
         else
             check_result WARN L25 chk_krb_not_hardened
