@@ -1,5 +1,8 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.5.2 – 2026-10-04
+- Root cause of the golden-image outage (found by the user): seal stopped SSSD and deleted its cache (/var/lib/sss/db cache_*/timestamps_*, /var/lib/sss/mc). After the restart SSSD had no cached users and credentials, and without a reachable DC nobody could log on. Removed: seal no longer touches the SSSD cache; the per-clone script and the machine password rotation no longer run `sss_cache -E` (only the domain join does). Regression test added.
+
 ## 0.5.1 – 2026-10-02
 - Safety after a VM incident (logons broken on a golden image): Kerberos settings use the SSSD domain from sssd.conf, never an example AD_DOMAIN; after writing them `sssctl config-check` and an SSSD restart must pass, otherwise everything is rolled back automatically; SSSD waits for time sync only when systemd-timesyncd keeps the clock; adopt asks before applying them; machine password rotation never runs on a keytab AD already rejects; L24 no longer suggests `domain --force`.
 

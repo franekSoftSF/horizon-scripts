@@ -39,8 +39,9 @@ if [[ -x /etc/vdi-imagemaint/runonce.local ]]; then
     STEP_TIMEOUT=90 step /etc/vdi-imagemaint/runonce.local
 fi
 
-# New machine keytab from the offline join -> refresh SSSD and NFS Kerberos clients.
-step sss_cache -E
+# New machine keytab from the offline join -> restart SSSD and NFS Kerberos clients.
+# The SSSD cache is kept (no sss_cache -E): it carries the cached credentials that
+# keep logons working while a DC is not reachable yet.
 step systemctl restart sssd.service
 echo "keytab: $(klist -k /etc/krb5.keytab 2>/dev/null | awk 'NR>3 {print $1, $2}' | sort -u | head -n 3 | tr '\n' ' ')"
 if systemctl is-enabled --quiet autofs.service 2>/dev/null; then

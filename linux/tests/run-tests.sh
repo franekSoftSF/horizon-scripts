@@ -24,6 +24,12 @@ rm -f /tmp/vdi-syntax.$$
 crlf=$(grep -rlI $'\r' "$ROOT" --include='*.sh' --include='*.conf' --include='*.example' --exclude-dir=apps || true)
 check "LF line endings" '[[ -z $crlf ]]'
 
+# --- regression: the SSSD cache must never be wiped or invalidated outside the domain join
+# (wiping it in seal broke logons on a golden image - see CHANGELOG 0.5.2)
+sss_wipe=$(grep -rnE 'rm[^#]*/var/lib/sss|sss_cache' "$ROOT/lib" "$ROOT/files" --include='*.sh' |
+    grep -v '^\S*lib/domain\.sh:' | grep -vE ':[0-9]+:[[:space:]]*#' || true)
+check "SSSD cache untouched outside domain join${sss_wipe:+ ($sss_wipe)}" '[[ -z $sss_wipe ]]'
+
 # --- string tables -----------------------------------------------------------
 declare -A EN PL
 declare -A MSG

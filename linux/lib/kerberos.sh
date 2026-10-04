@@ -127,7 +127,7 @@ kerberos_rotate() {
     # Never rotate a keytab AD already rejects - that would not fix it.
     kerberos_testjoin || { logt WARN krb_rotate_failed; return 0; }
     if run adcli update --domain="$dom" --computer-password-lifetime="$MACHINE_PASSWORD_DAYS"; then
-        run sss_cache -E || true
+        # SSSD reads the new keytab on restart; its cache is kept (no sss_cache -E).
         run systemctl restart sssd.service || true
         logt OK krb_rotated "$MACHINE_PASSWORD_DAYS"
     else
