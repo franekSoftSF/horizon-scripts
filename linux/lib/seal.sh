@@ -58,14 +58,13 @@ EOF
 seal_cleanup() {
     logt INFO seal_cleaning
     apt_get clean
-    # Kerberos tickets and SSSD cache of whoever tested the master.
+    # Kerberos tickets of whoever tested the master.
     kdestroy -A 2>/dev/null || true
     rm -f /tmp/krb5cc_* 2>/dev/null || true
-    if unit_known sssd.service; then
-        run systemctl stop sssd.service
-        rm -f /var/lib/sss/db/cache_*.ldb /var/lib/sss/db/timestamps_*.ldb /var/lib/sss/mc/* 2>/dev/null || true
-        run systemctl start sssd.service
-    fi
+    # The SSSD cache (/var/lib/sss) is deliberately NOT touched. Wiping it (until 0.5.1)
+    # broke logons on a golden image: after the restart SSSD had no cached users and no
+    # cached credentials, and when it could not reach a DC yet (clock not synced, slow
+    # network) nobody could log on. SSSD refreshes its cache by itself.
     # DHCP leases: each clone must ask for its own.
     rm -f /var/lib/dhcp/*.leases /var/lib/NetworkManager/*.lease 2>/dev/null || true
     # Logs (our own log directory is kept for the audit trail).

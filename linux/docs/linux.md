@@ -202,7 +202,7 @@ on the server. The tool:
   - polkit: users cannot shut down, reboot or suspend the clone.
 - **seal** (undo with `unlock`):
   - Runs `check`, disables the apt timers and unattended-upgrades, and masks PackageKit.
-  - Cleans caches, logs, tickets, the SSSD cache and DHCP leases. Removes the SSH host keys; the RunOnce
+  - Cleans caches, logs, Kerberos tickets and DHCP leases. The SSSD cache is kept on purpose: wiping it broke logons when SSSD could not reach a DC right after the restart. Removes the SSH host keys; the RunOnce
     script creates new ones on each clone.
   - **Blocks package changes for everyone until unlock**: dpkg `pre-invoke` and apt `Update::Pre-Invoke`
     refuse `apt update`, `apt install` and `dpkg -i`. Package queries still work.

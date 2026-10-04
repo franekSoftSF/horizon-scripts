@@ -1,6 +1,6 @@
 # Status – VDI-ImageMaint dla Linuksa
 
-_Aktualizacja: 2026-10-02_ · wersja **0.5.1** · Debian 12 + MATE · Horizon 2506 Instant Clone
+_Aktualizacja: 2026-10-04_ · wersja **0.5.2** · Debian 12 + MATE · Horizon 2506 Instant Clone
 
 ## Zrobione
 - [x] Szkielet: `vdi-imagemaint.sh` (menu + tryby), `lib/common.sh` (konfiguracja, i18n EN/PL, log, śledzenie zmian w JSON)
@@ -38,6 +38,9 @@ _Aktualizacja: 2026-10-02_ · wersja **0.5.1** · Debian 12 + MATE · Horizon 25
 
 - [x] 0.5.1: po awarii na VM (brak logowania) – Kerberos z domeny z sssd.conf (nigdy przykładowej), sssctl config-check + restart SSSD z automatycznym
       wycofaniem, czekanie na czas tylko przy timesyncd, adopt pyta; użytkownik przywrócił snapshot i przechodzi proces od nowa
+
+- [x] 0.5.2: przyczyna awarii (wskazana przez użytkownika): seal usuwał cache SSSD → po restarcie brak logowania. Usunięte z seal, skryptu klona
+      i rotacji hasła (sss_cache -E tylko przy dołączaniu do domeny); test regresji
 
 ## Jak testowano (bez VM)
 - Kontener `debian:12` (Docker): 29/29 testów (`tests/run-tests.sh`), shellcheck 0 uwag

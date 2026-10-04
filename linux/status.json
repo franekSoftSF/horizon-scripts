@@ -1,6 +1,6 @@
 {
-  "updated": "2026-10-02",
-  "version": "0.5.1",
+  "updated": "2026-10-04",
+  "version": "0.5.2",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",
@@ -139,6 +139,13 @@
         "golden image could not be logged on to after the Kerberos step / rejoin advice - restored from snapshot"
       ],
       "fixedIn": "0.5.1 (safety net, real domain, no wait without timesyncd)"
+    },
+    {
+      "date": "2026-10-04",
+      "found": [
+        "root cause: seal wiped the SSSD cache; after restart no cached users/credentials -> no logon"
+      ],
+      "fixedIn": "0.5.2"
     }
   ]
 }

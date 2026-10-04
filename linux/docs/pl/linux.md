@@ -204,7 +204,7 @@ portu 9443 na serwerze. Narzędzie:
   - polkit: użytkownik nie może wyłączyć, zrestartować ani uśpić klona.
 - **seal** (cofnięcie: `unlock`):
   - Wykonuje `check`, wyłącza timery apt i unattended-upgrades oraz maskuje PackageKit.
-  - Czyści cache, logi, bilety Kerberos, cache SSSD i dzierżawy DHCP. Usuwa klucze hosta SSH; skrypt
+  - Czyści cache, logi, bilety Kerberos i dzierżawy DHCP. Cache SSSD jest celowo zachowywany: jego usuwanie psuło logowanie, gdy SSSD tuż po restarcie nie mógł połączyć się z kontrolerem domeny. Usuwa klucze hosta SSH; skrypt
     RunOnce tworzy nowe na każdym klonie.
   - **Blokuje zmiany pakietów dla wszystkich aż do unlock**: dpkg `pre-invoke` i apt
     `Update::Pre-Invoke` odrzucają `apt update`, `apt install` i `dpkg -i`. Zapytania o pakiety
