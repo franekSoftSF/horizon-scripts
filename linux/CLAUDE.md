@@ -31,3 +31,10 @@ docker run --rm -v "<repo>/linux:/src:ro" debian:12 ...   # jq + shellcheck + se
 ```
 Docker Desktop is installed (start it first). Nothing runs end-to-end without a VM with the Horizon agent;
 say clearly what was tested in the container vs. on a VM.
+
+## Releases (user works inside VDI without clipboard - reads GitHub in the browser)
+- Every `linux-v*` release: tag only (local `main` may hold unpushed Windows commits - never push main without asking),
+  assets `vdi-imagemaint-linux-<v>.tar.gz` + `.sha256` + `get-vdi-imagemaint.sh`, notes from
+  `docs/release-notes-template.md` (complete procedure: install, existing image, new image, monthly, diag).
+- Stable links: https://github.com/franekSoftSF/horizon-scripts/releases/latest and
+  `.../releases/latest/download/get-vdi-imagemaint.sh` (keep the Linux release marked Latest).

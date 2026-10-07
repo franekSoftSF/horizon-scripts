@@ -51,8 +51,11 @@ a potem wykonaj `seal`.
 
 ## Pobieranie z GitHuba
 
+Pełna procedura (nowa stacja, istniejący obraz, co miesiąc) jest zawsze pod adresem
+https://github.com/franekSoftSF/horizon-scripts/releases/latest.
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/franekSoftSF/horizon-scripts/main/linux/get-vdi-imagemaint.sh | sudo bash
+curl -fsSL https://github.com/franekSoftSF/horizon-scripts/releases/latest/download/get-vdi-imagemaint.sh | sudo bash
 ```
 
 `get-vdi-imagemaint.sh`:

@@ -49,8 +49,11 @@ image, runs `apt full-upgrade`, and seals it again. If a new kernel needs a rebo
 
 ## Download from GitHub
 
+The complete procedure (new station, existing image, monthly) is always on
+https://github.com/franekSoftSF/horizon-scripts/releases/latest.
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/franekSoftSF/horizon-scripts/main/linux/get-vdi-imagemaint.sh | sudo bash
+curl -fsSL https://github.com/franekSoftSF/horizon-scripts/releases/latest/download/get-vdi-imagemaint.sh | sudo bash
 ```
 
 `get-vdi-imagemaint.sh` does the following:
