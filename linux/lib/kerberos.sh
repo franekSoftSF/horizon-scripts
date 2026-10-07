@@ -256,6 +256,20 @@ mode_diag() {
             fi
         fi
         echo "== runonce.log (last 10)"; tail -n 10 "${LOG_DIR}/runonce.log" 2>/dev/null || echo "-"
+        # Instant clone customization (ClonePrep) and offline domain join happen in the agent:
+        # newest agent logs and their error lines (for a clone stuck in "customization failed").
+        local agentlog
+        for agentlog in /var/log/omnissa /var/log/vmware; do
+            [[ -d $agentlog ]] || continue
+            echo "== Horizon agent logs ${agentlog} (newest 6)"
+            find "$agentlog" -maxdepth 2 -type f -printf '%TY-%Tm-%Td %TH:%TM %s %p\n' 2>/dev/null | sort -r | head -n 6 || true
+            echo "-- errors in agent / customization / domain-join logs (last 25)"
+            grep -rhsiE 'error|fail|timeout|timed out|denied|offline.?join|clone ?prep|custom' "$agentlog" 2>/dev/null |
+                grep -viE 'no error|errors: 0|error=0' | tail -n 25 || true
+        done
+        echo "== hostname / domain on this machine"
+        printf 'hostname=%s fqdn=%s\n' "$(hostname 2>/dev/null)" "$(hostname -f 2>/dev/null || echo ?)"
+        echo "-- sssd domain status"; timeout 15 sssctl domain-status "$(krb_domain || echo "$AD_DOMAIN")" 2>&1 | head -n 8 || true
     } 2>&1 | sed -E 's/((pass|secret|authtok)[^=:]*[=:]).*/\1 ********/I' | tee "$f"
     chmod 0640 "$f"
     logt OK diag_saved "$f"

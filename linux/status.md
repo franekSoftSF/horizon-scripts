@@ -1,6 +1,6 @@
 # Status – VDI-ImageMaint dla Linuksa
 
-_Aktualizacja: 2026-10-07_ · wersja **0.7.1** · Debian 12/13 + MATE · Horizon 2506 Instant Clone
+_Aktualizacja: 2026-10-07_ · wersja **0.7.2** · Debian 12/13 + MATE · Horizon 2506 Instant Clone
 
 ## Zrobione
 - [x] Szkielet: `vdi-imagemaint.sh` (menu + tryby), `lib/common.sh` (konfiguracja, i18n EN/PL, log, śledzenie zmian w JSON)
@@ -72,6 +72,8 @@ _Aktualizacja: 2026-10-07_ · wersja **0.7.1** · Debian 12/13 + MATE · Horizon
       $HOME = /home/STUDENT/<login>) – pod budowę nowego obrazu Debian 13
 
 - [x] 0.7.1: Larch/Larix + Ifeffit + Feff (XAS, prośba wykładowców o Demeter – Demeter nie ma w Debianie) w Zajęcia > Edukacja
+
+- [ ] Pula: klony nie przechodzą customization (pętla odtwarzania) – zbieramy logi z klona (diag 0.7.2: logi agenta, sssctl domain-status)
 
 ## Jak testowano (bez VM)
 - Kontener `debian:12` (Docker): 29/29 testów (`tests/run-tests.sh`), shellcheck 0 uwag

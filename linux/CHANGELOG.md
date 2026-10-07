@@ -1,5 +1,8 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.7.2 – 2026-10-08
+- diag: Horizon agent section for clones whose customization fails - newest files and error/timeout/offline-join/ClonePrep lines from /var/log/omnissa (or /var/log/vmware), hostname/FQDN and `sssctl domain-status`.
+
 ## 0.7.1 – 2026-10-08
 - Course apps: Larch (python3-xraylarch with Larix, the XAS analysis GUI that follows Demeter's Athena/Artemis), ifeffit and feff85exafs - requested by lecturers (Demeter itself is not packaged in Debian). They land in Courses > Education. Verified on Debian 13 (Larch 0.9.81).
 

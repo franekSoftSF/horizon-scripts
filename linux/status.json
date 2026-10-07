@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-08",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "platform": {
     "os": "Debian 12 bookworm / Debian 13 trixie",
     "desktop": "MATE + LightDM",
@@ -195,6 +195,13 @@
         "NFS home share from fstab sometimes not mounted at boot (manual mount + reboot fixed it)"
       ],
       "fixedIn": "0.6.7 (nfsmount: x-systemd.automount)"
+    },
+    {
+      "date": "2026-10-08",
+      "found": [
+        "pool: clone customization fails after seal + Push Image (recreate loop)"
+      ],
+      "fixedIn": "open - diag 0.7.2 collects agent logs"
     }
   ]
 }
