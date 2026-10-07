@@ -231,6 +231,30 @@ mode_diag() {
             grep -E '^[[:space:]]*(OfflineJoinDomain|RunOnceScript|SSOEnable|SSOUserFormat|SSODesktopType)' "${dir}/viewagent-custom.conf" 2>&1 || true
         fi
         systemctl is-active viewagent.service 2>&1 || true
+        echo "== NFS"
+        grep -E '^[^#].*[[:space:]]nfs4?[[:space:]]' /etc/fstab 2>/dev/null | sed 's/^/fstab: /' || echo "fstab: no nfs entry"
+        grep -rhsE '(fstype=nfs|[[:alnum:].-]+:/)' /etc/auto.master.d /etc/auto.* 2>/dev/null | grep -v '^#' | sed 's/^/autofs: /' | head -n 5 || true
+        findmnt -t nfs,nfs4 -o TARGET,SOURCE,OPTIONS 2>/dev/null || echo "mounted: none"
+        local u
+        for u in rpc-gssd.service nfs-client.target autofs.service rpc-statd.service; do
+            printf '%s: %s/%s\n' "$u" "$(systemctl is-enabled "$u" 2>&1 | head -n1 || true)" "$(systemctl is-active "$u" 2>&1 | head -n1 || true)"
+        done
+        echo "-- rpc-gssd journal (last 10)"; journalctl -b -u rpc-gssd --no-pager 2>&1 | tail -n 10 || true
+        echo "-- kernel NFS/RPC (last 10)"; journalctl -k -b --no-pager 2>/dev/null | grep -iE 'nfs|rpc|gss' | tail -n 10 || true
+        echo "-- keytab principals for NFS"; klist -k /etc/krb5.keytab 2>/dev/null | awk 'NR>3 {print $2}' | grep -iE '^(nfs|host)/|\$@' | sort -u | head -n 6 || true
+        # The user who ran sudo: their ticket cache and a home access test as that user
+        # (by uid, without PAM; rpc.gssd finds the ticket by uid). Never blocks longer than 10 s.
+        if [[ -n ${SUDO_USER:-} && $SUDO_USER != root ]]; then
+            local uid gid home
+            uid=$(id -u "$SUDO_USER" 2>/dev/null || echo "?")
+            gid=$(id -g "$SUDO_USER" 2>/dev/null || echo "?")
+            home=$(getent passwd "$SUDO_USER" 2>/dev/null | cut -d: -f6 || true)
+            echo "-- user ${SUDO_USER} uid=${uid} home=${home:-?}"
+            find /tmp -maxdepth 1 -name "krb5cc_${uid}*" -printf '%M %u %p\n' 2>/dev/null | grep . || echo "no FILE ticket cache in /tmp"
+            if [[ -n $home && $uid != "?" ]]; then
+                timeout 10 setpriv --reuid="$uid" --regid="$gid" --clear-groups ls -ld "$home" 2>&1 || echo "home access rc=$?"
+            fi
+        fi
         echo "== runonce.log (last 10)"; tail -n 10 "${LOG_DIR}/runonce.log" 2>/dev/null || echo "-"
     } 2>&1 | sed -E 's/((pass|secret|authtok)[^=:]*[=:]).*/\1 ********/I' | tee "$f"
     chmod 0640 "$f"

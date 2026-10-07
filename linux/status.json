@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-07",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",
@@ -171,6 +171,13 @@
         "sudo for AD user: PAM account error, SSSD offline after boot (NetworkManager-wait-online disabled by optimize)"
       ],
       "fixedIn": "0.6.4"
+    },
+    {
+      "date": "2026-10-07",
+      "found": [
+        "NFS stopped working (user TGT valid) - cause under investigation"
+      ],
+      "fixedIn": "0.6.5 (diag NFS section)"
     }
   ]
 }
