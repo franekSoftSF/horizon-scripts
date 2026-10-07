@@ -3,7 +3,22 @@
      releases/latest/download/get-vdi-imagemaint.sh. -->
 VDI-ImageMaint for Linux **{{VERSION}}** – golden-image tool for **Debian 12** (MATE session, GDM, Horizon SSO) on **Omnissa Horizon 8 Instant Clone**.
 
-## 1. Download and install (golden image, as root)
+## 0. Fresh Debian: curl and sudo
+
+A fresh Debian 12 has `wget` but no `curl`. If you set a root password during the installation, `sudo` is missing
+too. Then run as root (`su -`):
+
+```bash
+apt-get update && apt-get install -y curl ca-certificates sudo
+```
+
+Shortest way: one command installs everything below (works with wget alone, curl is added automatically):
+
+```bash
+wget -qO- https://github.com/franekSoftSF/horizon-scripts/releases/latest/download/get-vdi-imagemaint.sh | sudo bash
+```
+
+## 1. Download and install by hand (golden image)
 
 ```bash
 cd /tmp
@@ -79,6 +94,10 @@ Logs are in `/var/log/vdi-imagemaint/`. Running `sudo ./vdi-imagemaint.sh` witho
 ---
 
 ## PL – całość krok po kroku
+
+**0. Świeży Debian:** nie ma `curl` (jest `wget`). Jeśli przy instalacji ustawiono hasło roota, nie ma też `sudo`.
+Wtedy jako root (`su -`): `apt-get update && apt-get install -y curl ca-certificates sudo`. Najkrócej, bez `curl`:
+`wget -qO- https://github.com/franekSoftSF/horizon-scripts/releases/latest/download/get-vdi-imagemaint.sh | sudo bash`
 
 **1. Pobranie i instalacja** – polecenia z punktu 1 powyżej. Potem skopiuj archiwum agenta Horizon do `/opt/vdi-imagemaint/Horizon/`. Na obrazach przygotowanych ręcznie narzędzie szuka też w `/install`.
 
