@@ -2,12 +2,14 @@
 # VDI-ImageMaint for Linux - download, verify and install/upgrade the tool from GitHub.
 #
 #   curl -fsSL https://github.com/franekSoftSF/horizon-scripts/releases/latest/download/get-vdi-imagemaint.sh | sudo bash
+#   wget -qO- https://github.com/franekSoftSF/horizon-scripts/releases/latest/download/get-vdi-imagemaint.sh | sudo bash
+#   (a fresh Debian has wget but no curl - curl and the CA certificates are installed here when missing)
 #   sudo bash get-vdi-imagemaint.sh [--version 0.3.0] [--dir /opt/vdi-imagemaint] [--lang pl-PL]
 #
 # Picks the newest "linux-v*" release (the repository also has Windows releases), checks
 # the SHA-256 file and unpacks into the install directory. An upgrade replaces only the
 # tool's own files: vdi-imagemaint.conf, Horizon/, certs/, apps/*.conf and anything else
-# you added stay untouched. Needs bash, curl, tar, sha256sum (all in a Debian base install).
+# you added stay untouched. Needs bash, tar, sha256sum (Debian base) and curl (installed when missing).
 # It also creates the working folders (Horizon/, certs/) and downloads what is freely
 # available - the USB VHCI driver source; Omnissa installers need a login and are copied by hand.
 
@@ -41,6 +43,14 @@ die() {
 }
 
 [[ $EUID -eq 0 ]] || die "Run as root (sudo)." "Uruchom jako root (sudo)."
+# A fresh Debian install has no curl: install it (and the CA certificates for HTTPS).
+if ! command -v curl >/dev/null 2>&1 || [[ ! -s /etc/ssl/certs/ca-certificates.crt ]]; then
+    msg "Installing curl and ca-certificates ..." "Instaluję curl i ca-certificates ..."
+    DEBIAN_FRONTEND=noninteractive apt-get update -qq >/dev/null 2>&1 || true
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl ca-certificates >/dev/null 2>&1 ||
+        die "apt-get install curl ca-certificates failed - check the apt sources / network." \
+            "apt-get install curl ca-certificates nie powiodło się - sprawdź źródła apt / sieć."
+fi
 for c in curl tar sha256sum; do
     command -v "$c" >/dev/null 2>&1 || die "Missing command: %s (apt install %s)" "Brak polecenia: %s (apt install %s)" "$c" "$c"
 done

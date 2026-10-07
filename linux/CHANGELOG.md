@@ -1,5 +1,8 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.6.3 – 2026-10-07
+- Fresh Debian has no curl: get-vdi-imagemaint.sh installs curl and ca-certificates when missing and can be started with wget; the procedure starts with step 0 (curl, sudo via `su -`). Release notes carry the complete procedure (docs/release-notes-template.md); stable releases/latest links.
+
 ## 0.6.2 – 2026-10-07
 - courses installs the missing course applications first (COURSES_INSTALL, COURSES_PACKAGES: geany jupyter-notebook qtcreator octave jmol gnumeric texmaker texstudio; VS Code from a code_*.deb in Horizon/ or /install); packages not in the apt sources are reported; nothing is installed on a sealed image.
 - get-vdi-imagemaint.sh creates Horizon/ and certs/, downloads the USB VHCI source (checked tarball) and says which Omnissa installers must be copied by hand.

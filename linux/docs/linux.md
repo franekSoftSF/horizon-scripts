@@ -56,6 +56,15 @@ https://github.com/franekSoftSF/horizon-scripts/releases/latest.
 curl -fsSL https://github.com/franekSoftSF/horizon-scripts/releases/latest/download/get-vdi-imagemaint.sh | sudo bash
 ```
 
+A fresh Debian 12 has `wget` but no `curl`; the installer adds curl itself, so this works too:
+
+```bash
+wget -qO- https://github.com/franekSoftSF/horizon-scripts/releases/latest/download/get-vdi-imagemaint.sh | sudo bash
+```
+
+If `sudo` is missing as well (root password set during the installation), run as root (`su -`):
+`apt-get update && apt-get install -y curl ca-certificates sudo`.
+
 `get-vdi-imagemaint.sh` does the following:
 - finds the newest `linux-v*` release (the repository also has Windows releases);
 - downloads the release and checks its SHA-256 file;
