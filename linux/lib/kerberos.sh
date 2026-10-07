@@ -135,12 +135,41 @@ kerberos_rotate() {
     fi
 }
 
-# kerberos_testjoin -> 0 accepted by AD, 1 rejected, 2 not checkable, 3 timed out.
-# adcli may wait long for a DC (DNS/LDAP) or ask on the terminal: never from stdin,
-# never longer than KRB_ADCLI_TIMEOUT seconds; its output goes to the log.
+# Machine principal from the keytab (e.g. H8-DEBTEMP02$@STD.FIZYKA.PW.EDU.PL).
+krb_machine_principal() {
+    klist -k /etc/krb5.keytab 2>/dev/null | awk 'NR>3 {print $2}' | grep -m1 '\$@' || true
+}
+
+# kerberos_kinit_test -> 0 accepted, 1 rejected by the KDC, 3 KDC not reachable, 4 inconclusive.
+# A Kerberos login with the machine keytab into a memory cache: quick, read-only.
+kerberos_kinit_test() {
+    local princ rc=0 out
+    command -v kinit >/dev/null 2>&1 || return 4
+    princ=$(krb_machine_principal)
+    [[ -n $princ ]] || return 4
+    out=$(timeout 20 kinit -k -t /etc/krb5.keytab -c MEMORY:vdi-imagemaint "$princ" </dev/null 2>&1) || rc=$?
+    [[ -w $LOG_DIR ]] && printf 'kinit -k %s (rc=%s): %s\n' "$princ" "$rc" "$out" >>"$LOG_FILE"
+    ((rc == 0)) && return 0
+    ((rc == 124 || rc == 137)) && return 3
+    case ${out,,} in
+        *"preauthentication failed"* | *"not found in kerberos database"* | *"password incorrect"* | *"key version"*) return 1 ;;
+        *"cannot contact"* | *"cannot find kdc"* | *"cannot resolve"*) return 3 ;;
+    esac
+    return 4
+}
+
+# kerberos_testjoin -> 0 accepted by AD, 1 rejected, 2 not checkable, 3 timed out / unreachable.
+# First kinit with the machine keytab (direct, seconds); adcli testjoin only when kinit
+# is inconclusive. adcli may wait long for a DC or ask on the terminal: never from stdin,
+# never longer than KRB_ADCLI_TIMEOUT seconds. All output goes to the log.
 KRB_ADCLI_TIMEOUT=30
 kerberos_testjoin() {
     local dom rc=0 out
+    kerberos_kinit_test || rc=$?
+    case $rc in
+        0 | 1 | 3) return "$rc" ;;
+    esac
+    rc=0
     command -v adcli >/dev/null 2>&1 || return 2
     dom=$(krb_domain) || return 2
     out=$(timeout "$KRB_ADCLI_TIMEOUT" adcli testjoin --domain="$dom" </dev/null 2>&1) || rc=$?
@@ -167,4 +196,43 @@ mode_kerberos() {
         *) logt WARN chk_testjoin_unknown "$dom" ;;
     esac
     log INFO "$(timedatectl show -p NTPSynchronized -p TimeUSec 2>/dev/null | tr '\n' ' ' || true)"
+}
+
+# Mode "diag": read-only diagnosis of logon/Kerberos/SSSD/agent in one screen, also saved
+# to the log folder (for desktops without clipboard: take a screenshot or copy the file).
+# Secret values are masked; nothing is changed.
+mode_diag() {
+    logt STEP step_diag
+    local f dir
+    f="${LOG_DIR}/diag-$(date +%Y%m%d-%H%M%S).txt"
+    {
+        echo "== VDI-ImageMaint ${VDI_VERSION} diag $(date -Is) on $(hostname -f 2>/dev/null || hostname)"
+        echo "== os: $(. /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-?}") kernel $(uname -r)"
+        echo "== time"; timedatectl show -p NTPSynchronized -p Timezone -p TimeUSec 2>&1 || true
+        echo "== realm list"; timeout 15 realm list 2>&1 || true
+        echo "== sssd"; systemctl is-active sssd.service 2>&1 || true
+        timeout 15 sssctl config-check 2>&1 || true
+        ls -l /etc/sssd/conf.d/ 2>&1 || true
+        sed -nE '/^\[|domains|id_provider|access_provider|ad_gpo|fully_qualified|homedir|password_age|krb5_/p' \
+            /etc/sssd/sssd.conf /etc/sssd/conf.d/*.conf 2>/dev/null || true
+        echo "== keytab (principal, kvno; no keys)"
+        klist -k /etc/krb5.keytab 2>/dev/null | awk 'NR>3 {print $1, $2}' | sort -u | head -n 10 || true
+        echo "== kinit -k (machine keytab against the KDC)"
+        local rc=0
+        kerberos_kinit_test || rc=$?
+        echo "result: $(case $rc in 0) echo ACCEPTED ;; 1) echo REJECTED ;; 3) echo "KDC NOT REACHABLE" ;; *) echo INCONCLUSIVE ;; esac)"
+        tail -n 1 "$LOG_FILE" 2>/dev/null || true
+        echo "== adcli testjoin (max ${KRB_ADCLI_TIMEOUT} s)"
+        timeout "$KRB_ADCLI_TIMEOUT" adcli testjoin --domain="$(krb_domain || echo "$AD_DOMAIN")" </dev/null 2>&1 || echo "rc=$?"
+        echo "== DNS"; dig +short -t SRV "_ldap._tcp.$(krb_domain || echo "$AD_DOMAIN")" 2>&1 | head -n 5 || true
+        echo "== sssd journal (last 20)"; journalctl -u sssd -b --no-pager 2>&1 | tail -n 20 || true
+        echo "== Horizon agent"
+        if dir=$(agent_conf_dir); then
+            grep -E '^[[:space:]]*(OfflineJoinDomain|RunOnceScript|SSOEnable|SSOUserFormat|SSODesktopType)' "${dir}/viewagent-custom.conf" 2>&1 || true
+        fi
+        systemctl is-active viewagent.service 2>&1 || true
+        echo "== runonce.log (last 10)"; tail -n 10 "${LOG_DIR}/runonce.log" 2>/dev/null || echo "-"
+    } 2>&1 | sed -E 's/((pass|secret|authtok)[^=:]*[=:]).*/\1 ********/I' | tee "$f"
+    chmod 0640 "$f"
+    logt OK diag_saved "$f"
 }

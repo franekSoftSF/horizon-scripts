@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-07",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",
@@ -36,6 +36,7 @@
     "update",
     "fido",
     "status",
+    "diag",
     "self-update"
   ],
   "apps": [
@@ -153,6 +154,14 @@
         "check hung at L24 (adcli testjoin)"
       ],
       "fixedIn": "0.5.3"
+    },
+    {
+      "date": "2026-10-07",
+      "found": [
+        "L24 adcli testjoin no answer within 30 s (large AD)",
+        "no clipboard on the VDI - diagnostics must be built in"
+      ],
+      "fixedIn": "0.5.4"
     }
   ]
 }

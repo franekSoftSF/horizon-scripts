@@ -58,6 +58,7 @@ Modes:
   update     unlock if sealed, apt full-upgrade, autoremove
   fido       FIDO2 redirection test inside a session on a clone
   status     tool version, profile, recorded changes
+  diag       read-only diagnosis of logon/Kerberos/SSSD/agent, saved to /var/log/vdi-imagemaint/diag-*.txt
   self-update  check GitHub now and upgrade the tool (also when AUTO_UPGRADE=no)
 
 Options:
@@ -337,7 +338,7 @@ MSG[krb_harden]='Kerberos/SSSD safety settings for %s (no automatic machine pass
 MSG[krb_hardened]='Kerberos/SSSD safety settings active.'
 MSG[krb_rotated]='Machine account password rotated (if older than %s days) - the new snapshot carries a current keytab.'
 MSG[krb_rotate_failed]='Machine account password not rotated (keytab rejected or adcli update failed) - check with: adcli testjoin.'
-MSG[chk_testjoin_ok]='Machine account in %s accepts this keytab (adcli testjoin).'
+MSG[chk_testjoin_ok]='Machine account in %s accepts this keytab.'
 MSG[chk_testjoin_bad]='Machine account in %s does NOT accept this keytab - logons will fail. Restore a snapshot whose keytab AD accepts, or rejoin (back up /etc/sssd/sssd.conf first), then a new snapshot.'
 MSG[chk_krb_hardened]='Kerberos/SSSD safety settings present.'
 MSG[chk_krb_not_hardened]='Kerberos/SSSD safety settings missing - run mode kerberos.'
@@ -346,5 +347,8 @@ MSG[krb_no_domain]='No real SSSD domain found (sssd.conf "domains", AD_DOMAIN is
 MSG[krb_no_timesyncd]='systemd-timesyncd does not keep the clock here (chrony or VMware Tools?) - SSSD does not wait for time sync.'
 MSG[krb_rolled_back]='Kerberos/SSSD settings ROLLED BACK - %s failed with them; SSSD runs with its previous configuration.'
 MSG[adopt_q_kerberos]='Apply the Kerberos/SSSD safety settings (no automatic machine password change, time sync, ticket renewal; rolled back automatically if SSSD rejects them)?'
-MSG[chk_testjoin_timeout]='Machine account check for %s did not answer within %s s (DC not reachable over DNS/LDAP?) - not verified; details in the log.'
+MSG[chk_testjoin_timeout]='Machine account check for %s: no domain controller answered within %s s - not verified; run mode diag.'
 MSG[chk_testjoin_unknown]='Machine account in %s could not be checked (adcli missing or no SSSD domain).'
+MSG[step_diag]='DIAG - logon, Kerberos, SSSD and agent diagnosis (read-only)'
+MSG[diag_saved]='Diagnosis saved to %s'
+MSG[menu_diag]='Diagnosis of logon/Kerberos/SSSD (read-only, saved to a file)'
