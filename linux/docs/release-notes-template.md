@@ -47,6 +47,7 @@ Run the tool as the **local** admin (e.g. `sysadmin`) from the vSphere console. 
 sudo ./vdi-imagemaint.sh adopt          # detects the image, creates vdi-imagemaint.conf, shows a diff, keeps your setup
 sudo ./vdi-imagemaint.sh check          # 0 ERR expected
 sudo ./vdi-imagemaint.sh update         # (S) packages first (apt full-upgrade, agents), reboot if asked
+sudo ./vdi-imagemaint.sh nfsmount       # (S) NFS homes from fstab mounted on first access, then: sudo reboot + test
 sudo ./vdi-imagemaint.sh usb            # (S) USB 3.0 / FIDO2 driver (VHCI), then: sudo reboot
 sudo ./vdi-imagemaint.sh kerberos       # (S) machine password / time sync safety, then: sudo reboot + logon test
 sudo ./vdi-imagemaint.sh courses        # installs course apps, "Courses" folder in the MATE menu
@@ -107,6 +108,7 @@ Wtedy jako root (`su -`): `apt-get update && apt-get install -y curl ca-certific
 1. `adopt` – rozpoznaje obraz i sam tworzy konfigurację.
 2. `check`
 3. `update` – najpierw aktualizacja pakietów; restart, jeśli narzędzie o niego poprosi.
+3a. `nfsmount` – katalogi domowe NFS z fstab montowane przy pierwszym dostępie; potem restart i test.
 4. `usb`, potem restart.
 5. `kerberos`, potem restart i test logowania.
 6. `courses` – aplikacje do zajęć i folder Zajęcia.

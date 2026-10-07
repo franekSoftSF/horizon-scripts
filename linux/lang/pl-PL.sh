@@ -45,6 +45,7 @@ Tryby:
   prepare    pakiety bazowe, sesja MATE + GDM, locale, klawiatura, strefa czasowa, NTP
   domain     krb5.conf, SSSD, realm join obrazu, sudo, True SSO / karta
   kerberos   bezpieczeństwo SSSD/Kerberos: bez automatycznej zmiany hasła komputera, czekanie na czas, odnawianie biletów
+  nfsmount   udziały NFS z fstab montowane przy pierwszym dostępie (x-systemd.automount); --revert przywraca fstab
   nfs        katalogi domowe NFSv4 z Kerberosem (autofs, rpc.gssd, idmapd)
   agent      instalacja/aktualizacja agenta Horizon (z kontrolą wersji; zależności, sterownik USB VHCI, dźwięk), RunOnce
   usb        sam sterownik USB VHCI (przejęty obraz, bez reinstalacji agenta)
@@ -366,3 +367,15 @@ MSG[courses_installing]='Instaluję aplikacje do zajęć: %s'
 MSG[courses_install_failed]='Instalacja %s nie powiodła się - zobacz log; folder powstaje z tym, co jest zainstalowane.'
 MSG[courses_pkg_unknown]='Niedostępne w skonfigurowanych źródłach apt: %s'
 MSG[courses_sealed_no_install]='Obraz jest zamknięty - brakujące aplikacje nie zostaną zainstalowane (najpierw unlock); powstaje tylko folder.'
+
+# --- 0.6.7: nfsmount ---
+MSG[step_nfsmount]='NFSMOUNT - udziały NFS z fstab montowane przy pierwszym dostępie (x-systemd.automount)'
+MSG[step_nfsmount_revert]='NFSMOUNT --revert - przywracanie oryginalnego /etc/fstab'
+MSG[nfsmount_none]='Brak wpisów nfs/nfs4 w /etc/fstab - nic do zrobienia.'
+MSG[nfsmount_already]='Wszystkie wpisy NFS w /etc/fstab już montują się przy pierwszym dostępie.'
+MSG[nfsmount_invalid]='Zmieniony /etc/fstab nie przeszedł findmnt --verify - nic nie zapisano.'
+MSG[nfsmount_entry]='NFS %s: %s'
+MSG[nfsmount_reverted]='Przywrócono oryginalny /etc/fstab.'
+MSG[chk_nfs_not_mounted]='Niezamontowane udziały NFS z fstab:%s - montowanie przy starcie jest tu zawodne; uruchom tryb nfsmount (montowanie przy pierwszym dostępie).'
+MSG[chk_nfs_mounted]='Udziały NFS z fstab zamontowane lub montowane przy pierwszym dostępie.'
+MSG[menu_nfsmount]='NFS z fstab: montowanie przy pierwszym dostępie (brak katalogów domowych po starcie)'

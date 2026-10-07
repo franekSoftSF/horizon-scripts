@@ -217,6 +217,15 @@ portu 9443 na serwerze. Narzędzie:
   wymagają logowania w Customer Connect i kopiuje się je ręcznie.
 - `courses --revert` usuwa folder.
 
+### Brak katalogów domowych NFS po starcie (tryb `nfsmount`)
+
+Na VM udział NFS `sec=krb5` z `/etc/fstab` czasem nie montował się przy starcie systemu. Sieć, DNS, `rpc-gssd` albo
+poświadczenie Kerberos maszyny nie były jeszcze gotowe, a próba nie była ponawiana. Logowanie działało, ale katalogu
+domowego brakowało do ręcznego `mount`. `nfsmount` dopisuje do wpisów NFS w fstab
+`_netdev,x-systemd.automount,x-systemd.mount-timeout=30`, więc udział montuje się przy pierwszym wejściu do katalogu.
+Nowy fstab jest sprawdzany przez `findmnt --verify`. Oryginał jest zachowany, a `nfsmount --revert` go przywraca.
+`check` L26 ostrzega o niezamontowanych udziałach NFS z fstab.
+
 ## Co zmieniają tryby
 
 - **domain**: zapisuje `krb5.conf`, `sssd.conf` i `smb.conf` i dołącza obraz wzorcowy przez `realm join`

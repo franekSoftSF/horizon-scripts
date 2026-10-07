@@ -45,6 +45,7 @@ Modes:
   prepare    base packages, MATE session + GDM, locale, keyboard, time zone, NTP
   domain     krb5.conf, SSSD, realm join of the golden image, sudo, True SSO / smart card
   kerberos   SSSD/Kerberos safety: no automatic machine password change, wait for time sync, ticket renewal
+  nfsmount   NFS shares from fstab mounted on first access (x-systemd.automount); --revert restores fstab
   nfs        NFSv4 home directories with Kerberos (autofs, rpc.gssd, idmapd)
   agent      install/upgrade Horizon agent (version-aware; dependencies, USB VHCI driver, audio), RunOnce
   usb        USB VHCI driver only (adopted image, agent not reinstalled)
@@ -366,3 +367,15 @@ MSG[courses_installing]='Installing course applications: %s'
 MSG[courses_install_failed]='Installing %s failed - see the log; the folder is built with what is installed.'
 MSG[courses_pkg_unknown]='Not available in the configured apt sources: %s'
 MSG[courses_sealed_no_install]='The image is sealed - missing course applications are not installed (unlock first); only the folder is built.'
+
+# --- 0.6.7: nfsmount ---
+MSG[step_nfsmount]='NFSMOUNT - NFS shares from fstab mounted on first access (x-systemd.automount)'
+MSG[step_nfsmount_revert]='NFSMOUNT --revert - restoring the original /etc/fstab'
+MSG[nfsmount_none]='No nfs/nfs4 entry in /etc/fstab - nothing to do.'
+MSG[nfsmount_already]='All NFS entries in /etc/fstab already mount on first access.'
+MSG[nfsmount_invalid]='The changed /etc/fstab did not pass findmnt --verify - nothing written.'
+MSG[nfsmount_entry]='NFS %s: %s'
+MSG[nfsmount_reverted]='Original /etc/fstab restored.'
+MSG[chk_nfs_not_mounted]='NFS share(s) from fstab not mounted:%s - mounts at boot are unreliable here; run mode nfsmount (mount on first access).'
+MSG[chk_nfs_mounted]='NFS shares from fstab mounted or mounted on first access.'
+MSG[menu_nfsmount]='NFS from fstab: mount on first access (fixes homes missing after boot)'

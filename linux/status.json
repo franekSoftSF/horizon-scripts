@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-08",
-  "version": "0.6.6",
+  "version": "0.6.7",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",
@@ -25,6 +25,7 @@
     "domain",
     "kerberos",
     "nfs",
+    "nfsmount",
     "agent",
     "recording",
     "apps",
@@ -186,6 +187,13 @@
         "adcli update did not finish within 120 s; password not rotated"
       ],
       "fixedIn": "0.6.4 (wait-online), 0.6.6 (rotation off by default)"
+    },
+    {
+      "date": "2026-10-08",
+      "found": [
+        "NFS home share from fstab sometimes not mounted at boot (manual mount + reboot fixed it)"
+      ],
+      "fixedIn": "0.6.7 (nfsmount: x-systemd.automount)"
     }
   ]
 }

@@ -215,6 +215,15 @@ on the server. The tool:
   a Customer Connect login and are copied by hand.
 - `courses --revert` removes the folder.
 
+### NFS homes missing after boot (mode `nfsmount`)
+
+On the VM, a `sec=krb5` NFS share from `/etc/fstab` sometimes did not mount at boot. The network, DNS, `rpc-gssd` or
+the machine's Kerberos credential was not ready yet, and the mount was not retried. Login worked, but the home share was
+missing until a manual `mount`. `nfsmount` adds `_netdev,x-systemd.automount,x-systemd.mount-timeout=30` to the NFS
+entries in fstab, so the share mounts when somebody first opens the directory. The new fstab is checked with
+`findmnt --verify`. The original is kept, and `nfsmount --revert` restores it. `check` L26 warns about NFS shares from
+fstab that are not mounted.
+
 ## What each mode changes
 
 - **domain**: writes `krb5.conf`, `sssd.conf` and `smb.conf` and joins the golden image with `realm join`

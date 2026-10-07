@@ -158,6 +158,16 @@ mode_check() {
         fi
     fi
 
+    if [[ -n $(nfsmount_entries) ]]; then
+        local nfsbad
+        nfsbad=$(nfsmount_check)
+        if [[ -n $nfsbad ]]; then
+            check_result WARN L26 chk_nfs_not_mounted "$nfsbad"
+        else
+            check_result OK L26 chk_nfs_mounted
+        fi
+    fi
+
     if systemctl is-active --quiet open-vm-tools.service; then
         check_result OK L13 chk_vmtools_ok
     else
