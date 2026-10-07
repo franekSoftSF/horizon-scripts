@@ -1,5 +1,10 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.6.1 – 2026-10-07
+- Courses folder keeps the usual sub-categories in MATE: Courses > Programming / Education / Office / Graphics / Other (from each app's Categories, as the MATE menu places it; EN/PL names). GNOME stays one flat folder.
+- COURSES_APPS also takes Geany, Jupyter Notebook and Jmol (seen in the VM's Programming/Education menus).
+- Fix: the generated MATE menu file of 0.6.0 was invalid XML ("--" inside a comment), so MATE ignored it; Eclipse is now moved into Courses too. Test added for generated XML comments.
+
 ## 0.6.0 – 2026-10-07
 - GDM is the display manager (Horizon SSO logs on through gdm-hzncred and starts MATE with SSODesktopType=UseMATE): prepare no longer switches to LightDM, check L11 accepts GDM or LightDM with a MATE session, LightDM tuning only when LightDM is used.
 - New mode `courses`: one "Courses" folder (COURSES_FOLDER_NAME, PL "Zajęcia") for the course applications - GNOME app-grid folder via the dconf system db (locked with COURSES_LOCK=yes), MATE submenu via override copies in /usr/local/share/applications with Categories=X-VDI-Apps (merged with the Eclipse VDI-Apps menu). Apps from COURSES_APPS (default: octave gnumeric qtcreator code.desktop texmaker texstudio texdoctk) plus Eclipse; missing apps skipped. Run by apps, refreshed by update, `courses --revert` removes it.

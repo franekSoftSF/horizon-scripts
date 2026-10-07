@@ -3,9 +3,12 @@
 # Qt Creator, VS Code, Texmaker, TeXstudio, texdoctk, Eclipse, ...), on GNOME and MATE.
 #   GNOME  app-grid folder through the dconf system database (org.gnome.desktop.app-folders);
 #          apps in a folder leave the main grid. Locked by default, so lab users always see it.
-#   MATE   XDG submenu (merged menu, same "VDI-Apps" menu the Eclipse component uses); the
-#          apps are moved by an override copy of their .desktop file in
-#          /usr/local/share/applications with Categories=X-VDI-Apps (package files untouched).
+#   MATE   XDG submenu "Courses" with the usual sub-categories inside (Programming,
+#          Education, Office, Graphics, Other - taken from each app's own Categories), e.g.
+#          Courses > Programming > Geany, Jupyter, Qt Creator, VS Code, Eclipse. The apps are
+#          moved by an override copy of their .desktop file in /usr/local/share/applications
+#          with Categories=X-VDI-Apps;X-VDI-<group>; (package files untouched).
+#   GNOME  folders cannot be nested there: one flat folder.
 # Everything is tracked in courses-state.json: each run first removes the previous result, so
 # apps dropped from COURSES_APPS disappear; "courses --revert" removes it all. Re-run by
 # "apps" and "update" so the override copies follow package updates.
@@ -38,6 +41,31 @@ menu_find_apps() {
             fi
         )
     done
+}
+
+# Sub-category of an app, like the MATE menu places it (first match wins).
+COURSES_GROUPS="programming education office graphics other"
+courses_group() {
+    local c
+    c=$(sed -nE 's/^Categories[[:space:]]*=[[:space:]]*//p' "$1" 2>/dev/null | head -n1 || true)
+    case ";${c}" in
+        *";Development;"*) echo programming ;;
+        *";Education;"* | *";Science;"* | *";Math;"* | *";Chemistry;"* | *";Physics;"*) echo education ;;
+        *";Office;"* | *";Publishing;"* | *";Spreadsheet;"* | *";WordProcessor;"*) echo office ;;
+        *";Graphics;"*) echo graphics ;;
+        *) echo other ;;
+    esac
+}
+
+# Display names of the sub-menus (EN, PL)
+courses_group_name() {
+    case $1 in
+        programming) printf 'Programming\tProgramowanie' ;;
+        education) printf 'Education\tEdukacja' ;;
+        office) printf 'Office\tBiuro' ;;
+        graphics) printf 'Graphics\tGrafika' ;;
+        *) printf 'Other\tInne' ;;
+    esac
 }
 
 # GNOME default folders (keep them next to ours)
@@ -85,31 +113,48 @@ Name[pl]=${COURSES_FOLDER_NAME_PL:-$COURSES_FOLDER_NAME}
 Icon=applications-science
 EOF
 
-    # MATE / XDG menus: override copies with our category, plus the merged submenu.
-    local src cats
+    # MATE / XDG menus: override copies with our categories, plus the merged submenu with
+    # one sub-menu per group that has apps.
+    local src group en pl
+    declare -A in_group=()
     for id in "${ids[@]}"; do
         src="/usr/share/applications/${id}"
-        [[ $id == vdi-eclipse.desktop ]] && continue    # Eclipse sets X-VDI-Apps itself when MENU_SUBMENU is used
-        cats="X-VDI-Apps;"
-        sed -E -e '/^Categories[[:space:]]*=/d' -e "0,/^\[Desktop Entry\]/s//[Desktop Entry]\nCategories=${cats}/" "$src" |
+        group=$(courses_group "$src")
+        in_group[$group]+="${id} "
+        sed -E -e '/^Categories[[:space:]]*=/d' \
+            -e "0,/^\[Desktop Entry\]/s//[Desktop Entry]\nCategories=X-VDI-Apps;X-VDI-${group};/" "$src" |
             write_file courses "${MENU_OVERRIDE_DIR}/${id}" 0644
+    done
+    for group in $COURSES_GROUPS; do
+        [[ -n ${in_group[$group]:-} ]] || continue
+        IFS=$'\t' read -r en pl <<<"$(courses_group_name "$group")"
+        write_file courses "/usr/share/desktop-directories/vdi-courses-${group}.directory" 0644 <<EOF
+[Desktop Entry]
+Type=Directory
+Name=${en}
+Name[pl]=${pl}
+Icon=applications-$([[ $group == programming ]] && echo development || echo "$group")
+EOF
     done
     {
         cat <<'EOF'
 <!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
  "http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd">
-<!-- Managed by VDI-ImageMaint (courses) - removed by "vdi-imagemaint.sh menu --revert" -->
+<!-- Managed by VDI-ImageMaint (mode courses); the revert option of that mode removes it. -->
 <Menu>
   <Name>Applications</Name>
   <Menu>
     <Name>VDI-Apps</Name>
     <Directory>vdi-courses.directory</Directory>
-    <Include>
-      <Category>X-VDI-Apps</Category>
 EOF
-        for id in "${ids[@]}"; do printf '      <Filename>%s</Filename>\n' "$id"; done
+        for group in $COURSES_GROUPS; do
+            [[ -n ${in_group[$group]:-} ]] || continue
+            printf '    <Menu>\n      <Name>VDI-Courses-%s</Name>\n      <Directory>vdi-courses-%s.directory</Directory>\n      <Include>\n        <Category>X-VDI-%s</Category>\n' \
+                "$group" "$group" "$group"
+            for id in ${in_group[$group]}; do printf '        <Filename>%s</Filename>\n' "$id"; done
+            printf '      </Include>\n    </Menu>\n'
+        done
         cat <<'EOF'
-    </Include>
   </Menu>
 </Menu>
 EOF
