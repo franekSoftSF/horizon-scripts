@@ -362,3 +362,7 @@ MSG[courses_no_apps]='Żadna aplikacja z COURSES_APPS (%s) nie jest zainstalowan
 MSG[courses_apps]='Do folderu trafia %s aplikacji: %s'
 MSG[courses_done]='Folder „%s” z %s aplikacjami gotowy - widoczny przy następnym logowaniu.'
 MSG[menu_courses]='Folder „Zajęcia” dla aplikacji do zajęć (courses --revert usuwa)'
+MSG[courses_installing]='Instaluję aplikacje do zajęć: %s'
+MSG[courses_install_failed]='Instalacja %s nie powiodła się - zobacz log; folder powstaje z tym, co jest zainstalowane.'
+MSG[courses_pkg_unknown]='Niedostępne w skonfigurowanych źródłach apt: %s'
+MSG[courses_sealed_no_install]='Obraz jest zamknięty - brakujące aplikacje nie zostaną zainstalowane (najpierw unlock); powstaje tylko folder.'

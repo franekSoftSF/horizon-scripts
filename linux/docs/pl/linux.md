@@ -197,6 +197,11 @@ portu 9443 na serwerze. Narzędzie:
 - **Które aplikacje:** `COURSES_APPS="geany jupyter qtcreator code.desktop octave jmol gnumeric texmaker texstudio texdoctk"`.
   Wpis kończący się na `.desktop` to dokładna nazwa pliku; każdy inny to fragment nazwy pliku, bez rozróżniania
   wielkości liter. Eclipse jest dodawany, gdy jest zainstalowany. Niezainstalowane aplikacje są pomijane.
+- **Najpierw doinstalowywane są brakujące aplikacje** (`COURSES_INSTALL="yes"`): pakiety Debiana z
+  `COURSES_PACKAGES` (Geany, Jupyter Notebook, Qt Creator, Octave, Jmol, Gnumeric, Texmaker, TeXstudio) oraz
+  VS Code z pliku `code_*.deb` w `Horizon/` lub `/install`. Na zamkniętym obrazie nic nie jest instalowane.
+- `get-vdi-imagemaint.sh` zakłada katalogi `Horizon/` i `certs/` i pobiera źródła USB VHCI. Instalatory Omnissa
+  wymagają logowania w Customer Connect i kopiuje się je ręcznie.
 - `courses --revert` usuwa folder.
 
 ## Co zmieniają tryby

@@ -68,6 +68,47 @@ courses_group_name() {
     esac
 }
 
+# Install the course applications that are missing (COURSES_INSTALL=yes): Debian packages
+# from COURSES_PACKAGES, VS Code from a code_*.deb in Horizon/ or HORIZON_EXTRA_DIRS.
+# Not on a sealed image (package changes are blocked there) - then only the folder is built.
+courses_install() {
+    [[ $COURSES_INSTALL == yes ]] || return 0
+    if is_sealed; then
+        logt WARN courses_sealed_no_install
+        return 0
+    fi
+    local pkg deb
+    local -a missing=() unknown=()
+    for pkg in $COURSES_PACKAGES; do
+        pkg_installed "$pkg" && continue
+        missing+=("$pkg")
+    done
+    if ((${#missing[@]})); then
+        apt_get update >/dev/null || true
+        local -a ok=()
+        for pkg in "${missing[@]}"; do
+            if [[ -n $(apt-cache policy "$pkg" 2>/dev/null | sed -n 's/^ *Candidate: //p' | grep -v '(none)' || true) ]]; then
+                ok+=("$pkg")
+            else
+                unknown+=("$pkg")
+            fi
+        done
+        if ((${#ok[@]})); then
+            logt INFO courses_installing "${ok[*]}"
+            apt_install "${ok[@]}" || logt WARN courses_install_failed "${ok[*]}"
+        fi
+        ((${#unknown[@]})) && logt WARN courses_pkg_unknown "${unknown[*]}"
+    fi
+    if ! pkg_installed code; then
+        deb=$(find_sources 'code_*_amd64.deb' f | sort -V | tail -n1 || true)
+        if [[ -n $deb ]]; then
+            logt INFO courses_installing "$(basename "$deb")"
+            apt_install "$deb" || logt WARN courses_install_failed "$(basename "$deb")"
+        fi
+    fi
+    return 0
+}
+
 # GNOME default folders (keep them next to ours)
 menu_gnome_children() {
     local cur
@@ -92,6 +133,7 @@ mode_courses() {
         return 0
     fi
     logt STEP step_courses
+    courses_install
     local -a ids=()
     local id
     while IFS= read -r id; do ids+=("$id"); done < <(menu_find_apps)
