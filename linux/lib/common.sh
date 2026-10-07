@@ -2,7 +2,7 @@
 # VDI-ImageMaint for Linux - shared helpers: config, i18n, logging, state, tracked changes.
 # Sourced by vdi-imagemaint.sh; expects VDI_ROOT to be set.
 
-VDI_VERSION="0.6.3"
+VDI_VERSION="0.6.4"
 STATE_DIR="/var/lib/vdi-imagemaint"
 LOG_DIR="/var/log/vdi-imagemaint"
 LOG_FILE="${LOG_DIR}/vdi-imagemaint-$(date +%Y%m%d).log"
@@ -247,19 +247,26 @@ unit_off() {
     esac
 }
 
+# unit_restore SECTION UNIT ORIG - bring one unit back to its recorded original state
+unit_restore() {
+    local section=$1 unit=$2 orig=$3
+    case $orig in
+        masked) ;;
+        enabled | enabled-runtime)
+            run systemctl unmask "$unit" || true
+            run systemctl enable --now "$unit" || logt WARN unit_restore_failed "$unit"
+            ;;
+        *) run systemctl unmask "$unit" || true ;;
+    esac
+    state_update "$section" 'del(.units[$u])' --arg u "$unit"
+    logt OK unit_restored "$unit" "$orig"
+}
+
 units_restore() {
     local section=$1 unit orig
     while IFS=$'\t' read -r unit orig; do
         [[ -n $unit ]] || continue
-        case $orig in
-            masked) ;;
-            enabled | enabled-runtime)
-                run systemctl unmask "$unit" || true
-                run systemctl enable --now "$unit" || logt WARN unit_restore_failed "$unit"
-                ;;
-            *) run systemctl unmask "$unit" || true ;;
-        esac
-        logt OK unit_restored "$unit" "$orig"
+        unit_restore "$section" "$unit" "$orig"
     done < <(state_get "$section" '.units | to_entries[] | "\(.key)\t\(.value)"')
     state_update "$section" '.units = {}'
 }

@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-07",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",
@@ -163,6 +163,14 @@
         "no clipboard on the VDI - diagnostics must be built in"
       ],
       "fixedIn": "0.5.4"
+    },
+    {
+      "date": "2026-10-07",
+      "found": [
+        "self-upgrade: installer overwrote itself while running (-fsSL: command not found)",
+        "sudo for AD user: PAM account error, SSSD offline after boot (NetworkManager-wait-online disabled by optimize)"
+      ],
+      "fixedIn": "0.6.4"
     }
   ]
 }

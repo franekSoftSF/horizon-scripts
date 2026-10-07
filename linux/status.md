@@ -1,6 +1,6 @@
 # Status – VDI-ImageMaint dla Linuksa
 
-_Aktualizacja: 2026-10-07_ · wersja **0.6.3** · Debian 12 + MATE · Horizon 2506 Instant Clone
+_Aktualizacja: 2026-10-07_ · wersja **0.6.4** · Debian 12 + MATE · Horizon 2506 Instant Clone
 
 ## Zrobione
 - [x] Szkielet: `vdi-imagemaint.sh` (menu + tryby), `lib/common.sh` (konfiguracja, i18n EN/PL, log, śledzenie zmian w JSON)
@@ -54,6 +54,9 @@ _Aktualizacja: 2026-10-07_ · wersja **0.6.3** · Debian 12 + MATE · Horizon 25
 - [x] 0.6.2: courses doinstalowuje brakujące aplikacje (apt + code_*.deb); get-vdi-imagemaint.sh zakłada Horizon/ i certs/ i pobiera źródła VHCI
 
 - [x] 0.6.3: świeży Debian bez curl – instalacja przez wget, skrypt sam doinstalowuje curl; krok 0 w procedurze; stałe linki releases/latest
+
+- [x] 0.6.4: VM – skrypt instalacyjny nadpisywał sam siebie w trakcie (`-fsSL: command not found`) → blok { } + kopia tymczasowa;
+      sudo AD zawieszało się (PAM/SSSD offline) → NetworkManager-wait-online nie jest już wyłączany, przywracany przy optimize
 
 ## Jak testowano (bez VM)
 - Kontener `debian:12` (Docker): 29/29 testów (`tests/run-tests.sh`), shellcheck 0 uwag

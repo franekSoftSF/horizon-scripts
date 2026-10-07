@@ -8,7 +8,14 @@ mode_optimize() {
         return 0
     fi
     logt STEP step_optimize
-    local u
+    local u orig
+    # Units an older version turned off but that are no longer on the lists come back
+    # (e.g. NetworkManager-wait-online, removed in 0.6.4).
+    while IFS=$'\t' read -r u orig; do
+        [[ -n $u ]] || continue
+        [[ " $OPTIMIZE_DISABLE_UNITS $OPTIMIZE_MASK_UNITS " == *" $u "* ]] && continue
+        unit_restore optimize "$u" "$orig"
+    done < <(state_get optimize '.units | to_entries[] | "\(.key)\t\(.value)"')
     for u in $OPTIMIZE_DISABLE_UNITS; do unit_off optimize "$u" disable; done
     for u in $OPTIMIZE_MASK_UNITS; do unit_off optimize "$u" mask; done
 
