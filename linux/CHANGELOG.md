@@ -1,5 +1,9 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.7.0 – 2026-10-08
+- Debian 13 (trixie) supported next to Debian 12 (all packages verified on Debian 13). Horizon agent: Debian 13 needs 2606+ (Omnissa docs) - agent refuses older archives on Debian 13 (unless --force), check L27 warns.
+- NFS_MODE="fstab": one NFS share on NFS_MOUNTPOINT in /etc/fstab, mounted on first access (x-systemd.automount), homes HOME_ROOT/<login> - the layout of the existing images (/home/STUDENT). adopt records it; check L12 understands it.
+
 ## 0.6.8 – 2026-10-08
 - seal: users on instant clones see only "Log Out" (SEAL_HIDE_POWER=yes) - a polkit rule denies power-off, reboot, halt, suspend and hibernate to everybody outside the sudo group, so MATE, the logout dialog and the GDM login screen hide those buttons (also `systemctl poweroff` from a terminal). unlock removes it.
 

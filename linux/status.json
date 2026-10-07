@@ -1,14 +1,14 @@
 {
   "updated": "2026-10-08",
-  "version": "0.6.8",
+  "version": "0.7.0",
   "platform": {
-    "os": "Debian 12 bookworm",
+    "os": "Debian 12 bookworm / Debian 13 trixie",
     "desktop": "MATE + LightDM",
     "horizon": "2506 Instant Clone",
     "adJoin": "SSSD + realm join on the golden image (mode domain), Horizon offline join per clone",
     "certLogon": "True SSO / smart card optional (pam_cert_auth, PKINIT)",
     "fido2": "experimental probe (mode fido)",
-    "homes": "NFSv4 sec=krb5p via autofs"
+    "homes": "NFSv4 + Kerberos: fstab share mounted on first access (NFS_MODE=fstab) or autofs per user"
   },
   "languages": {
     "primary": "en-US",
@@ -105,8 +105,8 @@
     "machine password rotation via adcli update on the golden image; clones after a long power-off"
   ],
   "plan": [
-    "VM test: ISO build -> seal -> Instant Clone pool -> logon, NFS, collaboration via UAG",
-    "fixes after test, 0.2.0",
+    "Saturday: new golden image on Debian 13 (agent 2606+, NFS_MODE=fstab, /home/STUDENT/<login>)",
+    "fixes after the Debian 13 build",
     "HTML cycle report"
   ],
   "docsSource": "Desktops and Applications in Omnissa Horizon 8, PDF version 2606 (user) + docs.omnissa.com Vmulti/2506",

@@ -1,7 +1,7 @@
 <!-- Release notes template: every linux-v* release carries the complete procedure (users read it in the VDI browser,
      there is no clipboard). Replace {{VERSION}} and {{CHANGES}}. Stable links: releases/latest and
      releases/latest/download/get-vdi-imagemaint.sh. -->
-VDI-ImageMaint for Linux **{{VERSION}}** – golden-image tool for **Debian 12** (MATE session, GDM, Horizon SSO) on **Omnissa Horizon 8 Instant Clone**.
+VDI-ImageMaint for Linux **{{VERSION}}** – golden-image tool for **Debian 12 and 13** (MATE session, GDM, Horizon SSO) on **Omnissa Horizon 8 Instant Clone**.
 
 ## 0. Fresh Debian: curl and sudo
 
@@ -57,14 +57,18 @@ sudo ./vdi-imagemaint.sh check
 sudo ./vdi-imagemaint.sh seal           # (S) last step, powers off -> snapshot -> Push Image
 ```
 
-## 2b. NEW golden image (fresh Debian 12)
+## 2b. NEW golden image (fresh Debian 12 or 13)
+
+Debian 13 needs Horizon agent **2606 or newer** (Omnissa docs); older archives are refused. For homes on one NFS share as on
+the existing images, set in `vdi-imagemaint.conf`: `NFS_MODE="fstab"`, `NFS_SERVER`, `NFS_EXPORT`,
+`NFS_MOUNTPOINT="/home/STUDENT"`, `HOME_ROOT="/home/STUDENT"`, `NFS_SEC="krb5"`.
 
 ```bash
 sudo cp vdi-imagemaint.conf.example vdi-imagemaint.conf
-sudo nano vdi-imagemaint.conf           # AD domain, join account, NFS, ...
+sudo nano vdi-imagemaint.conf           # AD domain, join account, NFS (NFS_MODE="fstab" ...), ...
 sudo ./vdi-imagemaint.sh prepare        # packages, MATE + GDM, locale, time
 sudo ./vdi-imagemaint.sh domain         # SSSD, realm join (asks for the password)
-sudo ./vdi-imagemaint.sh nfs            # NFSv4 + Kerberos homes
+sudo ./vdi-imagemaint.sh nfs            # NFSv4 + Kerberos homes (fstab share mounted on first access)
 sudo ./vdi-imagemaint.sh agent          # Horizon agent + USB driver, then: sudo reboot
 sudo ./vdi-imagemaint.sh apps           # Eclipse + course apps + "Courses" folder
 sudo ./vdi-imagemaint.sh optimize
@@ -117,7 +121,7 @@ Wtedy jako root (`su -`): `apt-get update && apt-get install -y curl ca-certific
 9. `check`
 10. `seal`, potem snapshot i Push Image.
 
-**2b. Nowy obraz.** Skopiuj `vdi-imagemaint.conf.example` do `vdi-imagemaint.conf` i uzupełnij. Kolejność:
+**2b. Nowy obraz (Debian 12 lub 13).** Debian 13 wymaga agenta Horizon **2606 lub nowszego**. Skopiuj `vdi-imagemaint.conf.example` do `vdi-imagemaint.conf` i uzupełnij; dla jednego udziału NFS jak na obecnych obrazach: `NFS_MODE="fstab"`, `NFS_SERVER`, `NFS_EXPORT`, `NFS_MOUNTPOINT="/home/STUDENT"`, `HOME_ROOT="/home/STUDENT"`, `NFS_SEC="krb5"`. Kolejność:
 1. `prepare`
 2. `domain`
 3. `nfs`

@@ -87,6 +87,12 @@ mode_agent() {
     fi
     version=$(agent_archive_version "$archive")
     [[ -n $version ]] || version="unknown-$(basename "$archive")"
+    local min_yymm
+    min_yymm=$(agent_min_yymm)
+    if ((min_yymm > 0)) && [[ $version =~ ^[0-9]{4}- ]] && ((10#${version%%-*} < 10#$min_yymm)) && [[ ${FORCE:-0} != 1 ]]; then
+        logt ERR agent_too_old_for_os "$version" "$(os_version)" "$min_yymm"
+        exit 1
+    fi
     args=$(agent_args)
     installed_ver=$(state_get build '.agent.version // empty')
     installed_args=$(state_get build '.agent.args // empty')

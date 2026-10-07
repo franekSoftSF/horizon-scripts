@@ -1,6 +1,6 @@
 # Status – VDI-ImageMaint dla Linuksa
 
-_Aktualizacja: 2026-10-07_ · wersja **0.6.8** · Debian 12 + MATE · Horizon 2506 Instant Clone
+_Aktualizacja: 2026-10-07_ · wersja **0.7.0** · Debian 12/13 + MATE · Horizon 2506 Instant Clone
 
 ## Zrobione
 - [x] Szkielet: `vdi-imagemaint.sh` (menu + tryby), `lib/common.sh` (konfiguracja, i18n EN/PL, log, śledzenie zmian w JSON)
@@ -67,6 +67,9 @@ _Aktualizacja: 2026-10-07_ · wersja **0.6.8** · Debian 12 + MATE · Horizon 25
 - [x] 0.6.7: VM – udział NFS z fstab czasem nie montuje się przy starcie (działa po ręcznym mount/restarcie) → tryb `nfsmount` (x-systemd.automount), check L26
 
 - [x] 0.6.8: seal – na klonach tylko „Wyloguj” (polkit: bez wyłączania/restartu/usypiania poza grupą sudo)
+
+- [x] 0.7.0: Debian 13 (pakiety sprawdzone w debian:13, agent ≥ 2606), NFS_MODE=fstab (jeden udział na /home/STUDENT, montowanie przy pierwszym dostępie,
+      $HOME = /home/STUDENT/<login>) – pod budowę nowego obrazu Debian 13
 
 ## Jak testowano (bez VM)
 - Kontener `debian:12` (Docker): 29/29 testów (`tests/run-tests.sh`), shellcheck 0 uwag

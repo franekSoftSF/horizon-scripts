@@ -68,8 +68,10 @@ adopt_detect_config() {
     if [[ -n $line ]]; then
         read -r src mnt opts <<<"$line"
         adopt_cfg_set NFS_ENABLE yes
+        adopt_cfg_set NFS_MODE fstab
         adopt_cfg_set NFS_SERVER "${src%%:*}"
         adopt_cfg_set NFS_EXPORT "${src#*:}"
+        adopt_cfg_set NFS_MOUNTPOINT "$mnt"
         adopt_cfg_set HOME_ROOT "$mnt"
         [[ $opts =~ sec=(krb5[ip]?) ]] && adopt_cfg_set NFS_SEC "${BASH_REMATCH[1]}"
     else

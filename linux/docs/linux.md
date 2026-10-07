@@ -224,6 +224,16 @@ entries in fstab, so the share mounts when somebody first opens the directory. T
 `findmnt --verify`. The original is kept, and `nfsmount --revert` restores it. `check` L26 warns about NFS shares from
 fstab that are not mounted.
 
+### Debian 13 and NFS on one share
+
+- **Debian 13 (trixie)** is supported next to Debian 12. Every package the tool uses exists in Debian 13 under the same
+  name; the kernel is 6.12. Horizon agent: the Omnissa docs list Debian 13 from release **2606** on. `agent` refuses an
+  older archive on Debian 13 (unless `--force`), and `check` L27 warns.
+- **`NFS_MODE="fstab"`**: one NFS share (`NFS_SERVER:NFS_EXPORT`) is written to `/etc/fstab` on `NFS_MOUNTPOINT` with
+  `_netdev,x-systemd.automount,x-systemd.mount-timeout=30` (mounted on first access); the homes are `HOME_ROOT/<login>`
+  (SSSD `override_homedir`). This is the layout of the existing images (e.g. `/home/STUDENT`). `NFS_MODE="autofs"`
+  mounts one export per user instead.
+
 ## What each mode changes
 
 - **domain**: writes `krb5.conf`, `sssd.conf` and `smb.conf` and joins the golden image with `realm join`

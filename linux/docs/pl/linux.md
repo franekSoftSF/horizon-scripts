@@ -226,6 +226,16 @@ domowego brakowało do ręcznego `mount`. `nfsmount` dopisuje do wpisów NFS w f
 Nowy fstab jest sprawdzany przez `findmnt --verify`. Oryginał jest zachowany, a `nfsmount --revert` go przywraca.
 `check` L26 ostrzega o niezamontowanych udziałach NFS z fstab.
 
+### Debian 13 i NFS na jednym udziale
+
+- **Debian 13 (trixie)** jest wspierany obok Debiana 12. Wszystkie pakiety używane przez narzędzie są w Debianie 13 pod
+  tymi samymi nazwami; jądro to 6.12. Agent Horizon: dokumentacja Omnissa wymienia Debian 13 od wydania **2606**. `agent`
+  odrzuca starsze archiwum na Debianie 13 (chyba że `--force`), a `check` L27 ostrzega.
+- **`NFS_MODE="fstab"`**: jeden udział NFS (`NFS_SERVER:NFS_EXPORT`) trafia do `/etc/fstab` na `NFS_MOUNTPOINT` z opcjami
+  `_netdev,x-systemd.automount,x-systemd.mount-timeout=30` (montowanie przy pierwszym dostępie); katalogi domowe to
+  `HOME_ROOT/<login>` (SSSD `override_homedir`). Tak jest na obecnych obrazach (np. `/home/STUDENT`). `NFS_MODE="autofs"`
+  montuje zamiast tego osobny eksport na użytkownika.
+
 ## Co zmieniają tryby
 
 - **domain**: zapisuje `krb5.conf`, `sssd.conf` i `smb.conf` i dołącza obraz wzorcowy przez `realm join`

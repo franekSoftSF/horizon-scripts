@@ -2,7 +2,7 @@
 # VDI-ImageMaint for Linux - shared helpers: config, i18n, logging, state, tracked changes.
 # Sourced by vdi-imagemaint.sh; expects VDI_ROOT to be set.
 
-VDI_VERSION="0.6.8"
+VDI_VERSION="0.7.0"
 STATE_DIR="/var/lib/vdi-imagemaint"
 LOG_DIR="/var/log/vdi-imagemaint"
 LOG_FILE="${LOG_DIR}/vdi-imagemaint-$(date +%Y%m%d).log"
@@ -370,10 +370,25 @@ os_check() {
     [[ -r /etc/os-release ]] && . /etc/os-release
     id=${ID:-}
     version_id=${VERSION_ID:-}
-    if [[ $id != debian || $version_id != 12 ]]; then
+    if [[ $id != debian || ($version_id != 12 && $version_id != 13) ]]; then
         logt WARN os_unsupported "${PRETTY_NAME:-unknown}"
         return 1
     fi
+}
+
+# Debian major version (12, 13, ...) or empty
+os_version() {
+    # shellcheck disable=SC1091
+    (. /etc/os-release 2>/dev/null && printf '%s' "${VERSION_ID:-}") || true
+}
+
+# Horizon agent marketing version (YYMM) needed for this Debian release (Omnissa docs:
+# 2506 lists Debian 12.10/11.11, 2606 lists Debian 12.13/13.3).
+agent_min_yymm() {
+    case $(os_version) in
+        13) printf '%s' "$AGENT_MIN_YYMM_DEBIAN13" ;;
+        *) printf '0' ;;
+    esac
 }
 
 # Folders with Omnissa installers: Horizon/ next to the tool (new layout) and

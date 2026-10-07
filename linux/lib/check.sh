@@ -33,7 +33,7 @@ mode_check() {
         fi
     fi
 
-    if os_check 2>/dev/null; then check_result OK L01 chk_os_ok; else check_result WARN L01 chk_os_bad; fi
+    if os_check 2>/dev/null; then check_result OK L01 chk_os_ok "$(os_version)"; else check_result WARN L01 chk_os_bad; fi
 
     if reboot_pending; then
         check_result ERR L02 chk_reboot_pending "$(uname -r)" "$(newest_kernel)"
@@ -149,8 +149,13 @@ mode_check() {
     if step_adopted nfs; then
         check_result OK L12 chk_nfs_adopted "$(state_get build '.adopted.homes // empty')"
     elif [[ $NFS_ENABLE == yes ]]; then
-        if [[ $(unit_enabled_state autofs.service) == enabled && -f /etc/auto.vdi-home ]] &&
-            grep -q "^Domain = ${NFS_IDMAP_DOMAIN:-$AD_DOMAIN}\$" /etc/idmapd.conf 2>/dev/null &&
+        local nfs_ok=0
+        if [[ $NFS_MODE == fstab ]]; then
+            awk -v mp="$(nfs_mountpoint)" '$1 !~ /^#/ && $2 == mp && $3 ~ /^nfs/ && $4 ~ /x-systemd\.automount/ {f=1} END {exit !f}' /etc/fstab && nfs_ok=1
+        else
+            [[ $(unit_enabled_state autofs.service) == enabled && -f /etc/auto.vdi-home ]] && nfs_ok=1
+        fi
+        if ((nfs_ok)) && grep -q "^Domain = ${NFS_IDMAP_DOMAIN:-$AD_DOMAIN}\$" /etc/idmapd.conf 2>/dev/null &&
             [[ -f $NFS_SSSD_SNIPPET ]]; then
             check_result OK L12 chk_nfs_ok "$HOME_ROOT"
         else
@@ -165,6 +170,18 @@ mode_check() {
             check_result WARN L26 chk_nfs_not_mounted "$nfsbad"
         else
             check_result OK L26 chk_nfs_mounted
+        fi
+    fi
+
+    # Horizon agent release vs Debian release (Debian 13 needs 2606+ per the Omnissa docs)
+    local min_yymm agent_ver
+    min_yymm=$(agent_min_yymm)
+    agent_ver=$(state_get build '.agent.version // empty')
+    if ((min_yymm > 0)) && [[ -n $agent_ver ]]; then
+        if ((10#${agent_ver%%-*} < 10#$min_yymm)); then
+            check_result WARN L27 chk_agent_too_old "$agent_ver" "$(os_version)" "$min_yymm"
+        else
+            check_result OK L27 chk_agent_os_ok "$agent_ver" "$(os_version)"
         fi
     fi
 

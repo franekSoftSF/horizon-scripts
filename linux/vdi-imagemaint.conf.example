@@ -27,9 +27,12 @@ AUDIO_IN_ENABLE="yes"
 
 # NFS home directories
 NFS_ENABLE="yes"
-NFS_SERVER="nfs.example.edu"
-NFS_EXPORT="/export/home"
-NFS_SEC="krb5p"
+NFS_MODE="fstab"                  # one share mounted on first access (as on the existing images)
+NFS_SERVER="nfs.example.edu"      # e.g. h8-truenas.std.fizyka.pw.edu.pl
+NFS_EXPORT="/export/home"         # e.g. /mnt/Dane/Student2
+NFS_MOUNTPOINT="/home/STUDENT"
+HOME_ROOT="/home/STUDENT"         # $HOME = /home/STUDENT/<login>
+NFS_SEC="krb5"
 
 # Horizon Linux Agent (put Omnissa-horizonagent-linux-x86_64-*.tar.gz in Horizon/)
 HORIZON_CS_FQDN=""                # e.g. "cs01.ad.uni.edu cs02.ad.uni.edu" - checked for DNS resolution
