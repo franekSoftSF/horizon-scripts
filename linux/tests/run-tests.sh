@@ -64,6 +64,10 @@ used=$(
         sed -nE 's/.*local -a modes=\((.*)\).*/\1/p' vdi-imagemaint.sh | tr ' ' '\n' | sed 's/^/menu_/'
     } | sort -u
 )
+# XML comments in generated menu files must not contain "--" (invalid XML: MATE ignores the file)
+badxml=$(grep -rnE '<!--.*--.*-->' "$ROOT/lib" | grep -vE '<!--[^-]*(-[^-][^-]*)*-->' || true)
+check "no -- inside generated XML comments${badxml:+ ($badxml)}" '[[ -z $badxml ]]'
+
 # menu_<mode> keys are the menu labels: a log message must never reuse one (it would
 # replace the label), and no mode may be called "menu" (that name opens the menu).
 modes=$(sed -nE 's/.*local -a modes=\((.*)\).*/\1/p' "$ROOT/vdi-imagemaint.sh")

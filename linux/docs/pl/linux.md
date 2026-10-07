@@ -187,12 +187,14 @@ portu 9443 na serwerze. Narzędzie:
 `courses` przenosi aplikacje do zajęć do jednego folderu `COURSES_FOLDER_NAME` (domyślnie „Courses”, po polsku
 „Zajęcia”). `apps` uruchamia go na końcu, a `update` go odświeża.
 
-- **GNOME:** folder w siatce aplikacji, ustawiony dla wszystkich użytkowników przez systemową bazę dconf.
+- **GNOME:** jeden płaski folder w siatce aplikacji (foldery GNOME nie mogą być zagnieżdżone), ustawiony dla wszystkich użytkowników przez systemową bazę dconf.
   Aplikacje z folderu znikają z głównej siatki. Przy `COURSES_LOCK="yes"` (domyślnie dla uczelni) użytkownicy
   nie mogą usunąć folderu.
-- **MATE:** podmenu w menu Aplikacje, to samo `VDI-Apps`, którego używa komponent Eclipse. Aplikacje są
+- **MATE:** podmenu w menu Aplikacje (to samo `VDI-Apps`, którego używa komponent Eclipse), a w nim zwykłe
+  podkategorie: Courses > Programowanie (Geany, Jupyter, Qt Creator, VS Code, Eclipse), Edukacja (Octave, Jmol),
+  Biuro (Gnumeric, Texmaker, TeXstudio), Grafika, Inne. Każda aplikacja zachowuje grupę, którą miała w menu MATE. Aplikacje są
   przenoszone przez kopie wpisów w `/usr/local/share/applications`; pliki pakietów nie są zmieniane.
-- **Które aplikacje:** `COURSES_APPS="octave gnumeric qtcreator code.desktop texmaker texstudio texdoctk"`.
+- **Które aplikacje:** `COURSES_APPS="geany jupyter qtcreator code.desktop octave jmol gnumeric texmaker texstudio texdoctk"`.
   Wpis kończący się na `.desktop` to dokładna nazwa pliku; każdy inny to fragment nazwy pliku, bez rozróżniania
   wielkości liter. Eclipse jest dodawany, gdy jest zainstalowany. Niezainstalowane aplikacje są pomijane.
 - `courses --revert` usuwa folder.

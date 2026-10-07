@@ -1,6 +1,6 @@
 # Status – VDI-ImageMaint dla Linuksa
 
-_Aktualizacja: 2026-10-07_ · wersja **0.6.0** · Debian 12 + MATE · Horizon 2506 Instant Clone
+_Aktualizacja: 2026-10-07_ · wersja **0.6.1** · Debian 12 + MATE · Horizon 2506 Instant Clone
 
 ## Zrobione
 - [x] Szkielet: `vdi-imagemaint.sh` (menu + tryby), `lib/common.sh` (konfiguracja, i18n EN/PL, log, śledzenie zmian w JSON)
@@ -48,6 +48,8 @@ _Aktualizacja: 2026-10-07_ · wersja **0.6.0** · Debian 12 + MATE · Horizon 25
 
 - [x] 0.6.0: tryb `courses` – folder „Courses/Zajęcia” (GNOME: folder w siatce aplikacji przez dconf; MATE: podmenu) dla Octave, Gnumeric,
       Qt Creator, VS Code, Texmaker, TeXstudio, texdoctk i Eclipse
+
+- [x] 0.6.1: folder Courses z podkategoriami w MATE (Programowanie, Edukacja, Biuro, Grafika, Inne); dodane Geany, Jupyter, Jmol
 
 ## Jak testowano (bez VM)
 - Kontener `debian:12` (Docker): 29/29 testów (`tests/run-tests.sh`), shellcheck 0 uwag

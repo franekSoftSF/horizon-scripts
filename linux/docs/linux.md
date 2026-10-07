@@ -186,11 +186,13 @@ on the server. The tool:
 `courses` puts the course applications into one folder named `COURSES_FOLDER_NAME` (default "Courses", Polish
 "Zajęcia"). `apps` runs it at the end, and `update` refreshes it.
 
-- **GNOME:** a folder in the app grid, set for every user through the dconf system database. Apps in the
+- **GNOME:** one flat folder in the app grid (GNOME folders cannot be nested), set for every user through the dconf system database. Apps in the
   folder leave the main grid. With `COURSES_LOCK="yes"` (university default) users cannot remove the folder.
-- **MATE:** a submenu in Applications, the same `VDI-Apps` menu the Eclipse component uses. The apps are moved
+- **MATE:** a submenu in Applications (the same `VDI-Apps` menu the Eclipse component uses), with the usual
+  sub-categories inside: Courses > Programming (Geany, Jupyter, Qt Creator, VS Code, Eclipse), Education (Octave,
+  Jmol), Office (Gnumeric, Texmaker, TeXstudio), Graphics, Other. Each app keeps the group it had in the MATE menu. The apps are moved
   by override copies in `/usr/local/share/applications`; package files are not changed.
-- **Which apps:** `COURSES_APPS="octave gnumeric qtcreator code.desktop texmaker texstudio texdoctk"`. An entry
+- **Which apps:** `COURSES_APPS="geany jupyter qtcreator code.desktop octave jmol gnumeric texmaker texstudio texdoctk"`. An entry
   ending in `.desktop` is an exact id; anything else is part of the file name, case-insensitive. Eclipse is added
   when installed. Apps that are not installed are skipped.
 - `courses --revert` removes the folder.
