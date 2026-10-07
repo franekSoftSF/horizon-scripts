@@ -78,7 +78,7 @@ mode_check() {
     local join_svc=sssd.service
     [[ $(state_get build '.adopted.join // empty') == winbind ]] && step_adopted domain && join_svc=winbind.service
     if [[ -s /etc/krb5.keytab ]] && { domain_is_joined || step_adopted domain; }; then
-        check_result OK L07 chk_joined_ok "$AD_DOMAIN"
+        check_result OK L07 chk_joined_ok "$(krb_domain || echo "$AD_DOMAIN")"
     else
         check_result ERR L07 chk_joined_bad "$AD_DOMAIN"
     fi
@@ -92,11 +92,14 @@ mode_check() {
     if kerberos_applies; then
         local kdom
         kdom=$(krb_domain || echo "?")
-        if kerberos_testjoin; then
-            check_result OK L24 chk_testjoin_ok "$kdom"
-        else
-            check_result ERR L24 chk_testjoin_bad "$kdom"
-        fi
+        local krc=0
+        kerberos_testjoin || krc=$?
+        case $krc in
+            0) check_result OK L24 chk_testjoin_ok "$kdom" ;;
+            1) check_result ERR L24 chk_testjoin_bad "$kdom" ;;
+            3) check_result WARN L24 chk_testjoin_timeout "$kdom" "$KRB_ADCLI_TIMEOUT" ;;
+            *) check_result WARN L24 chk_testjoin_unknown "$kdom" ;;
+        esac
         if [[ -f $KRB_SSSD_SNIPPET ]]; then
             check_result OK L25 chk_krb_hardened
         else

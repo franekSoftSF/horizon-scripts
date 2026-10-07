@@ -126,7 +126,7 @@ kerberos_rotate() {
     dom=$(krb_domain) || return 0
     # Never rotate a keytab AD already rejects - that would not fix it.
     kerberos_testjoin || { logt WARN krb_rotate_failed; return 0; }
-    if run adcli update --domain="$dom" --computer-password-lifetime="$MACHINE_PASSWORD_DAYS"; then
+    if run timeout 120 adcli update --domain="$dom" --computer-password-lifetime="$MACHINE_PASSWORD_DAYS" </dev/null; then
         # SSSD reads the new keytab on restart; its cache is kept (no sss_cache -E).
         run systemctl restart sssd.service || true
         logt OK krb_rotated "$MACHINE_PASSWORD_DAYS"
@@ -135,12 +135,21 @@ kerberos_rotate() {
     fi
 }
 
-# kerberos_testjoin -> 0 when the machine keytab is accepted by AD
+# kerberos_testjoin -> 0 accepted by AD, 1 rejected, 2 not checkable, 3 timed out.
+# adcli may wait long for a DC (DNS/LDAP) or ask on the terminal: never from stdin,
+# never longer than KRB_ADCLI_TIMEOUT seconds; its output goes to the log.
+KRB_ADCLI_TIMEOUT=30
 kerberos_testjoin() {
-    local dom
+    local dom rc=0 out
     command -v adcli >/dev/null 2>&1 || return 2
     dom=$(krb_domain) || return 2
-    adcli testjoin --domain="$dom" >/dev/null 2>&1
+    out=$(timeout "$KRB_ADCLI_TIMEOUT" adcli testjoin --domain="$dom" </dev/null 2>&1) || rc=$?
+    [[ -w $LOG_DIR ]] && printf 'adcli testjoin (rc=%s): %s\n' "$rc" "$out" >>"$LOG_FILE"
+    case $rc in
+        0) return 0 ;;
+        124 | 137) return 3 ;;
+        *) return 1 ;;
+    esac
 }
 
 # Mode "kerberos": apply the settings now and show the state.
@@ -149,10 +158,13 @@ mode_kerberos() {
     kerberos_harden || true
     local dom
     dom=$(krb_domain || echo "?")
-    if kerberos_testjoin; then
-        logt OK chk_testjoin_ok "$dom"
-    else
-        logt ERR chk_testjoin_bad "$dom"
-    fi
+    local rc=0
+    kerberos_testjoin || rc=$?
+    case $rc in
+        0) logt OK chk_testjoin_ok "$dom" ;;
+        1) logt ERR chk_testjoin_bad "$dom" ;;
+        3) logt WARN chk_testjoin_timeout "$dom" "$KRB_ADCLI_TIMEOUT" ;;
+        *) logt WARN chk_testjoin_unknown "$dom" ;;
+    esac
     log INFO "$(timedatectl show -p NTPSynchronized -p TimeUSec 2>/dev/null | tr '\n' ' ' || true)"
 }

@@ -346,3 +346,5 @@ MSG[krb_no_domain]='Nie znaleziono prawdziwej domeny SSSD ("domains" w sssd.conf
 MSG[krb_no_timesyncd]='Zegar nie jest synchronizowany przez systemd-timesyncd (chrony lub VMware Tools?) - SSSD nie czeka na synchronizację czasu.'
 MSG[krb_rolled_back]='Ustawienia Kerberos/SSSD WYCOFANE - %s nie przeszło z nimi; SSSD działa na poprzedniej konfiguracji.'
 MSG[adopt_q_kerberos]='Zastosować ustawienia bezpieczeństwa Kerberos/SSSD (bez automatycznej zmiany hasła komputera, czas, odnawianie biletów; wycofywane automatycznie, jeśli SSSD ich nie przyjmie)?'
+MSG[chk_testjoin_timeout]='Sprawdzenie konta komputera w %s nie odpowiedziało w ciągu %s s (kontroler niedostępny przez DNS/LDAP?) - niezweryfikowane; szczegóły w logu.'
+MSG[chk_testjoin_unknown]='Nie można sprawdzić konta komputera w %s (brak adcli albo domeny SSSD).'

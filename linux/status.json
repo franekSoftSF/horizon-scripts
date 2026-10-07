@@ -1,6 +1,6 @@
 {
-  "updated": "2026-10-04",
-  "version": "0.5.2",
+  "updated": "2026-10-07",
+  "version": "0.5.3",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",
@@ -146,6 +146,13 @@
         "root cause: seal wiped the SSSD cache; after restart no cached users/credentials -> no logon"
       ],
       "fixedIn": "0.5.2"
+    },
+    {
+      "date": "2026-10-07",
+      "found": [
+        "check hung at L24 (adcli testjoin)"
+      ],
+      "fixedIn": "0.5.3"
     }
   ]
 }
