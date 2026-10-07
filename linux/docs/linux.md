@@ -205,11 +205,11 @@ on the server. The tool:
   sub-categories inside: Courses > Programming (Geany, Jupyter, Qt Creator, VS Code, Eclipse), Education (Octave,
   Jmol), Office (Gnumeric, Texmaker, TeXstudio), Graphics, Other. Each app keeps the group it had in the MATE menu. The apps are moved
   by override copies in `/usr/local/share/applications`; package files are not changed.
-- **Which apps:** `COURSES_APPS="geany jupyter qtcreator code.desktop octave jmol gnumeric texmaker texstudio texdoctk"`. An entry
+- **Which apps:** `COURSES_APPS="geany jupyter qtcreator code.desktop octave jmol larch gnumeric texmaker texstudio texdoctk"`. An entry
   ending in `.desktop` is an exact id; anything else is part of the file name, case-insensitive. Eclipse is added
   when installed. Apps that are not installed are skipped.
 - **Missing apps are installed first** (`COURSES_INSTALL="yes"`): Debian packages from `COURSES_PACKAGES`
-  (Geany, Jupyter Notebook, Qt Creator, Octave, Jmol, Gnumeric, Texmaker, TeXstudio), and VS Code from a
+  (Geany, Jupyter Notebook, Qt Creator, Octave, Jmol, Larch/Larix with Ifeffit and Feff for XAS, Gnumeric, Texmaker, TeXstudio), and VS Code from a
   `code_*.deb` in `Horizon/` or `/install`. Nothing is installed on a sealed image.
 - `get-vdi-imagemaint.sh` creates `Horizon/` and `certs/` and downloads the USB VHCI source. Omnissa installers need
   a Customer Connect login and are copied by hand.

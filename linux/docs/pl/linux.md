@@ -207,11 +207,11 @@ portu 9443 na serwerze. Narzędzie:
   podkategorie: Courses > Programowanie (Geany, Jupyter, Qt Creator, VS Code, Eclipse), Edukacja (Octave, Jmol),
   Biuro (Gnumeric, Texmaker, TeXstudio), Grafika, Inne. Każda aplikacja zachowuje grupę, którą miała w menu MATE. Aplikacje są
   przenoszone przez kopie wpisów w `/usr/local/share/applications`; pliki pakietów nie są zmieniane.
-- **Które aplikacje:** `COURSES_APPS="geany jupyter qtcreator code.desktop octave jmol gnumeric texmaker texstudio texdoctk"`.
+- **Które aplikacje:** `COURSES_APPS="geany jupyter qtcreator code.desktop octave jmol larch gnumeric texmaker texstudio texdoctk"`.
   Wpis kończący się na `.desktop` to dokładna nazwa pliku; każdy inny to fragment nazwy pliku, bez rozróżniania
   wielkości liter. Eclipse jest dodawany, gdy jest zainstalowany. Niezainstalowane aplikacje są pomijane.
 - **Najpierw doinstalowywane są brakujące aplikacje** (`COURSES_INSTALL="yes"`): pakiety Debiana z
-  `COURSES_PACKAGES` (Geany, Jupyter Notebook, Qt Creator, Octave, Jmol, Gnumeric, Texmaker, TeXstudio) oraz
+  `COURSES_PACKAGES` (Geany, Jupyter Notebook, Qt Creator, Octave, Jmol, Larch/Larix z Ifeffit i Feff do XAS, Gnumeric, Texmaker, TeXstudio) oraz
   VS Code z pliku `code_*.deb` w `Horizon/` lub `/install`. Na zamkniętym obrazie nic nie jest instalowane.
 - `get-vdi-imagemaint.sh` zakłada katalogi `Horizon/` i `certs/` i pobiera źródła USB VHCI. Instalatory Omnissa
   wymagają logowania w Customer Connect i kopiuje się je ręcznie.

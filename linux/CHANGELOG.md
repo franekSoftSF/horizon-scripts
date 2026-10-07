@@ -1,5 +1,8 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.7.1 – 2026-10-08
+- Course apps: Larch (python3-xraylarch with Larix, the XAS analysis GUI that follows Demeter's Athena/Artemis), ifeffit and feff85exafs - requested by lecturers (Demeter itself is not packaged in Debian). They land in Courses > Education. Verified on Debian 13 (Larch 0.9.81).
+
 ## 0.7.0 – 2026-10-08
 - Debian 13 (trixie) supported next to Debian 12 (all packages verified on Debian 13). Horizon agent: Debian 13 needs 2606+ (Omnissa docs) - agent refuses older archives on Debian 13 (unless --force), check L27 warns.
 - NFS_MODE="fstab": one NFS share on NFS_MOUNTPOINT in /etc/fstab, mounted on first access (x-systemd.automount), homes HOME_ROOT/<login> - the layout of the existing images (/home/STUDENT). adopt records it; check L12 understands it.

@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-08",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "platform": {
     "os": "Debian 12 bookworm / Debian 13 trixie",
     "desktop": "MATE + LightDM",
@@ -102,7 +102,8 @@
     "gnome-shell-extension-appindicator on a MATE image",
     "Horizon Recording -t registration on the golden image and on clones",
     "adopt on a real existing golden image (agent version detection is best effort)",
-    "machine password rotation via adcli update on the golden image; clones after a long power-off"
+    "machine password rotation via adcli update on the golden image; clones after a long power-off",
+    "Demeter (Athena/Artemis) from source if lecturers need the classic GUI (libwx-perl, libpgplot-perl, libifeffit-perl exist in Debian 12/13)"
   ],
   "plan": [
     "Saturday: new golden image on Debian 13 (agent 2606+, NFS_MODE=fstab, /home/STUDENT/<login>)",

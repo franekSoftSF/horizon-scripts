@@ -1,6 +1,6 @@
 # Status – VDI-ImageMaint dla Linuksa
 
-_Aktualizacja: 2026-10-07_ · wersja **0.7.0** · Debian 12/13 + MATE · Horizon 2506 Instant Clone
+_Aktualizacja: 2026-10-07_ · wersja **0.7.1** · Debian 12/13 + MATE · Horizon 2506 Instant Clone
 
 ## Zrobione
 - [x] Szkielet: `vdi-imagemaint.sh` (menu + tryby), `lib/common.sh` (konfiguracja, i18n EN/PL, log, śledzenie zmian w JSON)
@@ -70,6 +70,8 @@ _Aktualizacja: 2026-10-07_ · wersja **0.7.0** · Debian 12/13 + MATE · Horizon
 
 - [x] 0.7.0: Debian 13 (pakiety sprawdzone w debian:13, agent ≥ 2606), NFS_MODE=fstab (jeden udział na /home/STUDENT, montowanie przy pierwszym dostępie,
       $HOME = /home/STUDENT/<login>) – pod budowę nowego obrazu Debian 13
+
+- [x] 0.7.1: Larch/Larix + Ifeffit + Feff (XAS, prośba wykładowców o Demeter – Demeter nie ma w Debianie) w Zajęcia > Edukacja
 
 ## Jak testowano (bez VM)
 - Kontener `debian:12` (Docker): 29/29 testów (`tests/run-tests.sh`), shellcheck 0 uwag
