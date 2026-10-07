@@ -27,6 +27,10 @@ mode_update() {
     fi
     # Fresh machine password right before the new snapshot (see lib/kerberos.sh).
     kerberos_rotate
+    # Override copies of the course apps follow the updated packages.
+    if [[ -s $(state_file courses) ]]; then
+        mode_courses
+    fi
 
     if reboot_pending; then
         logt WARN reboot_needed

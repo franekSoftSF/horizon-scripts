@@ -22,7 +22,7 @@ MSG[reboot_needed]='A reboot is required before the next step.'
 
 # --- menu / usage ---
 MSG[menu_title]='=== VDI-ImageMaint for Linux %s (profile: %s) ==='
-MSG[menu_prepare]='1. Base system: packages, MATE + LightDM, locale, time'
+MSG[menu_prepare]='1. Base system: packages, MATE session + GDM, locale, time'
 MSG[menu_nfs]='3. NFSv4 + Kerberos home directories (autofs)'
 MSG[menu_agent]='4. Horizon Linux Agent (Instant Clone, offline join) - then reboot'
 MSG[menu_optimize]='6. VDI optimization (reversible: optimize --revert)'
@@ -42,15 +42,16 @@ Monthly:        update --then-seal       Reverse a seal: unlock
 
 Modes:
   adopt      existing image: detect, create vdi-imagemaint.conf, preview (diff), keep steps, record agent version
-  prepare    base packages, MATE + LightDM, locale, keyboard, time zone, NTP
+  prepare    base packages, MATE session + GDM, locale, keyboard, time zone, NTP
   domain     krb5.conf, SSSD, realm join of the golden image, sudo, True SSO / smart card
   kerberos   SSSD/Kerberos safety: no automatic machine password change, wait for time sync, ticket renewal
   nfs        NFSv4 home directories with Kerberos (autofs, rpc.gssd, idmapd)
   agent      install/upgrade Horizon agent (version-aware; dependencies, USB VHCI driver, audio), RunOnce
   usb        USB VHCI driver only (adopted image, agent not reinstalled)
   recording  Horizon Recording Agent (-t template mode; asks for the server password)
-  apps       run apps/*.sh --install (e.g. Eclipse)
-  optimize   VDI tuning (services, MATE dconf, LightDM, journald, sysctl, I/O, polkit)
+  apps       run apps/*.sh --install (e.g. Eclipse), then courses
+  courses    "Courses" folder for the course apps (GNOME app grid + MATE menu); --revert removes it
+  optimize   VDI tuning (services, MATE dconf, journald, sysctl, I/O, polkit)
   collab     Session Collaboration settings - asks for each value (UAG link)
   check      read-only readiness checks (exit 1 on errors)
   seal       check + cleanup + block package changes + quiet desktop for users, then power off
@@ -64,7 +65,7 @@ Modes:
 Options:
   --config FILE   configuration file (default: vdi-imagemaint.conf next to the tool)
   --lang en-US|pl-PL
-  --revert        with optimize: undo all optimizations
+  --revert        with optimize / courses: undo
   --then-seal     with update: seal when no reboot is pending
   --force         seal despite failed checks; rerun a done step; reinstall or downgrade agents
   -y, --yes       answer yes to questions
@@ -148,8 +149,8 @@ MSG[chk_sssd_bad]='SSSD not running.'
 MSG[chk_time_ok]='Time synchronized (NTP).'
 MSG[chk_time_bad]='Time not synchronized - Kerberos fails above 5 minutes of skew.'
 MSG[chk_dns_ok]='DNS SRV records for %s found.'
-MSG[chk_desktop_ok]='LightDM + MATE session.'
-MSG[chk_desktop_bad]='LightDM is not the display manager or the MATE session is missing.'
+MSG[chk_desktop_ok]='MATE session, display manager %s.'
+MSG[chk_desktop_bad]='No MATE session or no GDM/LightDM display manager.'
 MSG[chk_nfs_ok]='NFS homes configured under %s.'
 MSG[chk_nfs_bad]='NFS homes incomplete (autofs, /etc/auto.vdi-home or idmapd Domain).'
 MSG[chk_vmtools_ok]='open-vm-tools running.'
@@ -269,7 +270,7 @@ MSG[adopt_homes]='Home directories: %s; SSSD home setting: %s'
 MSG[adopt_agent]='Horizon agent installed: %s; config: %s; OfflineJoinDomain: %s; RunOnceScript: %s; USB components: %s'
 MSG[adopt_preview_title]='PREVIEW - what the build steps would change (nothing is written)'
 MSG[adopt_preview_step]='--- step %s'
-MSG[adopt_preview_dm]='prepare would switch the display manager from %s to lightdm.'
+MSG[adopt_preview_dm]='prepare would switch the display manager from %s to gdm3.'
 MSG[adopt_preview_mate]='prepare would install the MATE desktop (no MATE session found).'
 MSG[adopt_preview_locale]='prepare would change the system locale from %s to %s.'
 MSG[adopt_preview_tz]='prepare would change the time zone from %s to %s.'
@@ -292,7 +293,7 @@ MSG[step_adopted]='Step %s was adopted from the existing image (%s) - skipped (-
 MSG[chk_offlinejoin_adopted]='OfflineJoinDomain set (adopted image, join method %s).'
 MSG[chk_join_service_ok]='%s running.'
 MSG[chk_join_service_bad]='%s not running.'
-MSG[chk_desktop_adopted]='Adopted desktop with display manager %s (not the tested LightDM + MATE).'
+MSG[chk_desktop_adopted]='Adopted desktop with display manager %s and no MATE session (SSODesktopType=UseMATE expects one).'
 MSG[chk_nfs_adopted]='Home directories adopted from the existing image (%s).'
 MSG[menu_adopt]='0. Existing image: detect, preview, keep (adopt)'
 
@@ -352,3 +353,12 @@ MSG[chk_testjoin_unknown]='Machine account in %s could not be checked (adcli mis
 MSG[step_diag]='DIAG - logon, Kerberos, SSSD and agent diagnosis (read-only)'
 MSG[diag_saved]='Diagnosis saved to %s'
 MSG[menu_diag]='Diagnosis of logon/Kerberos/SSSD (read-only, saved to a file)'
+
+# --- 0.6.0: Courses folder ---
+MSG[step_courses]='COURSES - "Courses" folder for the course applications (GNOME app grid and MATE menu)'
+MSG[step_courses_revert]='COURSES --revert - removing the "Courses" folder'
+MSG[courses_reverted]='The "Courses" folder is removed; the applications are back in their usual places.'
+MSG[courses_no_apps]='None of the applications in COURSES_APPS (%s) is installed - no folder created.'
+MSG[courses_apps]='%s application(s) go into the folder: %s'
+MSG[courses_done]='Folder "%s" with %s application(s) ready - visible at the next logon.'
+MSG[menu_courses]='Folder "Courses" for the course applications (courses --revert removes it)'

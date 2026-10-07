@@ -1,5 +1,9 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.6.0 – 2026-10-07
+- GDM is the display manager (Horizon SSO logs on through gdm-hzncred and starts MATE with SSODesktopType=UseMATE): prepare no longer switches to LightDM, check L11 accepts GDM or LightDM with a MATE session, LightDM tuning only when LightDM is used.
+- New mode `courses`: one "Courses" folder (COURSES_FOLDER_NAME, PL "Zajęcia") for the course applications - GNOME app-grid folder via the dconf system db (locked with COURSES_LOCK=yes), MATE submenu via override copies in /usr/local/share/applications with Categories=X-VDI-Apps (merged with the Eclipse VDI-Apps menu). Apps from COURSES_APPS (default: octave gnumeric qtcreator code.desktop texmaker texstudio texdoctk) plus Eclipse; missing apps skipped. Run by apps, refreshed by update, `courses --revert` removes it.
+
 ## 0.5.4 – 2026-10-07
 - L24 checks the machine keytab with `kinit -k` first (direct KDC login, seconds; principal taken from the keytab) and uses `adcli testjoin` only when kinit is inconclusive - on the VM adcli did not answer within 30 s in a large university domain.
 - New mode `diag`: read-only diagnosis (time, realm, SSSD and its config check, keytab principals/kvno, kinit and adcli results, DNS, last SSSD journal lines, agent settings, runonce.log), shown and saved to /var/log/vdi-imagemaint/diag-*.txt with secrets masked - for desktops without clipboard.

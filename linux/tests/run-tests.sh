@@ -64,6 +64,16 @@ used=$(
         sed -nE 's/.*local -a modes=\((.*)\).*/\1/p' vdi-imagemaint.sh | tr ' ' '\n' | sed 's/^/menu_/'
     } | sort -u
 )
+# menu_<mode> keys are the menu labels: a log message must never reuse one (it would
+# replace the label), and no mode may be called "menu" (that name opens the menu).
+modes=$(sed -nE 's/.*local -a modes=\((.*)\).*/\1/p' "$ROOT/vdi-imagemaint.sh")
+clash=""
+for m in $modes; do
+    [[ $m == menu ]] && clash+=" mode-named-menu"
+    grep -rqE "logt (STEP|INFO|OK|WARN|ERR) menu_${m}([^a-z_-]|\$)" "$ROOT/lib" "$ROOT/vdi-imagemaint.sh" && clash+=" menu_${m}"
+done
+check "menu labels not reused by messages${clash:+ ($clash)}" '[[ -z $clash ]]'
+
 unknown=""
 for k in $used; do [[ -n ${EN[$k]+x} ]] || unknown+=" $k"; done
 check "all keys used in code exist${unknown:+ (unknown:$unknown)}" '[[ -z $unknown ]]'

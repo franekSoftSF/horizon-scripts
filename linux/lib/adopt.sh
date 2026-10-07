@@ -106,7 +106,7 @@ adopt_preview() {
         PREVIEW=1
         domain_defaults
         logt INFO adopt_preview_step prepare
-        [[ $ADOPT_DM == lightdm ]] || logt WARN adopt_preview_dm "$ADOPT_DM"
+        [[ $ADOPT_DM == gdm3 || $ADOPT_DM == lightdm ]] || logt WARN adopt_preview_dm "$ADOPT_DM"
         [[ " $ADOPT_SESSIONS " == *" mate "* ]] || logt WARN adopt_preview_mate
         local cur_lang cur_tz
         cur_lang=$(sed -n 's/^LANG=//p' /etc/default/locale 2>/dev/null | tr -d '"' || true)

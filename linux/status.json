@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-07",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",
@@ -28,6 +28,7 @@
     "agent",
     "recording",
     "apps",
+    "courses",
     "optimize",
     "collab",
     "check",

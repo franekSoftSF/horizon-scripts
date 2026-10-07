@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# Mode "prepare": base OS for a Horizon Linux desktop - packages, MATE + LightDM,
+# Mode "prepare": base OS for a Horizon Linux desktop - packages, MATE session + GDM,
 # locale, keyboard, time zone, time sync, VMware Tools. Build step, run once.
 
 mode_prepare() {
@@ -66,12 +66,13 @@ EOF
 
 prepare_desktop() {
     logt INFO desktop_install "$DESKTOP_PACKAGES"
-    # LightDM must win over gdm3 if both get pulled in; the Horizon agent supports MATE on LightDM.
-    echo "lightdm shared/default-x-display-manager select lightdm" | debconf-set-selections
+    # GDM stays the display manager: Horizon SSO logs on through the gdm-hzncred PAM
+    # service and starts the MATE session (SSODesktopType=UseMATE in viewagent-custom.conf).
+    echo "gdm3 shared/default-x-display-manager select gdm3" | debconf-set-selections
     # shellcheck disable=SC2086
     apt_install $DESKTOP_PACKAGES
-    printf '/usr/sbin/lightdm\n' >/etc/X11/default-display-manager
-    DEBIAN_FRONTEND=noninteractive run dpkg-reconfigure lightdm || true
+    printf '/usr/sbin/gdm3\n' >/etc/X11/default-display-manager
+    DEBIAN_FRONTEND=noninteractive run dpkg-reconfigure gdm3 || true
     run systemctl set-default graphical.target
 }
 
