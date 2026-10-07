@@ -195,6 +195,11 @@ on the server. The tool:
 - **Which apps:** `COURSES_APPS="geany jupyter qtcreator code.desktop octave jmol gnumeric texmaker texstudio texdoctk"`. An entry
   ending in `.desktop` is an exact id; anything else is part of the file name, case-insensitive. Eclipse is added
   when installed. Apps that are not installed are skipped.
+- **Missing apps are installed first** (`COURSES_INSTALL="yes"`): Debian packages from `COURSES_PACKAGES`
+  (Geany, Jupyter Notebook, Qt Creator, Octave, Jmol, Gnumeric, Texmaker, TeXstudio), and VS Code from a
+  `code_*.deb` in `Horizon/` or `/install`. Nothing is installed on a sealed image.
+- `get-vdi-imagemaint.sh` creates `Horizon/` and `certs/` and downloads the USB VHCI source. Omnissa installers need
+  a Customer Connect login and are copied by hand.
 - `courses --revert` removes the folder.
 
 ## What each mode changes

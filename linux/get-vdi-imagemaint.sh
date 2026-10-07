@@ -8,6 +8,8 @@
 # the SHA-256 file and unpacks into the install directory. An upgrade replaces only the
 # tool's own files: vdi-imagemaint.conf, Horizon/, certs/, apps/*.conf and anything else
 # you added stay untouched. Needs bash, curl, tar, sha256sum (all in a Debian base install).
+# It also creates the working folders (Horizon/, certs/) and downloads what is freely
+# available - the USB VHCI driver source; Omnissa installers need a login and are copied by hand.
 
 set -Eeuo pipefail
 
@@ -77,6 +79,26 @@ for d in lib lang conf files docs tests; do
 done
 cp -a "${WORK}/vdi-imagemaint/." "${DEST}/"
 chown -R root:root "$DEST"
+
+# Working folders and the freely downloadable package (kept on upgrades).
+install -d -m 0755 "${DEST}/Horizon" "${DEST}/certs"
+VHCI_FILE="${DEST}/Horizon/vhci-hcd-1.15.tar.gz"
+VHCI_SRC="https://sourceforge.net/projects/usb-vhci/files/linux%20kernel%20module/vhci-hcd-1.15.tar.gz/download"
+if [[ -s $VHCI_FILE ]] && tar -tzf "$VHCI_FILE" >/dev/null 2>&1; then
+    :
+elif curl -fsSL --connect-timeout 10 --max-time 120 -o "${VHCI_FILE}.part" "$VHCI_SRC" &&
+    tar -tzf "${VHCI_FILE}.part" >/dev/null 2>&1; then
+    mv -f "${VHCI_FILE}.part" "$VHCI_FILE"
+    msg "Downloaded: %s" "Pobrano: %s" "$VHCI_FILE"
+else
+    rm -f "${VHCI_FILE}.part"
+    msg "USB VHCI source not downloaded (offline?) - the tool downloads it later when needed." \
+        "Nie pobrano źródeł USB VHCI (brak sieci?) - narzędzie pobierze je później, gdy będą potrzebne."
+fi
+if ! ls "${DEST}"/Horizon/*horizonagent-linux* /install/*horizonagent-linux* >/dev/null 2>&1; then
+    msg "Copy the Horizon Linux Agent (Omnissa-horizonagent-linux-x86_64-*.tar.gz, Customer Connect login) to %s/Horizon/ - optional: Horizon.Recording.Linux.Agent-*.tar.gz, code_*.deb (VS Code)." \
+        "Skopiuj Horizon Linux Agent (Omnissa-horizonagent-linux-x86_64-*.tar.gz, wymaga logowania w Customer Connect) do %s/Horizon/ - opcjonalnie: Horizon.Recording.Linux.Agent-*.tar.gz, code_*.deb (VS Code)." "$DEST"
+fi
 
 if [[ ! -f ${DEST}/vdi-imagemaint.conf ]]; then
     msg "Existing golden image: sudo %s/vdi-imagemaint.sh adopt  (creates vdi-imagemaint.conf from what it finds)" \

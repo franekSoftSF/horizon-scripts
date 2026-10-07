@@ -362,3 +362,7 @@ MSG[courses_no_apps]='None of the applications in COURSES_APPS (%s) is installed
 MSG[courses_apps]='%s application(s) go into the folder: %s'
 MSG[courses_done]='Folder "%s" with %s application(s) ready - visible at the next logon.'
 MSG[menu_courses]='Folder "Courses" for the course applications (courses --revert removes it)'
+MSG[courses_installing]='Installing course applications: %s'
+MSG[courses_install_failed]='Installing %s failed - see the log; the folder is built with what is installed.'
+MSG[courses_pkg_unknown]='Not available in the configured apt sources: %s'
+MSG[courses_sealed_no_install]='The image is sealed - missing course applications are not installed (unlock first); only the folder is built.'

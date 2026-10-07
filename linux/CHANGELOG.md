@@ -1,5 +1,9 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.6.2 – 2026-10-07
+- courses installs the missing course applications first (COURSES_INSTALL, COURSES_PACKAGES: geany jupyter-notebook qtcreator octave jmol gnumeric texmaker texstudio; VS Code from a code_*.deb in Horizon/ or /install); packages not in the apt sources are reported; nothing is installed on a sealed image.
+- get-vdi-imagemaint.sh creates Horizon/ and certs/, downloads the USB VHCI source (checked tarball) and says which Omnissa installers must be copied by hand.
+
 ## 0.6.1 – 2026-10-07
 - Courses folder keeps the usual sub-categories in MATE: Courses > Programming / Education / Office / Graphics / Other (from each app's Categories, as the MATE menu places it; EN/PL names). GNOME stays one flat folder.
 - COURSES_APPS also takes Geany, Jupyter Notebook and Jmol (seen in the VM's Programming/Education menus).
