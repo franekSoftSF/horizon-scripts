@@ -22,7 +22,7 @@ MSG[reboot_needed]='Przed kolejnym krokiem wymagany jest restart.'
 
 # --- menu / usage ---
 MSG[menu_title]='=== VDI-ImageMaint dla Linuksa %s (profil: %s) ==='
-MSG[menu_prepare]='1. System bazowy: pakiety, MATE + LightDM, locale, czas'
+MSG[menu_prepare]='1. System bazowy: pakiety, sesja MATE + GDM, locale, czas'
 MSG[menu_nfs]='3. Katalogi domowe NFSv4 + Kerberos (autofs)'
 MSG[menu_agent]='4. Horizon Linux Agent (Instant Clone, offline join) - potem restart'
 MSG[menu_optimize]='6. Optymalizacja VDI (odwracalna: optimize --revert)'
@@ -42,15 +42,16 @@ Co miesiąc:     update --then-seal       Cofnięcie zamknięcia: unlock
 
 Tryby:
   adopt      istniejący obraz: wykrycie, utworzenie vdi-imagemaint.conf, podgląd (diff), zachowanie kroków, zapis wersji agenta
-  prepare    pakiety bazowe, MATE + LightDM, locale, klawiatura, strefa czasowa, NTP
+  prepare    pakiety bazowe, sesja MATE + GDM, locale, klawiatura, strefa czasowa, NTP
   domain     krb5.conf, SSSD, realm join obrazu, sudo, True SSO / karta
   kerberos   bezpieczeństwo SSSD/Kerberos: bez automatycznej zmiany hasła komputera, czekanie na czas, odnawianie biletów
   nfs        katalogi domowe NFSv4 z Kerberosem (autofs, rpc.gssd, idmapd)
   agent      instalacja/aktualizacja agenta Horizon (z kontrolą wersji; zależności, sterownik USB VHCI, dźwięk), RunOnce
   usb        sam sterownik USB VHCI (przejęty obraz, bez reinstalacji agenta)
   recording  Horizon Recording Agent (tryb szablonu -t; pyta o hasło do serwera)
-  apps       uruchamia apps/*.sh --install (np. Eclipse)
-  optimize   strojenie VDI (usługi, dconf MATE, LightDM, journald, sysctl, I/O, polkit)
+  apps       uruchamia apps/*.sh --install (np. Eclipse), potem courses
+  courses    folder „Zajęcia” dla aplikacji do zajęć (siatka GNOME + menu MATE); --revert usuwa
+  optimize   strojenie VDI (usługi, dconf MATE, journald, sysctl, I/O, polkit)
   collab     ustawienia Session Collaboration - pyta o każdą wartość (link UAG)
   check      kontrola gotowości tylko do odczytu (kod 1 przy błędach)
   seal       check + sprzątanie + blokada pakietów + cisza dla użytkowników, potem wyłączenie
@@ -64,7 +65,7 @@ Tryby:
 Opcje:
   --config PLIK   plik konfiguracji (domyślnie: vdi-imagemaint.conf obok narzędzia)
   --lang en-US|pl-PL
-  --revert        z optimize: cofnij wszystkie optymalizacje
+  --revert        z optimize / courses: cofnij zmiany
   --then-seal     z update: zamknij obraz, jeśli nie trzeba restartu
   --force         seal mimo błędów kontroli; ponowne wykonanie kroku; reinstalacja lub obniżenie wersji agentów
   -y, --yes       odpowiadaj "tak" na pytania
@@ -148,8 +149,8 @@ MSG[chk_sssd_bad]='SSSD nie działa.'
 MSG[chk_time_ok]='Czas zsynchronizowany (NTP).'
 MSG[chk_time_bad]='Czas niezsynchronizowany - Kerberos nie działa przy różnicy powyżej 5 minut.'
 MSG[chk_dns_ok]='Rekordy DNS SRV dla %s znalezione.'
-MSG[chk_desktop_ok]='LightDM + sesja MATE.'
-MSG[chk_desktop_bad]='LightDM nie jest menedżerem logowania albo brak sesji MATE.'
+MSG[chk_desktop_ok]='Sesja MATE, menedżer logowania %s.'
+MSG[chk_desktop_bad]='Brak sesji MATE albo menedżera logowania GDM/LightDM.'
 MSG[chk_nfs_ok]='Katalogi domowe NFS skonfigurowane pod %s.'
 MSG[chk_nfs_bad]='Niekompletna konfiguracja NFS (autofs, /etc/auto.vdi-home lub Domain w idmapd).'
 MSG[chk_vmtools_ok]='open-vm-tools działa.'
@@ -269,7 +270,7 @@ MSG[adopt_homes]='Katalogi domowe: %s; ustawienie SSSD: %s'
 MSG[adopt_agent]='Agent Horizon zainstalowany: %s; konfiguracja: %s; OfflineJoinDomain: %s; RunOnceScript: %s; składniki USB: %s'
 MSG[adopt_preview_title]='PODGLĄD - co zmieniłyby kroki budowy (nic nie jest zapisywane)'
 MSG[adopt_preview_step]='--- krok %s'
-MSG[adopt_preview_dm]='prepare przestawiłby menedżer logowania z %s na lightdm.'
+MSG[adopt_preview_dm]='prepare przestawiłby menedżer logowania z %s na gdm3.'
 MSG[adopt_preview_mate]='prepare zainstalowałby pulpit MATE (nie znaleziono sesji MATE).'
 MSG[adopt_preview_locale]='prepare zmieniłby locale systemu z %s na %s.'
 MSG[adopt_preview_tz]='prepare zmieniłby strefę czasową z %s na %s.'
@@ -292,7 +293,7 @@ MSG[step_adopted]='Krok %s przejęty z istniejącego obrazu (%s) - pominięto (-
 MSG[chk_offlinejoin_adopted]='OfflineJoinDomain ustawione (przejęty obraz, metoda dołączenia %s).'
 MSG[chk_join_service_ok]='%s działa.'
 MSG[chk_join_service_bad]='%s nie działa.'
-MSG[chk_desktop_adopted]='Przejęty pulpit z menedżerem logowania %s (nie testowane LightDM + MATE).'
+MSG[chk_desktop_adopted]='Przejęty pulpit z menedżerem logowania %s i bez sesji MATE (SSODesktopType=UseMATE jej wymaga).'
 MSG[chk_nfs_adopted]='Katalogi domowe przejęte z istniejącego obrazu (%s).'
 MSG[menu_adopt]='0. Istniejący obraz: wykryj, pokaż różnice, zachowaj (adopt)'
 
@@ -352,3 +353,12 @@ MSG[chk_testjoin_unknown]='Nie można sprawdzić konta komputera w %s (brak adcl
 MSG[step_diag]='DIAG - diagnoza logowania, Kerberosa, SSSD i agenta (tylko odczyt)'
 MSG[diag_saved]='Diagnoza zapisana w %s'
 MSG[menu_diag]='Diagnoza logowania/Kerberosa/SSSD (tylko odczyt, zapis do pliku)'
+
+# --- 0.6.0: Courses folder ---
+MSG[step_courses]='COURSES - folder „Zajęcia” dla aplikacji do zajęć (siatka aplikacji GNOME i menu MATE)'
+MSG[step_courses_revert]='COURSES --revert - usuwanie folderu „Zajęcia”'
+MSG[courses_reverted]='Folder usunięty; aplikacje wróciły na swoje zwykłe miejsca.'
+MSG[courses_no_apps]='Żadna aplikacja z COURSES_APPS (%s) nie jest zainstalowana - folder nie powstał.'
+MSG[courses_apps]='Do folderu trafia %s aplikacji: %s'
+MSG[courses_done]='Folder „%s” z %s aplikacjami gotowy - widoczny przy następnym logowaniu.'
+MSG[menu_courses]='Folder „Zajęcia” dla aplikacji do zajęć (courses --revert usuwa)'

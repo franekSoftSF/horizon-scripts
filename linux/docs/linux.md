@@ -1,6 +1,6 @@
 # VDI-ImageMaint for Linux (Debian 12, MATE, Instant Clone)
 
-Golden-image tooling for **Debian 12 (bookworm) + MATE** desktops on **Omnissa Horizon 2506
+Golden-image tooling for **Debian 12 (bookworm) + MATE** desktops (MATE session started by Horizon SSO, GDM display manager) on **Omnissa Horizon 2506
 Instant Clone**: SSSD on the golden image + Horizon offline domain join per clone, optional
 True SSO / smart card logon, experimental FIDO2 redirection test, NFSv4 + Kerberos home directories. Same lifecycle as the Windows tool: **Build → Update → Optimize → Seal**,
 reversible with **Unlock**. Profiles: `university`, `business`. Messages in English and Polish.
@@ -30,7 +30,7 @@ On the VM, logs are in `/var/log/vdi-imagemaint/` and state is in `/var/lib/vdi-
 ```bash
 sudo cp -r linux /opt/vdi-imagemaint && cd /opt/vdi-imagemaint
 sudo cp vdi-imagemaint.conf.example vdi-imagemaint.conf && sudo nano vdi-imagemaint.conf
-sudo ./vdi-imagemaint.sh prepare     # packages, MATE + LightDM, locale, time (NTP = AD)
+sudo ./vdi-imagemaint.sh prepare     # packages, MATE session + GDM, locale, time (NTP = AD)
 sudo ./vdi-imagemaint.sh domain      # krb5, SSSD, realm join (asks for the join password), True SSO / smart card
 sudo ./vdi-imagemaint.sh nfs         # autofs + NFSv4 sec=krb5p, idmapd, SSSD snippet
 sudo ./vdi-imagemaint.sh agent       # Horizon agent, OfflineJoinDomain=sssd, RunOnceScript
@@ -181,6 +181,20 @@ on the server. The tool:
   (then a reboot), and an older one is refused;
 - leaves the pairing token `/etc/omnissa/horizonrecording/pairingdata.json` alone during seal.
 
+## "Courses" folder (mode `courses`)
+
+`courses` puts the course applications into one folder named `COURSES_FOLDER_NAME` (default "Courses", Polish
+"Zajęcia"). `apps` runs it at the end, and `update` refreshes it.
+
+- **GNOME:** a folder in the app grid, set for every user through the dconf system database. Apps in the
+  folder leave the main grid. With `COURSES_LOCK="yes"` (university default) users cannot remove the folder.
+- **MATE:** a submenu in Applications, the same `VDI-Apps` menu the Eclipse component uses. The apps are moved
+  by override copies in `/usr/local/share/applications`; package files are not changed.
+- **Which apps:** `COURSES_APPS="octave gnumeric qtcreator code.desktop texmaker texstudio texdoctk"`. An entry
+  ending in `.desktop` is an exact id; anything else is part of the file name, case-insensitive. Eclipse is added
+  when installed. Apps that are not installed are skipped.
+- `courses --revert` removes the folder.
+
 ## What each mode changes
 
 - **domain**: writes `krb5.conf`, `sssd.conf` and `smb.conf` and joins the golden image with `realm join`
@@ -197,7 +211,8 @@ on the server. The tool:
     anacron and exim4. Masks sleep, suspend and hibernate.
   - MATE settings through dconf: no compositing or animations, solid background, no power saving, and no
     thumbnails, previews or item counts in Caja on NFS. Disables event sounds.
-  - LightDM: hides the user list and disables the guest account.
+  - LightDM (only when it is the display manager): hides the user list and disables the guest account. Horizon SSO
+    images use GDM: SSO logs on through the `gdm-hzncred` PAM service and starts MATE (`SSODesktopType=UseMATE`).
   - System: journald in RAM, sysctl tuning, I/O scheduler `none`, and `/tmp` in RAM (optional).
   - polkit: users cannot shut down, reboot or suspend the clone.
 - **seal** (undo with `unlock`):

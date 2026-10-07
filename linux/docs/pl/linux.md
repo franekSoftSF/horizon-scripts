@@ -31,7 +31,7 @@ zapisywany jeden raz.
 ```bash
 sudo cp -r linux /opt/vdi-imagemaint && cd /opt/vdi-imagemaint
 sudo cp vdi-imagemaint.conf.example vdi-imagemaint.conf && sudo nano vdi-imagemaint.conf
-sudo ./vdi-imagemaint.sh prepare     # pakiety, MATE + LightDM, locale, czas (NTP = AD)
+sudo ./vdi-imagemaint.sh prepare     # pakiety, sesja MATE + GDM, locale, czas (NTP = AD)
 sudo ./vdi-imagemaint.sh domain      # krb5, SSSD, realm join (pyta o hasło), True SSO / karta
 sudo ./vdi-imagemaint.sh nfs         # autofs + NFSv4 sec=krb5p, idmapd, fragment SSSD
 sudo ./vdi-imagemaint.sh agent       # agent Horizon, OfflineJoinDomain=sssd, RunOnceScript
@@ -182,6 +182,21 @@ portu 9443 na serwerze. Narzędzie:
   (potem restart), starsza jest odrzucana;
 - nie usuwa podczas seal tokenu parowania `/etc/omnissa/horizonrecording/pairingdata.json`.
 
+## Folder „Zajęcia” (tryb `courses`)
+
+`courses` przenosi aplikacje do zajęć do jednego folderu `COURSES_FOLDER_NAME` (domyślnie „Courses”, po polsku
+„Zajęcia”). `apps` uruchamia go na końcu, a `update` go odświeża.
+
+- **GNOME:** folder w siatce aplikacji, ustawiony dla wszystkich użytkowników przez systemową bazę dconf.
+  Aplikacje z folderu znikają z głównej siatki. Przy `COURSES_LOCK="yes"` (domyślnie dla uczelni) użytkownicy
+  nie mogą usunąć folderu.
+- **MATE:** podmenu w menu Aplikacje, to samo `VDI-Apps`, którego używa komponent Eclipse. Aplikacje są
+  przenoszone przez kopie wpisów w `/usr/local/share/applications`; pliki pakietów nie są zmieniane.
+- **Które aplikacje:** `COURSES_APPS="octave gnumeric qtcreator code.desktop texmaker texstudio texdoctk"`.
+  Wpis kończący się na `.desktop` to dokładna nazwa pliku; każdy inny to fragment nazwy pliku, bez rozróżniania
+  wielkości liter. Eclipse jest dodawany, gdy jest zainstalowany. Niezainstalowane aplikacje są pomijane.
+- `courses --revert` usuwa folder.
+
 ## Co zmieniają tryby
 
 - **domain**: zapisuje `krb5.conf`, `sssd.conf` i `smb.conf` i dołącza obraz wzorcowy przez `realm join`
@@ -199,7 +214,8 @@ portu 9443 na serwerze. Narzędzie:
     Maskuje uśpienie i hibernację.
   - Ustawia MATE przez dconf: bez kompozycji i animacji, jednolite tło, bez oszczędzania energii.
     W Caja na NFS wyłącza miniatury, podglądy i liczniki elementów. Wyłącza dźwięki zdarzeń.
-  - LightDM: ukrywa listę użytkowników i wyłącza konto gościa.
+  - LightDM (tylko gdy to on jest menedżerem logowania): ukrywa listę użytkowników i wyłącza konto gościa. Obrazy z SSO
+    Horizon używają GDM: SSO loguje przez usługę PAM `gdm-hzncred` i uruchamia MATE (`SSODesktopType=UseMATE`).
   - System: journald w RAM, strojenie sysctl, harmonogram I/O `none` oraz opcjonalnie `/tmp` w RAM.
   - polkit: użytkownik nie może wyłączyć, zrestartować ani uśpić klona.
 - **seal** (cofnięcie: `unlock`):

@@ -87,6 +87,8 @@ EOF
 }
 
 optimize_lightdm() {
+    # Only when LightDM is used (Horizon SSO images use GDM).
+    [[ $(basename "$(cat /etc/X11/default-display-manager 2>/dev/null || echo none)") == lightdm ]] || return 0
     write_file optimize /etc/lightdm/lightdm.conf.d/50-vdi-imagemaint.conf 0644 <<EOF
 ${MANAGED_MARK}
 [Seat:*]

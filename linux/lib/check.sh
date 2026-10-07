@@ -135,8 +135,10 @@ mode_check() {
         check_result WARN L10 dns_srv_missing "_ldap._tcp.${AD_DOMAIN}"
     fi
 
-    if [[ $(cat /etc/X11/default-display-manager 2>/dev/null) == */lightdm && -f /usr/share/xsessions/mate.desktop ]]; then
-        check_result OK L11 chk_desktop_ok
+    local dm
+    dm=$(basename "$(cat /etc/X11/default-display-manager 2>/dev/null || echo none)")
+    if [[ ($dm == gdm3 || $dm == lightdm) && -f /usr/share/xsessions/mate.desktop ]]; then
+        check_result OK L11 chk_desktop_ok "$dm"
     elif step_adopted prepare && [[ -s /etc/X11/default-display-manager ]] &&
         [[ -n $(find /usr/share/xsessions -maxdepth 1 -name '*.desktop' 2>/dev/null | head -n1) ]]; then
         check_result WARN L11 chk_desktop_adopted "$(basename "$(cat /etc/X11/default-display-manager)")"

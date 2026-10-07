@@ -16,7 +16,7 @@ VDI_ROOT=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
 
 # shellcheck source=lib/common.sh
 . "${VDI_ROOT}/lib/common.sh"
-for _lib in base domain kerberos nfs vhci agent recording adoptconf adopt selfupdate collab optimize update seal check; do
+for _lib in base domain kerberos nfs vhci agent recording adoptconf adopt selfupdate courses collab optimize update seal check; do
     # shellcheck disable=SC1090
     . "${VDI_ROOT}/lib/${_lib}.sh"
 done
@@ -28,7 +28,7 @@ usage() {
 
 menu() {
     local choice
-    local -a modes=(adopt prepare domain kerberos nfs agent usb recording apps optimize collab check seal update unlock fido status diag self-update)
+    local -a modes=(adopt prepare domain kerberos nfs agent usb recording apps courses optimize collab check seal update unlock fido status diag self-update)
     while true; do
         printf '\n%s\n' "$(t menu_title "$VDI_VERSION" "$PROFILE")"
         local i=1 m
@@ -63,6 +63,7 @@ dispatch() {
         usb) mode_usb ;;
         recording) mode_recording ;;
         apps) mode_apps ;;
+        courses) mode_courses ;;
         optimize) mode_optimize ;;
         collab) mode_collab ;;
         update) mode_update ;;

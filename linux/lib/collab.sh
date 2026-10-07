@@ -94,4 +94,6 @@ mode_apps() {
         fi
     done
     ((found)) || logt INFO apps_none "${VDI_ROOT}/apps"
+    # Put the course applications (and Eclipse) into the "Courses" folder.
+    mode_courses
 }
