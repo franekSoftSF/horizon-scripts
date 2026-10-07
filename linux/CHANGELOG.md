@@ -1,5 +1,9 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.5.3 – 2026-10-07
+- check hung at L24 on the VM: `adcli testjoin` now runs with a 30 s limit and no terminal input; a timeout is a warning ("not verified"), the adcli output goes to the log. `adcli update` (password rotation) gets a 120 s limit and no terminal input.
+- L07 shows the SSSD domain from sssd.conf instead of a configured example value.
+
 ## 0.5.2 – 2026-10-04
 - Root cause of the golden-image outage (found by the user): seal stopped SSSD and deleted its cache (/var/lib/sss/db cache_*/timestamps_*, /var/lib/sss/mc). After the restart SSSD had no cached users and credentials, and without a reachable DC nobody could log on. Removed: seal no longer touches the SSSD cache; the per-clone script and the machine password rotation no longer run `sss_cache -E` (only the domain join does). Regression test added.
 

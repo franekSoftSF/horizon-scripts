@@ -346,3 +346,5 @@ MSG[krb_no_domain]='No real SSSD domain found (sssd.conf "domains", AD_DOMAIN is
 MSG[krb_no_timesyncd]='systemd-timesyncd does not keep the clock here (chrony or VMware Tools?) - SSSD does not wait for time sync.'
 MSG[krb_rolled_back]='Kerberos/SSSD settings ROLLED BACK - %s failed with them; SSSD runs with its previous configuration.'
 MSG[adopt_q_kerberos]='Apply the Kerberos/SSSD safety settings (no automatic machine password change, time sync, ticket renewal; rolled back automatically if SSSD rejects them)?'
+MSG[chk_testjoin_timeout]='Machine account check for %s did not answer within %s s (DC not reachable over DNS/LDAP?) - not verified; details in the log.'
+MSG[chk_testjoin_unknown]='Machine account in %s could not be checked (adcli missing or no SSSD domain).'
