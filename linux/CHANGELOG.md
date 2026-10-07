@@ -1,5 +1,9 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.5.4 – 2026-10-07
+- L24 checks the machine keytab with `kinit -k` first (direct KDC login, seconds; principal taken from the keytab) and uses `adcli testjoin` only when kinit is inconclusive - on the VM adcli did not answer within 30 s in a large university domain.
+- New mode `diag`: read-only diagnosis (time, realm, SSSD and its config check, keytab principals/kvno, kinit and adcli results, DNS, last SSSD journal lines, agent settings, runonce.log), shown and saved to /var/log/vdi-imagemaint/diag-*.txt with secrets masked - for desktops without clipboard.
+
 ## 0.5.3 – 2026-10-07
 - check hung at L24 on the VM: `adcli testjoin` now runs with a 30 s limit and no terminal input; a timeout is a warning ("not verified"), the adcli output goes to the log. `adcli update` (password rotation) gets a 120 s limit and no terminal input.
 - L07 shows the SSSD domain from sssd.conf instead of a configured example value.

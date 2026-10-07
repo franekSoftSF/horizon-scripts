@@ -1,6 +1,6 @@
 # Status – VDI-ImageMaint dla Linuksa
 
-_Aktualizacja: 2026-10-07_ · wersja **0.5.3** · Debian 12 + MATE · Horizon 2506 Instant Clone
+_Aktualizacja: 2026-10-07_ · wersja **0.5.4** · Debian 12 + MATE · Horizon 2506 Instant Clone
 
 ## Zrobione
 - [x] Szkielet: `vdi-imagemaint.sh` (menu + tryby), `lib/common.sh` (konfiguracja, i18n EN/PL, log, śledzenie zmian w JSON)
@@ -43,6 +43,8 @@ _Aktualizacja: 2026-10-07_ · wersja **0.5.3** · Debian 12 + MATE · Horizon 25
       i rotacji hasła (sss_cache -E tylko przy dołączaniu do domeny); test regresji
 
 - [x] 0.5.3: VM – check zawieszał się na L24 (`adcli testjoin`) → limit 30 s, bez wejścia z terminala, przekroczenie = ostrzeżenie; L07 pokazuje domenę z sssd.conf
+
+- [x] 0.5.4: L24 przez `kinit -k` (adcli tylko jako uzupełnienie), tryb `diag` (diagnoza tylko do odczytu, zapis do pliku – VDI bez schowka)
 
 ## Jak testowano (bez VM)
 - Kontener `debian:12` (Docker): 29/29 testów (`tests/run-tests.sh`), shellcheck 0 uwag

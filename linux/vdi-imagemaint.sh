@@ -28,7 +28,7 @@ usage() {
 
 menu() {
     local choice
-    local -a modes=(adopt prepare domain kerberos nfs agent usb recording apps optimize collab check seal update unlock fido status self-update)
+    local -a modes=(adopt prepare domain kerberos nfs agent usb recording apps optimize collab check seal update unlock fido status diag self-update)
     while true; do
         printf '\n%s\n' "$(t menu_title "$VDI_VERSION" "$PROFILE")"
         local i=1 m
@@ -57,6 +57,7 @@ dispatch() {
         prepare) run_step prepare mode_prepare ;;
         domain) run_step domain mode_domain ;;
         kerberos) mode_kerberos ;;
+        diag) mode_diag ;;
         nfs) run_step nfs mode_nfs ;;
         agent) mode_agent ;;
         usb) mode_usb ;;

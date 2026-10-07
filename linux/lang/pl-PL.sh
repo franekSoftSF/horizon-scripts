@@ -58,6 +58,7 @@ Tryby:
   update     odblokowanie (jeśli zamknięty), apt full-upgrade, autoremove
   fido       test przekierowania FIDO2 w sesji na klonie
   status     wersja, profil, zapisane zmiany
+  diag       diagnoza logowania/Kerberosa/SSSD/agenta tylko do odczytu, zapis w /var/log/vdi-imagemaint/diag-*.txt
   self-update  sprawdź GitHub teraz i zaktualizuj narzędzie (także przy AUTO_UPGRADE=no)
 
 Opcje:
@@ -337,7 +338,7 @@ MSG[krb_harden]='Ustawienia bezpieczeństwa Kerberos/SSSD dla %s (bez automatycz
 MSG[krb_hardened]='Ustawienia bezpieczeństwa Kerberos/SSSD aktywne.'
 MSG[krb_rotated]='Hasło konta komputera zmienione (jeśli starsze niż %s dni) - nowy snapshot ma aktualny keytab.'
 MSG[krb_rotate_failed]='Hasło konta komputera nie zostało zmienione (keytab odrzucony lub błąd adcli update) - sprawdź: adcli testjoin.'
-MSG[chk_testjoin_ok]='Konto komputera w %s akceptuje ten keytab (adcli testjoin).'
+MSG[chk_testjoin_ok]='Konto komputera w %s akceptuje ten keytab.'
 MSG[chk_testjoin_bad]='Konto komputera w %s NIE akceptuje tego keytabu - logowanie nie zadziała. Przywróć snapshot z keytabem akceptowanym przez AD albo dołącz ponownie (najpierw kopia /etc/sssd/sssd.conf), potem nowy snapshot.'
 MSG[chk_krb_hardened]='Ustawienia bezpieczeństwa Kerberos/SSSD obecne.'
 MSG[chk_krb_not_hardened]='Brak ustawień bezpieczeństwa Kerberos/SSSD - uruchom tryb kerberos.'
@@ -346,5 +347,8 @@ MSG[krb_no_domain]='Nie znaleziono prawdziwej domeny SSSD ("domains" w sssd.conf
 MSG[krb_no_timesyncd]='Zegar nie jest synchronizowany przez systemd-timesyncd (chrony lub VMware Tools?) - SSSD nie czeka na synchronizację czasu.'
 MSG[krb_rolled_back]='Ustawienia Kerberos/SSSD WYCOFANE - %s nie przeszło z nimi; SSSD działa na poprzedniej konfiguracji.'
 MSG[adopt_q_kerberos]='Zastosować ustawienia bezpieczeństwa Kerberos/SSSD (bez automatycznej zmiany hasła komputera, czas, odnawianie biletów; wycofywane automatycznie, jeśli SSSD ich nie przyjmie)?'
-MSG[chk_testjoin_timeout]='Sprawdzenie konta komputera w %s nie odpowiedziało w ciągu %s s (kontroler niedostępny przez DNS/LDAP?) - niezweryfikowane; szczegóły w logu.'
+MSG[chk_testjoin_timeout]='Sprawdzenie konta komputera w %s: żaden kontroler domeny nie odpowiedział w ciągu %s s - niezweryfikowane; uruchom tryb diag.'
 MSG[chk_testjoin_unknown]='Nie można sprawdzić konta komputera w %s (brak adcli albo domeny SSSD).'
+MSG[step_diag]='DIAG - diagnoza logowania, Kerberosa, SSSD i agenta (tylko odczyt)'
+MSG[diag_saved]='Diagnoza zapisana w %s'
+MSG[menu_diag]='Diagnoza logowania/Kerberosa/SSSD (tylko odczyt, zapis do pliku)'
