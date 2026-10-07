@@ -1,5 +1,8 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.6.6 – 2026-10-08
+- Machine password rotation is off by default (MACHINE_PASSWORD_ROTATION=off): with snapshots of the golden image a rotation leaves every older snapshot with a stale keytab (AD logons fail there), and on the VM `adcli update` did not finish within 120 s in the large AD anyway. Docs no longer claim that the previous password keeps older snapshots working.
+
 ## 0.6.5 – 2026-10-07
 - diag: NFS section - fstab/autofs entries, mounted NFS (findmnt), rpc-gssd / nfs-client / autofs / rpc-statd state, rpc-gssd and kernel NFS messages, keytab principals, and for the user who ran sudo: ticket caches in /tmp and a 10 s home-directory access test as that user (by uid, without PAM).
 

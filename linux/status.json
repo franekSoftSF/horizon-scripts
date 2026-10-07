@@ -1,6 +1,6 @@
 {
-  "updated": "2026-10-07",
-  "version": "0.6.5",
+  "updated": "2026-10-08",
+  "version": "0.6.6",
   "platform": {
     "os": "Debian 12 bookworm",
     "desktop": "MATE + LightDM",
@@ -178,6 +178,14 @@
         "NFS stopped working (user TGT valid) - cause under investigation"
       ],
       "fixedIn": "0.6.5 (diag NFS section)"
+    },
+    {
+      "date": "2026-10-08",
+      "found": [
+        "confirmed: NetworkManager-wait-online disabled broke sudo (SSSD) and the NFS mount at boot; works after re-enabling",
+        "adcli update did not finish within 120 s; password not rotated"
+      ],
+      "fixedIn": "0.6.4 (wait-online), 0.6.6 (rotation off by default)"
     }
   ]
 }

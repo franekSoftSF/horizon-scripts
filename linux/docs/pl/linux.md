@@ -132,7 +132,7 @@ Wynika to z działania SSSD i Kerberosa z AD; dokumentacja Omnissa tego nie opis
 
 | Przyczyna | Co robi narzędzie (tryb `kerberos`, wykonywany też przez `domain` i `adopt`) |
 |---|---|
-| SSSD sam zmienia hasło konta komputera co 30 dni. AD akceptuje tylko bieżące i poprzednie hasło, więc starszy snapshot lub keytab jest odrzucany. | `ad_maximum_machine_account_password_age = 0` w `/etc/sssd/conf.d/60-vdi-imagemaint-kerberos.conf`. `update` zmienia hasło świadomie (`adcli update`, gdy starsze niż `MACHINE_PASSWORD_DAYS`=25) tuż przed nowym snapshotem. |
+| SSSD sam zmienia hasło konta komputera co 30 dni. Snapshot z keytabem starszym niż hasło w AD jest wtedy odrzucany. | `ad_maximum_machine_account_password_age = 0` w `/etc/sssd/conf.d/60-vdi-imagemaint-kerberos.conf`. Domyślnie hasło nie jest zmieniane wcale (`MACHINE_PASSWORD_ROTATION="off"`), więc każdy snapshot pozostaje ważny; AD nie wymusza zmiany haseł komputerów. Przy `"update"` zmienia je tryb `update` (`adcli update`), ale starsze snapshoty mają wtedy nieaktualny keytab. |
 | SSSD startuje przed synchronizacją zegara, a Kerberos nie działa przy różnicy powyżej 5 minut. | `sssd.service` czeka na `time-sync.target` (`systemd-time-wait-sync`, najwyżej 90 s). Skrypt klona synchronizuje czas przed restartem SSSD i NFS. |
 | Bilety użytkowników wygasają w długich sesjach i katalogi NFS krb5 przestają działać. | Odnawialne bilety (7 dni), odnawiane przez SSSD co 60 minut. |
 
@@ -140,8 +140,9 @@ Wynika to z działania SSSD i Kerberosa z AD; dokumentacja Omnissa tego nie opis
 snapshot z keytabem akceptowanym przez AD albo dołącz ponownie (najpierw kopia `/etc/sssd/sssd.conf`, bo `realm join`
 zapisuje własny), potem nowy snapshot. Ustawienia używają domeny z `sssd.conf` (nigdy wartości przykładowej). Po zapisie
 narzędzie uruchamia `sssctl config-check` i restartuje SSSD; jeśli coś się nie powiedzie, wszystko jest wycofywane.
-SSSD czeka na zegar tylko wtedy, gdy synchronizuje go `systemd-timesyncd`. Nie wracaj do snapshotów
-starszych niż jedna zmiana hasła. Na klonach `runonce.log` pokazuje synchronizację czasu i wpisy keytabu.
+SSSD czeka na zegar tylko wtedy, gdy synchronizuje go `systemd-timesyncd`. Jeśli kiedykolwiek zmienisz hasło konta komputera (`MACHINE_PASSWORD_ROTATION="update"`),
+snapshoty sprzed zmiany mają nieaktualny keytab: logowanie domenowe na obrazie wzorcowym tam nie działa (klonów to nie dotyczy –
+każdy dostaje od Horizon własne konto). Domyślnie hasło nie jest zmieniane (`"off"`), więc wszystkie snapshoty pozostają zgodne z AD. Na klonach `runonce.log` pokazuje synchronizację czasu i wpisy keytabu.
 
 ## Wersje i ponowne uruchomienia
 

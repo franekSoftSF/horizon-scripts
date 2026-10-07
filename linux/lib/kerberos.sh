@@ -5,11 +5,11 @@
 # snapshot was reverted), logons stop working - SSSD cannot authenticate to AD.
 # Causes and what is done (SSSD/MIT Kerberos behaviour; not covered by the Omnissa docs):
 #   1. SSSD rotates the machine account password every 30 days on its own
-#      (ad_maximum_machine_account_password_age). AD keeps only the current and the
-#      previous password, so an image/snapshot whose keytab is older than that no longer
-#      authenticates. -> automatic rotation off on the image; "update" rotates it on
-#      purpose (adcli update) right before the new snapshot, so every snapshot carries a
-#      current keytab.
+#      (ad_maximum_machine_account_password_age). An image/snapshot whose keytab is older
+#      than the password in AD no longer authenticates. -> automatic rotation off; by
+#      default the password is never changed (MACHINE_PASSWORD_ROTATION=off), so every
+#      snapshot keeps a valid keytab. MACHINE_PASSWORD_ROTATION=update rotates it in
+#      "update" (adcli) - only for images whose old snapshots are not reverted to.
 #   2. SSSD starts before the clock is synchronised; more than 5 minutes of skew breaks
 #      Kerberos and SSSD goes offline. -> sssd waits for time-sync.target
 #      (systemd-time-wait-sync, max 90 s), and the per-clone script syncs time first.
