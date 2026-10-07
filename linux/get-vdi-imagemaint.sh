@@ -13,6 +13,9 @@
 # It also creates the working folders (Horizon/, certs/) and downloads what is freely
 # available - the USB VHCI driver source; Omnissa installers need a login and are copied by hand.
 
+# The whole script is one { ... } block: bash reads it completely before running it, so
+# replacing this very file during an upgrade cannot make bash read the new file mid-line.
+{
 set -Eeuo pipefail
 
 REPO="franekSoftSF/horizon-scripts"
@@ -120,3 +123,5 @@ else
     msg "Your vdi-imagemaint.conf, Horizon/ and certs/ were kept." "Twój vdi-imagemaint.conf, Horizon/ i certs/ zostały zachowane."
 fi
 msg "VDI-ImageMaint for Linux %s installed in %s." "VDI-ImageMaint dla Linuksa %s zainstalowany w %s." "$VERSION" "$DEST"
+exit 0
+}

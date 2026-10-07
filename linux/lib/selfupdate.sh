@@ -34,8 +34,14 @@ self_update() {
     if [[ $AUTO_UPGRADE == ask ]] && ! confirm "$(t selfupdate_q "$latest")"; then
         return 0
     fi
-    if ! bash "${VDI_ROOT}/get-vdi-imagemaint.sh" --version "$latest" --dir "$VDI_ROOT" --lang "$VDI_LANG" 2>&1 |
-        { if [[ -w $LOG_DIR ]]; then tee -a "$LOG_FILE"; else cat; fi; }; then
+    # Run a copy: the installer replaces get-vdi-imagemaint.sh in VDI_ROOT while it runs.
+    local getter rc=0
+    getter=$(mktemp /tmp/vdi-get.XXXXXX)
+    cp "${VDI_ROOT}/get-vdi-imagemaint.sh" "$getter"
+    bash "$getter" --version "$latest" --dir "$VDI_ROOT" --lang "$VDI_LANG" 2>&1 |
+        { if [[ -w $LOG_DIR ]]; then tee -a "$LOG_FILE"; else cat; fi; } || rc=$?
+    rm -f "$getter"
+    if ((rc != 0)); then
         logt WARN selfupdate_failed "$latest"
         return 0
     fi

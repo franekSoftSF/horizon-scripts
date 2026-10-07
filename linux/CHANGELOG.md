@@ -1,5 +1,9 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.6.4 – 2026-10-07
+- Fix (VM): the self-upgrade printed "-fsSL: command not found" - get-vdi-imagemaint.sh replaced itself while bash was still reading it. The installer is now one block read completely before it runs, and the self-upgrade runs a temporary copy.
+- Fix (VM): sudo/logons of AD users failed with "PAM account management error" - optimize disabled NetworkManager-wait-online, so SSSD could start before the network on the golden image and stay offline. Removed from the list; units an older version turned off but no longer listed are restored by the next optimize.
+
 ## 0.6.3 – 2026-10-07
 - Fresh Debian has no curl: get-vdi-imagemaint.sh installs curl and ca-certificates when missing and can be started with wget; the procedure starts with step 0 (curl, sudo via `su -`). Release notes carry the complete procedure (docs/release-notes-template.md); stable releases/latest links.
 
