@@ -250,6 +250,9 @@ fstab that are not mounted.
     script creates new ones on each clone.
   - **Blocks package changes for everyone until unlock**: dpkg `pre-invoke` and apt `Update::Pre-Invoke`
     refuse `apt update`, `apt install` and `dpkg -i`. Package queries still work.
+  - **Users see only "Log Out"** (`SEAL_HIDE_POWER`): a polkit rule denies shut down, restart, suspend and
+    hibernate to everybody outside the `sudo` group, so MATE, the logout dialog and the GDM login screen hide them;
+    instant clones are discarded at logoff anyway.
   - **Hides pop-ups from users**: polkit denies PackageKit and apt actions without a password prompt and
     allows colord without the "authentication required" dialog. Turns off MATE housekeeping and
     network notifications and disables core dumps.

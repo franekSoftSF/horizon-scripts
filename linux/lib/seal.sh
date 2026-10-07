@@ -7,6 +7,7 @@ SSH_KEYS_DROPIN="/etc/systemd/system/ssh.service.d/50-vdi-imagemaint-hostkeys.co
 SEAL_APT_GUARD="/etc/apt/apt.conf.d/99vdi-imagemaint-sealed"
 SEAL_DPKG_GUARD="/etc/dpkg/dpkg.cfg.d/99vdi-imagemaint-sealed"
 SEAL_POLKIT_RULES="/etc/polkit-1/rules.d/50-vdi-imagemaint-sealed.rules"
+SEAL_POLKIT_POWER="/etc/polkit-1/rules.d/40-vdi-imagemaint-sealed-power.rules"
 SEAL_DCONF="/etc/dconf/db/local.d/60-vdi-imagemaint-sealed"
 
 mode_seal() {
@@ -119,6 +120,24 @@ polkit.addRule(function (action, subject) {
     return polkit.Result.NOT_HANDLED;
 });
 EOF
+        # Instant clones are never shut down, rebooted or suspended by users - logoff
+        # discards them. Without these rights MATE hides the buttons (it asks logind
+        # CanPowerOff/CanReboot/CanSuspend) and GDM's login screen too (Debian-gdm is not
+        # in "sudo"). Build admins in the sudo group keep them.
+        if [[ $SEAL_HIDE_POWER == yes ]]; then
+            write_file seal "$SEAL_POLKIT_POWER" 0644 <<'EOF'
+// Managed by VDI-ImageMaint (sealed image) - removed by "vdi-imagemaint.sh unlock".
+polkit.addRule(function (action, subject) {
+    if (subject.user == "root" || subject.isInGroup("sudo")) {
+        return polkit.Result.NOT_HANDLED;
+    }
+    if (/^org\.freedesktop\.login1\.(power-off|reboot|halt|suspend|hibernate|hybrid-sleep|suspend-then-hibernate)/.test(action.id)) {
+        return polkit.Result.NO;
+    }
+    return polkit.Result.NOT_HANDLED;
+});
+EOF
+        fi
     fi
     write_file seal "$SEAL_DCONF" 0644 <<EOF
 ${MANAGED_MARK}

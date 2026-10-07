@@ -254,6 +254,9 @@ Nowy fstab jest sprawdzany przez `findmnt --verify`. Oryginał jest zachowany, a
   - **Blokuje zmiany pakietów dla wszystkich aż do unlock**: dpkg `pre-invoke` i apt
     `Update::Pre-Invoke` odrzucają `apt update`, `apt install` i `dpkg -i`. Zapytania o pakiety
     nadal działają.
+  - **Użytkownicy widzą tylko „Wyloguj”** (`SEAL_HIDE_POWER`): reguła polkit odmawia wyłączenia, restartu, uśpienia
+    i hibernacji wszystkim spoza grupy `sudo`, więc MATE, okno wylogowania i ekran logowania GDM je ukrywają; klony
+    Instant Clone i tak są usuwane po wylogowaniu.
   - **Ukrywa okienka przed użytkownikami**: polkit odmawia akcji PackageKit i apt bez pytania o hasło
     i zezwala na colord, więc nie pojawia się okno „wymagane uwierzytelnienie”. Wyłącza powiadomienia
     housekeeping MATE i powiadomienia sieci oraz zrzuty pamięci.

@@ -1,5 +1,8 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.6.8 – 2026-10-08
+- seal: users on instant clones see only "Log Out" (SEAL_HIDE_POWER=yes) - a polkit rule denies power-off, reboot, halt, suspend and hibernate to everybody outside the sudo group, so MATE, the logout dialog and the GDM login screen hide those buttons (also `systemctl poweroff` from a terminal). unlock removes it.
+
 ## 0.6.7 – 2026-10-08
 - New mode `nfsmount`: NFS entries in /etc/fstab get `_netdev,x-systemd.automount,x-systemd.mount-timeout=30` (mount on first access) - on the VM the sec=krb5 home share sometimes did not mount at boot and stayed missing until a manual mount. fstab checked with findmnt --verify, original kept, `nfsmount --revert` restores it.
 - check L26: NFS shares from fstab that are neither mounted nor automount points.
