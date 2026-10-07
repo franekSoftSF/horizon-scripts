@@ -1,7 +1,7 @@
 #!/bin/bash
 # VDI-ImageMaint for Linux - download, verify and install/upgrade the tool from GitHub.
 #
-#   curl -fsSL https://raw.githubusercontent.com/franekSoftSF/horizon-scripts/main/linux/get-vdi-imagemaint.sh | sudo bash
+#   curl -fsSL https://github.com/franekSoftSF/horizon-scripts/releases/latest/download/get-vdi-imagemaint.sh | sudo bash
 #   sudo bash get-vdi-imagemaint.sh [--version 0.3.0] [--dir /opt/vdi-imagemaint] [--lang pl-PL]
 #
 # Picks the newest "linux-v*" release (the repository also has Windows releases), checks
