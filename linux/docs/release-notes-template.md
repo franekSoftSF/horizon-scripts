@@ -41,10 +41,12 @@ From now on, the tool upgrades itself from GitHub at every start.
 ## 2a. EXISTING golden image (already in the domain, agent installed)
 
 Take a vCenter snapshot before every step marked (S). After those steps, test a domain logon in a **new** session.
+Run the tool as the **local** admin (e.g. `sysadmin`) from the vSphere console. Its `sudo` does not depend on SSSD. Use the AD account only for the tests.
 
 ```bash
 sudo ./vdi-imagemaint.sh adopt          # detects the image, creates vdi-imagemaint.conf, shows a diff, keeps your setup
 sudo ./vdi-imagemaint.sh check          # 0 ERR expected
+sudo ./vdi-imagemaint.sh update         # (S) packages first (apt full-upgrade, agents), reboot if asked
 sudo ./vdi-imagemaint.sh usb            # (S) USB 3.0 / FIDO2 driver (VHCI), then: sudo reboot
 sudo ./vdi-imagemaint.sh kerberos       # (S) machine password / time sync safety, then: sudo reboot + logon test
 sudo ./vdi-imagemaint.sh courses        # installs course apps, "Courses" folder in the MATE menu
@@ -101,16 +103,17 @@ Wtedy jako root (`su -`): `apt-get update && apt-get install -y curl ca-certific
 
 **1. Pobranie i instalacja** – polecenia z punktu 1 powyżej. Potem skopiuj archiwum agenta Horizon do `/opt/vdi-imagemaint/Horizon/`. Na obrazach przygotowanych ręcznie narzędzie szuka też w `/install`.
 
-**2a. Istniejący obraz.** Przed krokami oznaczonymi (S) zrób snapshot. Po tych krokach przetestuj logowanie domenowe w nowej sesji. Kolejność:
+**2a. Istniejący obraz.** Przed krokami oznaczonymi (S) zrób snapshot. Po tych krokach przetestuj logowanie domenowe w nowej sesji. Narzędzie uruchamiaj na **lokalnym** koncie administratora (np. `sysadmin`) z konsoli vSphere; konta domenowego używaj tylko do testów. Kolejność:
 1. `adopt` – rozpoznaje obraz i sam tworzy konfigurację.
 2. `check`
-3. `usb`, potem restart.
-4. `kerberos`, potem restart i test logowania.
-5. `courses` – aplikacje do zajęć i folder Zajęcia.
-6. `optimize`
-7. `collab` – pyta o link UAG.
-8. `check`
-9. `seal`, potem snapshot i Push Image.
+3. `update` – najpierw aktualizacja pakietów; restart, jeśli narzędzie o niego poprosi.
+4. `usb`, potem restart.
+5. `kerberos`, potem restart i test logowania.
+6. `courses` – aplikacje do zajęć i folder Zajęcia.
+7. `optimize`
+8. `collab` – pyta o link UAG.
+9. `check`
+10. `seal`, potem snapshot i Push Image.
 
 **2b. Nowy obraz.** Skopiuj `vdi-imagemaint.conf.example` do `vdi-imagemaint.conf` i uzupełnij. Kolejność:
 1. `prepare`
