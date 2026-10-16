@@ -1,6 +1,6 @@
 {
-  "updated": "2026-10-08",
-  "version": "0.7.2",
+  "updated": "2026-10-16",
+  "version": "0.8.0",
   "platform": {
     "os": "Debian 12 bookworm / Debian 13 trixie",
     "desktop": "MATE + LightDM",
@@ -201,7 +201,7 @@
       "found": [
         "pool: clone customization fails after seal + Push Image (recreate loop)"
       ],
-      "fixedIn": "open - diag 0.7.2 collects agent logs"
+      "fixedIn": "0.8.0 (no SSSD time-sync wait, per-clone script leaves SSSD/clock alone) - to be confirmed on the pool"
     }
   ]
 }

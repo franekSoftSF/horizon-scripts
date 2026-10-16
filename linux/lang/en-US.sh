@@ -44,7 +44,7 @@ Modes:
   adopt      existing image: detect, create vdi-imagemaint.conf, preview (diff), keep steps, record agent version
   prepare    base packages, MATE session + GDM, locale, keyboard, time zone, NTP
   domain     krb5.conf, SSSD, realm join of the golden image, sudo, True SSO / smart card
-  kerberos   SSSD/Kerberos safety: no automatic machine password change, wait for time sync, ticket renewal
+  kerberos   SSSD/Kerberos: no automatic machine password change, ticket renewal
   nfsmount   NFS shares from fstab mounted on first access (x-systemd.automount); --revert restores fstab
   nfs        NFSv4 home directories with Kerberos (autofs, rpc.gssd, idmapd)
   agent      install/upgrade Horizon agent (version-aware; dependencies, USB VHCI driver, audio), RunOnce
@@ -336,7 +336,7 @@ MSG[vhci_patch_no_fit]='The agent VHCI patch does not fit %s (changed or patched
 # --- 0.5.0: Kerberos/SSSD robustness ---
 MSG[step_kerberos]='KERBEROS - machine password, time sync and ticket renewal for SSSD'
 MSG[krb_not_sssd]='No SSSD join on this image - Kerberos settings skipped.'
-MSG[krb_harden]='Kerberos/SSSD safety settings for %s (no automatic machine password change, SSSD waits for time sync, ticket renewal).'
+MSG[krb_harden]='Kerberos/SSSD settings for %s (no automatic machine password change, ticket renewal).'
 MSG[krb_hardened]='Kerberos/SSSD safety settings active.'
 MSG[krb_rotated]='Machine account password rotated (if older than %s days) - the new snapshot carries a current keytab.'
 MSG[krb_rotate_failed]='Machine account password not rotated (keytab rejected or adcli update failed) - check with: adcli testjoin.'
@@ -344,11 +344,10 @@ MSG[chk_testjoin_ok]='Machine account in %s accepts this keytab.'
 MSG[chk_testjoin_bad]='Machine account in %s does NOT accept this keytab - logons will fail. Restore a snapshot whose keytab AD accepts, or rejoin (back up /etc/sssd/sssd.conf first), then a new snapshot.'
 MSG[chk_krb_hardened]='Kerberos/SSSD safety settings present.'
 MSG[chk_krb_not_hardened]='Kerberos/SSSD safety settings missing - run mode kerberos.'
-MSG[menu_kerberos]='Kerberos/SSSD: machine password, time sync, ticket renewal (fix logon after power-off)'
+MSG[menu_kerberos]='Kerberos/SSSD: machine password, ticket renewal'
 MSG[krb_no_domain]='No real SSSD domain found (sssd.conf "domains", AD_DOMAIN is empty or an example) - Kerberos settings not written.'
-MSG[krb_no_timesyncd]='systemd-timesyncd does not keep the clock here (chrony or VMware Tools?) - SSSD does not wait for time sync.'
 MSG[krb_rolled_back]='Kerberos/SSSD settings ROLLED BACK - %s failed with them; SSSD runs with its previous configuration.'
-MSG[adopt_q_kerberos]='Apply the Kerberos/SSSD safety settings (no automatic machine password change, time sync, ticket renewal; rolled back automatically if SSSD rejects them)?'
+MSG[adopt_q_kerberos]='Apply the Kerberos/SSSD settings (no automatic machine password change, ticket renewal; rolled back automatically if SSSD rejects them)?'
 MSG[chk_testjoin_timeout]='Machine account check for %s: no domain controller answered within %s s - not verified; run mode diag.'
 MSG[chk_testjoin_unknown]='Machine account in %s could not be checked (adcli missing or no SSSD domain).'
 MSG[step_diag]='DIAG - logon, Kerberos, SSSD and agent diagnosis (read-only)'
@@ -382,3 +381,5 @@ MSG[menu_nfsmount]='NFS from fstab: mount on first access (fixes homes missing a
 MSG[chk_agent_too_old]='Horizon agent %s on Debian %s: the Omnissa docs list this Debian release from agent %s on - use a newer agent.'
 MSG[chk_agent_os_ok]='Horizon agent %s supports Debian %s.'
 MSG[agent_too_old_for_os]='Agent %s is older than the first release that supports Debian %s (%s) - not installed (use a newer archive, or --force).'
+MSG[krb_wait_removed]='Removed the SSSD time-sync wait of 0.5.0-0.7.2 (it broke domain logons on instant clones).'
+MSG[chk_krb_wait_left]='SSSD still waits for time sync (left over from 0.5.0-0.7.2) - breaks domain logons on instant clones; run mode kerberos or seal.'

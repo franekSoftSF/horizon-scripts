@@ -10,9 +10,9 @@
 #      default the password is never changed (MACHINE_PASSWORD_ROTATION=off), so every
 #      snapshot keeps a valid keytab. MACHINE_PASSWORD_ROTATION=update rotates it in
 #      "update" (adcli) - only for images whose old snapshots are not reverted to.
-#   2. SSSD starts before the clock is synchronised; more than 5 minutes of skew breaks
-#      Kerberos and SSSD goes offline. -> sssd waits for time-sync.target
-#      (systemd-time-wait-sync, max 90 s), and the per-clone script syncs time first.
+#   2. (0.5.0-0.7.2 made SSSD wait for time-sync.target and the per-clone script sync the
+#      clock first. That broke domain logons on instant clones - Horizon's ClonePrep owns
+#      SSSD during customization. Removed in 0.8.0; kerberos_remove_wait cleans it up.)
 #   3. User tickets expire in long sessions (NFS krb5 homes stop working).
 #      -> renewable tickets renewed by SSSD.
 # Written as conf.d snippet + systemd drop-ins, so sssd.conf of adopted images stays untouched.
@@ -37,6 +37,22 @@ krb_domain() {
     [[ -n $d ]] || d=$AD_DOMAIN
     [[ -n $d && $d != *example* ]] || return 1
     printf '%s' "$d"
+}
+
+# Versions 0.5.0-0.7.2 made SSSD wait for time-sync.target (sssd.service drop-in +
+# systemd-time-wait-sync). Fine on the golden image, but on instant clones it got in the
+# way of Horizon's customization (ClonePrep restarts SSSD after the offline join) and
+# domain logons failed on the clones. Removed; this cleans it up on existing images.
+kerberos_remove_wait() {
+    local had=0
+    [[ -f $KRB_SSSD_DROPIN || -f $KRB_WAITSYNC_DROPIN ]] && had=1
+    ((had)) || return 0
+    rm -f "$KRB_SSSD_DROPIN" "$KRB_WAITSYNC_DROPIN"
+    rmdir /etc/systemd/system/sssd.service.d /etc/systemd/system/systemd-time-wait-sync.service.d 2>/dev/null || true
+    # Our drop-in existed, so the tool had enabled systemd-time-wait-sync: turn it off again.
+    run systemctl disable systemd-time-wait-sync.service 2>/dev/null || true
+    run systemctl daemon-reload || true
+    logt OK krb_wait_removed
 }
 
 # Remove what kerberos_harden wrote and bring SSSD back (safety net).
@@ -73,32 +89,9 @@ krb5_renewable_lifetime = 7d
 krb5_renew_interval = 60m
 krb5_store_password_if_offline = True
 EOF
-    # Waiting for the clock only makes sense when systemd-timesyncd keeps it (time-wait-sync
-    # follows timesyncd; with chrony or VMware Tools it would only delay every boot).
-    local timesyncd=0
-    systemctl is-active --quiet systemd-timesyncd.service 2>/dev/null && timesyncd=1
-    if ((timesyncd)); then
-        write_file build "$KRB_WAITSYNC_DROPIN" 0644 <<EOF
-${MANAGED_MARK}
-# Never block the boot for long when NTP is unreachable.
-[Service]
-TimeoutStartSec=90
-EOF
-        write_file build "$KRB_SSSD_DROPIN" 0644 <<EOF
-${MANAGED_MARK}
-# Start SSSD with a synchronised clock: Kerberos fails above 5 minutes of skew.
-[Unit]
-Wants=time-sync.target
-After=time-sync.target
-EOF
-    else
-        logt INFO krb_no_timesyncd
-    fi
     [[ ${PREVIEW:-0} == 1 ]] && return 0
+    kerberos_remove_wait
     run systemctl daemon-reload
-    if ((timesyncd)) && unit_known systemd-timesyncd.service; then
-        run systemctl enable systemd-time-wait-sync.service || true
-    fi
 
     # Safety net: the configuration must validate and SSSD must come back up,
     # otherwise everything written here is removed again.

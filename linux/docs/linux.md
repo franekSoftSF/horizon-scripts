@@ -130,16 +130,16 @@ stop working. This follows from how SSSD and Kerberos behave with AD; the Omniss
 | Cause | What the tool does (mode `kerberos`, also run by `domain` and `adopt`) |
 |---|---|
 | SSSD changes the machine account password on its own every 30 days. A snapshot whose keytab is older than the password in AD is then rejected. | `ad_maximum_machine_account_password_age = 0` in `/etc/sssd/conf.d/60-vdi-imagemaint-kerberos.conf`. By default the password is never changed (`MACHINE_PASSWORD_ROTATION="off"`), so every snapshot stays valid; AD does not force computer password changes. With `"update"` the `update` mode rotates it (`adcli update`), but older snapshots then carry a stale keytab. |
-| SSSD starts before the clock is synchronised, and Kerberos fails above 5 minutes of skew. | `sssd.service` waits for `time-sync.target` (`systemd-time-wait-sync`, at most 90 s). The per-clone script syncs time before restarting SSSD and NFS. |
+| (0.5.0–0.7.2) SSSD waited for the clock, and the per-clone script synced the clock and restarted SSSD. | **Removed in 0.8.0**: it broke domain logons on instant clones, because Horizon's ClonePrep owns SSSD during customization. `kerberos` and `seal` remove the leftovers; `check` L25 reports them as an error. |
 | User tickets expire in long sessions, and the NFS krb5 homes stop working. | Renewable tickets (7 days), renewed every 60 minutes by SSSD. |
 
 `check` L24 runs `adcli testjoin` and blocks `seal` when AD no longer accepts the keytab. Fix it by restoring a
 snapshot whose keytab AD accepts, or by rejoining (back up `/etc/sssd/sssd.conf` first: `realm join` writes its own),
 then take a new snapshot. The settings use the domain from `sssd.conf` (never an example value). After writing them the
-tool runs `sssctl config-check` and restarts SSSD; if either fails, everything is rolled back. SSSD waits for the clock
-only when `systemd-timesyncd` keeps it. If you ever rotate the machine password (`MACHINE_PASSWORD_ROTATION="update"`),
+tool runs `sssctl config-check` and restarts SSSD; if either fails, everything is rolled back.
+If you ever rotate the machine password (`MACHINE_PASSWORD_ROTATION="update"`),
 snapshots from before the rotation have a stale keytab: AD logons on the golden image fail there (clones are not
-affected - each clone gets its own account from Horizon). By default the password is not changed (`"off"`). On clones, `runonce.log` shows the time sync and the keytab entries.
+affected - each clone gets its own account from Horizon). By default the password is not changed (`"off"`). On clones, `runonce.log` shows the keytab entries; the tool does not touch SSSD or the clock there.
 
 ## Versions and re-runs
 

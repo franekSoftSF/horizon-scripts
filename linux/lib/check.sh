@@ -100,7 +100,9 @@ mode_check() {
             3) check_result WARN L24 chk_testjoin_timeout "$kdom" "$KRB_ADCLI_TIMEOUT" ;;
             *) check_result WARN L24 chk_testjoin_unknown "$kdom" ;;
         esac
-        if [[ -f $KRB_SSSD_SNIPPET ]]; then
+        if [[ -f $KRB_SSSD_DROPIN || -f $KRB_WAITSYNC_DROPIN ]]; then
+            check_result ERR L25 chk_krb_wait_left
+        elif [[ -f $KRB_SSSD_SNIPPET ]]; then
             check_result OK L25 chk_krb_hardened
         else
             check_result WARN L25 chk_krb_not_hardened

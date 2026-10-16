@@ -133,16 +133,15 @@ Wynika to z działania SSSD i Kerberosa z AD; dokumentacja Omnissa tego nie opis
 | Przyczyna | Co robi narzędzie (tryb `kerberos`, wykonywany też przez `domain` i `adopt`) |
 |---|---|
 | SSSD sam zmienia hasło konta komputera co 30 dni. Snapshot z keytabem starszym niż hasło w AD jest wtedy odrzucany. | `ad_maximum_machine_account_password_age = 0` w `/etc/sssd/conf.d/60-vdi-imagemaint-kerberos.conf`. Domyślnie hasło nie jest zmieniane wcale (`MACHINE_PASSWORD_ROTATION="off"`), więc każdy snapshot pozostaje ważny; AD nie wymusza zmiany haseł komputerów. Przy `"update"` zmienia je tryb `update` (`adcli update`), ale starsze snapshoty mają wtedy nieaktualny keytab. |
-| SSSD startuje przed synchronizacją zegara, a Kerberos nie działa przy różnicy powyżej 5 minut. | `sssd.service` czeka na `time-sync.target` (`systemd-time-wait-sync`, najwyżej 90 s). Skrypt klona synchronizuje czas przed restartem SSSD i NFS. |
+| (0.5.0–0.7.2) SSSD czekał na zegar, a skrypt klona synchronizował czas i restartował SSSD. | **Usunięte w 0.8.0**: psuło logowanie domenowe na klonach Instant Clone, bo podczas dostosowania SSSD należy do ClonePrep Horizon. `kerberos` i `seal` usuwają pozostałości; `check` L25 zgłasza je jako błąd. |
 | Bilety użytkowników wygasają w długich sesjach i katalogi NFS krb5 przestają działać. | Odnawialne bilety (7 dni), odnawiane przez SSSD co 60 minut. |
 
 `check` L24 wykonuje `adcli testjoin` i blokuje `seal`, gdy AD nie akceptuje już keytabu. Naprawa: przywróć
 snapshot z keytabem akceptowanym przez AD albo dołącz ponownie (najpierw kopia `/etc/sssd/sssd.conf`, bo `realm join`
 zapisuje własny), potem nowy snapshot. Ustawienia używają domeny z `sssd.conf` (nigdy wartości przykładowej). Po zapisie
-narzędzie uruchamia `sssctl config-check` i restartuje SSSD; jeśli coś się nie powiedzie, wszystko jest wycofywane.
-SSSD czeka na zegar tylko wtedy, gdy synchronizuje go `systemd-timesyncd`. Jeśli kiedykolwiek zmienisz hasło konta komputera (`MACHINE_PASSWORD_ROTATION="update"`),
+narzędzie uruchamia `sssctl config-check` i restartuje SSSD; jeśli coś się nie powiedzie, wszystko jest wycofywane. Jeśli kiedykolwiek zmienisz hasło konta komputera (`MACHINE_PASSWORD_ROTATION="update"`),
 snapshoty sprzed zmiany mają nieaktualny keytab: logowanie domenowe na obrazie wzorcowym tam nie działa (klonów to nie dotyczy –
-każdy dostaje od Horizon własne konto). Domyślnie hasło nie jest zmieniane (`"off"`), więc wszystkie snapshoty pozostają zgodne z AD. Na klonach `runonce.log` pokazuje synchronizację czasu i wpisy keytabu.
+każdy dostaje od Horizon własne konto). Domyślnie hasło nie jest zmieniane (`"off"`), więc wszystkie snapshoty pozostają zgodne z AD. Na klonach `runonce.log` pokazuje wpisy keytabu; narzędzie nie dotyka tam SSSD ani zegara.
 
 ## Wersje i ponowne uruchomienia
 

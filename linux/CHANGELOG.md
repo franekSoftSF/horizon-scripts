@@ -1,5 +1,8 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.8.0 – 2026-10-16
+- Fix (VM): domain logons failed on instant clones after customization (both through the Connection Server and on the console), while the golden image worked. The Kerberos time-sync wait of 0.5.0-0.7.2 (sssd.service After/Wants=time-sync.target, systemd-time-wait-sync) and the per-clone script restarting the time service and SSSD got in the way of Horizon's ClonePrep, which owns SSSD during customization. Removed: kerberos keeps only the SSSD snippet (no automatic machine password change, ticket renewal); kerberos and seal remove the old drop-ins and disable systemd-time-wait-sync; the per-clone script no longer touches SSSD or the clock (SSH host keys, rpc-gssd/autofs only); check L25 reports leftovers as ERR. Regression tests added.
+
 ## 0.7.2 – 2026-10-08
 - diag: Horizon agent section for clones whose customization fails - newest files and error/timeout/offline-join/ClonePrep lines from /var/log/omnissa (or /var/log/vmware), hostname/FQDN and `sssctl domain-status`.
 

@@ -64,6 +64,13 @@ used=$(
         sed -nE 's/.*local -a modes=\((.*)\).*/\1/p' vdi-imagemaint.sh | tr ' ' '\n' | sed 's/^/menu_/'
     } | sort -u
 )
+# regression: the per-clone script must not touch SSSD or the clock, and kerberos must not
+# make SSSD wait for time-sync (both broke domain logons on instant clones - CHANGELOG 0.8.0)
+clone_bad=$(grep -nE '^[^#]*(sssd|timesyncd|timedatectl|time-wait-sync)' "$ROOT/files/runonce.sh" || true)
+check "per-clone script leaves SSSD and the clock alone${clone_bad:+ ($clone_bad)}" '[[ -z $clone_bad ]]'
+wait_bad=$(grep -nE '^[^#]*(After|Wants)=time-sync\.target|enable systemd-time-wait-sync' "$ROOT/lib"/*.sh || true)
+check "SSSD never waits for time-sync${wait_bad:+ ($wait_bad)}" '[[ -z $wait_bad ]]'
+
 # XML comments in generated menu files must not contain "--" (invalid XML: MATE ignores the file)
 badxml=$(grep -rnE '<!--.*--.*-->' "$ROOT/lib" | grep -vE '<!--[^-]*(-[^-][^-]*)*-->' || true)
 check "no -- inside generated XML comments${badxml:+ ($badxml)}" '[[ -z $badxml ]]'

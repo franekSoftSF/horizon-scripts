@@ -26,6 +26,8 @@ mode_seal() {
     for u in $SEAL_MASK_UNITS; do unit_off seal "$u" mask; done
 
     seal_ssh_keys
+    # The SSSD time-sync wait of 0.5.0-0.7.2 broke customization of instant clones.
+    kerberos_remove_wait
     seal_cleanup
     [[ $SEAL_QUIET_USERS == yes ]] && seal_quiet_users
     # Last: from here on apt/dpkg refuse to change packages until unlock.
