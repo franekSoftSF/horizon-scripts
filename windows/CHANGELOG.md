@@ -3,6 +3,23 @@
 ## VDI-ImageMaint 2.0.0 – in progress
 
 ### Added
+- **Demeter (Athena, Artemis, Hephaestus)** - `Scripts\Install-Demeter.ps1` 1.1 (EN/PL), package `Demeter` (Order 70, enabled in the
+  University manifest, disabled in the template), download entry (disabled; installer not code-signed). The official Inno Setup
+  installer is per-user (`%APPDATA%\DemeterPerl`; PATH/PGPLOT_DIR go to `HKCU\SYSTEM\CurrentControlSet\Control\Session Manager\Environment`,
+  a key Windows never reads), so programs failed for users. The script removes earlier per-user copies of every local profile
+  (waits for the Inno uninstaller's %TEMP% copy), installs silently into `C:\DemeterPerl`, cleans the installing account's HKCU
+  leftovers (that key included), sets Users read+execute (propagation verified, `/reset` fallback), writes launchers (`vdi\*.cmd`:
+  PATH + PGPLOT_DIR per process, `%APPDATA%\demeter`), an all-users Start menu group, optional `-Associate` (.prj/.fpj in HKLM) /
+  `-AddToPath`, smoke test `perl -MConfig -MDemeter` (also checks that `relocation.pl.bat` ran), Uninstall entry that runs a copy of
+  the script in `C:\DemeterPerl\vdi`. Docs `docs/demeter.md` (+pl).
+- **Larch / Larix (xraylarch)** - `Scripts\Install-Larch.ps1` 1.0 (EN/PL), package `Larch` (Order 71, enabled in the University
+  manifest, disabled in the template), download entry (disabled; newest release read from the download folder listing). The conda
+  constructor installer is run silently for all users (`/S /InstallationType=AllUsers /AddToPath=0 /RegisterPython=0 /NoShortcuts=1
+  /NoScripts=1 /KeepPkgCache=0 /D=C:\xraylarch`), then `pip install "xraylarch[larix]"` from PyPI with a log (`-Upgrade`,
+  `-Requirement` to pin); earlier per-user copies removed, Users read+execute, launchers (`vdi\*.cmd`: conda PATH, `CONDA_PREFIX`,
+  `PYTHONNOUSERSITE=1`), all-users Start menu group Larch (Larix, XRF/XRFMap/XRD1D viewers, Sitka, Jupyter Lab, Larch CLI; no
+  "Update Larch"), smoke test `import larch, wx`, Uninstall entry. Docs in `docs/demeter.md` (+pl), Linux parity
+  (`python3-xraylarch` / Larix).
 - **HTML cycle report** (`Private\Report.ps1`, EN/PL `Report.psd1`): every changing run is journaled in `cycle.json` (runs keyed by
   Id, merged on disk - survives reboots and SYSTEM child processes; events flushed on STEP/ERR); the Seal that ends the cycle writes
   `Reports\VDI-ImageMaint_<computer>_<cycle>.html` (self-contained, light/dark, print): status, Windows before/after + servicing end,

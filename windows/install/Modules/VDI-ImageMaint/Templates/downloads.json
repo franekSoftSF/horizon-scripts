@@ -120,6 +120,30 @@
       "Signer": "O=\"?Eclipse",
       "SignedFiles": "eclipse.exe",
       "ReplacePattern": "eclipse-java-*-win32-x86_64.zip"
+    },
+    {
+      "Id": "Demeter",
+      "Name": "Demeter 0.9.26 with Strawberry Perl (Athena/Artemis/Hephaestus, 64-bit installer, ~150 MB; XAS labs only - enable in C:\\install\\downloads.json)",
+      "Enabled": false,
+      "Kind": "file",
+      "Url": "https://s3.amazonaws.com/demeter4xas/Demeter_0.9.26_with_Strawberry_Perl_(64).exe",
+      "Target": "Apps\\Demeter",
+      "FileName": "Demeter_0.9.26_with_Strawberry_Perl_(64).exe",
+      "Signer": "",
+      "ReplacePattern": "Demeter_*_with_Strawberry_Perl_(64).exe"
+    },
+    {
+      "Id": "Larch",
+      "Name": "Larch / Larix (xraylarch conda installer, newest xraylarch-<YYYY-MM>-Windows-x86_64.exe, ~500 MB; XAS labs only - enable in C:\\install\\downloads.json)",
+      "Enabled": false,
+      "Kind": "file",
+      "ReleaseUrl": "https://millenia.cars.aps.anl.gov/xraylarch/downloads/?C=N;O=D",
+      "ReleasePattern": "xraylarch-(\\d{4}-\\d{2})-Windows-x86_64\\.exe",
+      "Url": "https://millenia.cars.aps.anl.gov/xraylarch/downloads/xraylarch-{Release}-Windows-x86_64.exe",
+      "Target": "Apps\\Larch",
+      "FileName": "*",
+      "Signer": "",
+      "ReplacePattern": "xraylarch-*-Windows-x86_64.exe"
     }
   ]
 }

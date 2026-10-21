@@ -77,6 +77,13 @@ folder listed below. `-Mode Download` prints this list at the end.
 | Eclipse Temurin JDK 21 / 25 LTS (`OpenJDK21U-jdk_x64_windows_hotspot_*.msi`, `OpenJDK25U-...`) | `Apps\Java\` | <https://adoptium.net/temurin/releases/> (Windows, x64, JDK, .msi) | Packages `TemurinJDK21` / `TemurinJDK25`, fixed folders `jdk-21` / `jdk-25`. New builds every quarter |
 | Eclipse IDE for Java Developers (`eclipse-java-<YYYY-MM>-R-win32-x86_64.zip`) | `Apps\Eclipse\` | <https://www.eclipse.org/downloads/packages/> (Windows x86_64) | Package `EclipseJava` (`Scripts\Install-Eclipse.ps1`). Do not unpack. New release in March, June, September and December. Design: [eclipse-java.md](eclipse-java.md) |
 
+## Science (XAS labs)
+
+| Item | Folder | Source | Notes |
+|---|---|---|---|
+| Demeter 0.9.26 with Strawberry Perl, 64-bit (`Demeter_0.9.26_with_Strawberry_Perl_(64).exe`, ~150 MB) | `Apps\Demeter\` | <https://bruceravel.github.io/demeter/> | Package `Demeter` (`Scripts\Install-Demeter.ps1`): the official installer is per-user, the script makes it all-users in `C:\DemeterPerl`. **Not Authenticode-signed** - download only from that page. `-Mode Download` gets it when enabled in `downloads.json`. Design: [demeter.md](demeter.md) |
+| Larch / Larix (xraylarch conda installer `xraylarch-<YYYY-MM>-Windows-x86_64.exe`, ~500 MB) | `Apps\Larch\` | <https://xraypy.github.io/xraylarch/installation.html> (folder <https://millenia.cars.aps.anl.gov/xraylarch/downloads/>) | Package `Larch` (`Scripts\Install-Larch.ps1`): silent all-users install into `C:\xraylarch`, then `pip install "xraylarch[larix]"` - **needs internet access to PyPI** at install time. Not Authenticode-signed. `-Mode Download` reads the newest release from the folder listing when enabled in `downloads.json`. Design: [demeter.md](demeter.md#larch--larix) |
+
 ## Optional
 
 | Item | Source | Notes |

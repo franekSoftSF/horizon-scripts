@@ -41,7 +41,9 @@
   "Ignore": [
     "(?i)\\\\Optional Components\\\\",
     "(?i)x86\\.msi$",
-    "(?i)^Apps\\\\Eclipse\\\\"
+    "(?i)^Apps\\\\Eclipse\\\\",
+    "(?i)^Apps\\\\Demeter\\\\",
+    "(?i)^Apps\\\\Larch\\\\"
   ],
   "Packages": [
     {
@@ -177,6 +179,26 @@
       "Type": "ps1",
       "File": "Scripts\\Install-Eclipse.ps1",
       "Arguments": "-Source '{InstallDir}\\Apps\\Eclipse' -Package java",
+      "Detect": { "Type": "Always" }
+    },
+    {
+      "Id": "Demeter",
+      "Name": "Demeter - Athena, Artemis, Hephaestus (instalator per-user zrobiony dla wszystkich -> C:\\DemeterPerl; skrypt porównuje wersję)",
+      "Enabled": true,
+      "Order": 70,
+      "Type": "ps1",
+      "File": "Scripts\\Install-Demeter.ps1",
+      "Arguments": "-Source '{InstallDir}\\Apps\\Demeter' -Associate",
+      "Detect": { "Type": "Always" }
+    },
+    {
+      "Id": "Larch",
+      "Name": "Larch / Larix (xraylarch, instalator conda all-users -> C:\\xraylarch + pip z PyPI; skrypt porównuje wydanie)",
+      "Enabled": true,
+      "Order": 71,
+      "Type": "ps1",
+      "File": "Scripts\\Install-Larch.ps1",
+      "Arguments": "-Source '{InstallDir}\\Apps\\Larch'",
       "Detect": { "Type": "Always" }
     }
   ]

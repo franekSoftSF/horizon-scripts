@@ -77,6 +77,13 @@ Potem kopiujesz plik do folderu z tabeli. `-Mode Download` wypisuje tę listę n
 | Eclipse Temurin JDK 21 / 25 LTS (`OpenJDK21U-jdk_x64_windows_hotspot_*.msi`, `OpenJDK25U-...`) | `Apps\Java\` | <https://adoptium.net/temurin/releases/> (Windows, x64, JDK, .msi) | Pakiety `TemurinJDK21` / `TemurinJDK25`, stałe foldery `jdk-21` / `jdk-25`. Nowe kompilacje co kwartał |
 | Eclipse IDE for Java Developers (`eclipse-java-<RRRR-MM>-R-win32-x86_64.zip`) | `Apps\Eclipse\` | <https://www.eclipse.org/downloads/packages/> (Windows x86_64) | Pakiet `EclipseJava` (`Scripts\Install-Eclipse.ps1`). Nie rozpakowuj. Nowe wydanie w marcu, czerwcu, wrześniu i grudniu. Założenia: [eclipse-java.md](eclipse-java.md) |
 
+## Nauka (pracownie XAS)
+
+| Element | Folder | Źródło | Uwagi |
+|---|---|---|---|
+| Demeter 0.9.26 with Strawberry Perl, 64-bit (`Demeter_0.9.26_with_Strawberry_Perl_(64).exe`, ~150 MB) | `Apps\Demeter\` | <https://bruceravel.github.io/demeter/> | Pakiet `Demeter` (`Scripts\Install-Demeter.ps1`): oficjalny instalator jest per-user, skrypt robi z niego instalację dla wszystkich w `C:\DemeterPerl`. **Bez podpisu Authenticode** - pobieraj tylko z tej strony. `-Mode Download` pobiera go po włączeniu w `downloads.json`. Opis: [demeter.md](demeter.md) |
+| Larch / Larix (instalator conda `xraylarch-<RRRR-MM>-Windows-x86_64.exe`, ~500 MB) | `Apps\Larch\` | <https://xraypy.github.io/xraylarch/installation.html> (folder <https://millenia.cars.aps.anl.gov/xraylarch/downloads/>) | Pakiet `Larch` (`Scripts\Install-Larch.ps1`): cicha instalacja dla wszystkich do `C:\xraylarch`, potem `pip install "xraylarch[larix]"` - **podczas instalacji potrzebny dostęp do PyPI**. Bez podpisu Authenticode. `-Mode Download` czyta najnowsze wydanie z listingu folderu po włączeniu w `downloads.json`. Opis: [demeter.md](demeter.md#larch--larix) |
+
 ## Opcjonalne
 
 | Element | Źródło | Uwagi |

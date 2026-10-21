@@ -80,6 +80,8 @@ Describe 'Inline EN/PL tables of standalone scripts' -ForEach @(
     @{ File = 'Scripts\Test-SysprepReadiness.ps1' }
     @{ File = 'Scripts\Set-FSLogixConfig.ps1' }
     @{ File = 'Scripts\Install-Eclipse.ps1' }
+    @{ File = 'Scripts\Install-Demeter.ps1' }
+    @{ File = 'Scripts\Install-Larch.ps1' }
     @{ File = 'Scripts\New-BuildMedia.ps1' }
     @{ File = 'Scripts\Invoke-GoldenVm.ps1' }
     @{ File = 'Scripts\Invoke-HorizonPushImage.ps1' }

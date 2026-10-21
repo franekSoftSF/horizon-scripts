@@ -49,6 +49,14 @@ _Aktualizacja: 2026-10-02_ · VDI-ImageMaint **2.0.0 (w trakcie)** · Set-FSLogi
       (menu H): status, Windows przed/po, wsparcie Horizon, błędy, zmiany aplikacji, aktualizacje, pakiety, komponenty VDI, Seal, logi.
       Testy z danymi testowymi; **nie testowano na VM**.
 
+- [x] **Demeter (Athena/Artemis/Hephaestus)** (2026-10-08): `Scripts\Install-Demeter.ps1` 1.0 (pakiet `Demeter`) robi z instalatora
+      per-user instalację dla wszystkich w `C:\DemeterPerl` (launchery z PATH/PGPLOT_DIR, menu Start dla wszystkich, ACL, sprzątanie
+      HKCU, `-Associate`); `docs/demeter.md` (+pl). 1.1: poprawki (klucz HKCU\SYSTEM\...\Environment instalatora, czekanie na
+      deinstalator, kopie per-user we wszystkich profilach, weryfikacja ACL i relokacji Perla, kopia skryptu do `vdi\`).
+      **Larch/Larix** (2026-10-21): `Scripts\Install-Larch.ps1` 1.0 (pakiet `Larch`): instalator conda AllUsers do `C:\xraylarch`,
+      `pip install xraylarch[larix]` (wymaga dostępu do PyPI), launchery i menu Start dla wszystkich. Sprawdzone tylko statycznie
+      (Pester 179/179); **nie testowano na VM** (instalacje, start programów jako zwykły użytkownik).
+
 ## Jak testowano (bez VM)
 - Parser PS 5.1: 0 błędów we wszystkich skryptach; PSScriptAnalyzer: tylko puste bloki catch (celowe)
 - Testy funkcji w izolacji (PS 5.1): unattend.xml (poprawny XML, wszystkie fazy, hasła w formacie WSIM),
