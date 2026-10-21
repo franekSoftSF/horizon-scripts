@@ -73,6 +73,8 @@ _Aktualizacja: 2026-10-16_ · wersja **0.8.0** · Debian 12/13 + MATE · Horizon
 
 - [x] 0.7.1: Larch/Larix + Ifeffit + Feff (XAS, prośba wykładowców o Demeter – Demeter nie ma w Debianie) w Zajęcia > Edukacja
 
+- [x] 0.8.1: Demeter (Athena/Artemis/Hephaestus/Atoms) z `libdemeter-perl` (Debian 13, contrib + non-free włączane przez courses), wpisy menu w Zajęcia > Edukacja – **do sprawdzenia na VDI**
+
 - [x] 0.8.0: Pula – po customizacji brak logowania domenowego na klonach (obraz wzorcowy działał) → usunięte czekanie SSSD na zegar i restart SSSD/zegara w skrypcie klona (wchodziły w paradę ClonePrep); kerberos/seal sprzątają pozostałości; L25 ERR; testy regresji
 
 ## Jak testowano (bez VM)

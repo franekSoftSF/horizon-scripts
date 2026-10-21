@@ -365,6 +365,7 @@ MSG[menu_courses]='Folder "Courses" for the course applications (courses --rever
 MSG[courses_installing]='Installing course applications: %s'
 MSG[courses_install_failed]='Installing %s failed - see the log; the folder is built with what is installed.'
 MSG[courses_pkg_unknown]='Not available in the configured apt sources: %s'
+MSG[courses_apt_components]='apt sources: component(s) %s enabled in %s'
 MSG[courses_sealed_no_install]='The image is sealed - missing course applications are not installed (unlock first); only the folder is built.'
 
 # --- 0.6.7: nfsmount ---

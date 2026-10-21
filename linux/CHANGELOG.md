@@ -1,5 +1,17 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.8.1 – 2026-10-21
+- Course apps: **Demeter** (Athena, Artemis, Hephaestus, Atoms) from `libdemeter-perl` - Debian 13 has it (0.9.27, `contrib`; the
+  0.7.1 note "not packaged in Debian" was wrong for trixie; Debian 12 has none). New `COURSES_APT_COMPONENTS="contrib non-free"`:
+  courses adds the components to the Debian apt sources (deb822 and one-line lists, own state section `coursesapt`, restored by
+  `courses --revert`) - two dependencies (libmath-random-perl, libstar-parser-perl) are in non-free. The package has no menu
+  entries: courses writes `vdi-demeter-{athena,artemis,hephaestus,atoms}.desktop` (Courses > Education). The folder rebuild now
+  clears the previous result before looking for apps, so these entries are found.
+- Verified in debian:13 (container): sources get `contrib non-free`, libdemeter-perl + python3-xraylarch install, 4 menu entries
+  valid (desktop-file-validate) with icons, `perl -MDemeter` = 0.9.26, Athena/Artemis/Hephaestus start under Xvfb, idempotent
+  re-run, `courses --revert` restores the sources. Demeter prints "can't open /usr/bin/larch" at start (Debian names it
+  larch_server) and falls back to Ifeffit - harmless. Not tested on a VM.
+
 ## 0.8.0 – 2026-10-16
 - Fix (VM): domain logons failed on instant clones after customization (both through the Connection Server and on the console), while the golden image worked. The Kerberos time-sync wait of 0.5.0-0.7.2 (sssd.service After/Wants=time-sync.target, systemd-time-wait-sync) and the per-clone script restarting the time service and SSSD got in the way of Horizon's ClonePrep, which owns SSSD during customization. Removed: kerberos keeps only the SSSD snippet (no automatic machine password change, ticket renewal); kerberos and seal remove the old drop-ins and disable systemd-time-wait-sync; the per-clone script no longer touches SSSD or the clock (SSH host keys, rpc-gssd/autofs only); check L25 reports leftovers as ERR. Regression tests added.
 

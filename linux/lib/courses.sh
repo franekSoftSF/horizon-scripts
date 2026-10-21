@@ -68,6 +68,71 @@ courses_group_name() {
     esac
 }
 
+# Enable the Debian archive components in COURSES_APT_COMPONENTS (e.g. contrib: libdemeter-perl)
+# in the Debian sources - deb822 *.sources (Components:) and one-line sources.list (deb ...).
+# Tracked in its own section "coursesapt" (the folder rebuild must not drop it); courses --revert restores it.
+courses_apt_components() {
+    [[ -n ${COURSES_APT_COMPONENTS:-} ]] || return 0
+    local f comp new changed=""
+    for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list; do
+        [[ -f $f ]] || continue
+        grep -qE 'debian\.org/debian|/debian-security|deb\.debian\.org' "$f" || continue
+        new=$(cat "$f")
+        for comp in $COURSES_APT_COMPONENTS; do
+            if [[ $f == *.sources ]]; then
+                # stanza-wise: add to "Components:" of stanzas whose URIs point at a Debian mirror
+                new=$(printf '%s\n' "$new" | awk -v c="$comp" '
+                    function flush() { for (i = 1; i <= n; i++) { l = buf[i]
+                        if (deb && l ~ /^Components:/ && (" " l " ") !~ (" " c " ")) l = l " " c
+                        print l } n = 0; deb = 0 }
+                    /^[[:space:]]*$/ { flush(); print; next }
+                    { buf[++n] = $0; if ($0 ~ /^URIs:.*debian/) deb = 1 }
+                    END { flush() }')
+            else
+                new=$(printf '%s\n' "$new" | awk -v c="$comp" '
+                    /^[[:space:]]*deb(-src)?[[:space:]]/ && /debian/ && (" " $0 " ") !~ (" " c " ") { $0 = $0 " " c }
+                    { print }')
+            fi
+        done
+        if [[ $new != "$(cat "$f")" ]]; then
+            printf '%s\n' "$new" | write_file coursesapt "$f" 0644
+            changed+="${changed:+, }$f"
+        fi
+    done
+    if [[ -n $changed ]]; then logt OK courses_apt_components "$COURSES_APT_COMPONENTS" "$changed"; fi
+    return 0
+}
+
+# Demeter (libdemeter-perl) ships the programs but no menu entries: write them, so that
+# COURSES_APPS (vdi-demeter) finds them. Only for programs that are installed.
+courses_demeter_desktop() {
+    local share=/usr/share/perl5/Demeter/UI name exe icon comment id
+    local -a entries=(
+        "Athena|dathena|${share}/Athena/share/athena_icon.png|XAS data processing|Przetwarzanie danych XAS"
+        "Artemis|dartemis|${share}/Artemis/share/artemis_icon.png|EXAFS data analysis using Feff and Ifeffit|Analiza danych EXAFS (Feff i Ifeffit)"
+        "Hephaestus|dhephaestus|${share}/Hephaestus/icons/vulcan.png|A periodic table for the absorption spectroscopist|Układ okresowy dla spektroskopii absorpcyjnej"
+        "Atoms|datoms|${share}/Atoms/icons/atoms.png|Crystallography for the absorption spectroscopist|Krystalografia dla spektroskopii absorpcyjnej"
+    )
+    local a pl
+    for a in "${entries[@]}"; do
+        IFS='|' read -r name exe icon comment pl <<<"$a"
+        command -v "$exe" >/dev/null 2>&1 || continue
+        id="vdi-demeter-${name,,}.desktop"
+        write_file courses "/usr/share/applications/${id}" 0644 <<EOF
+[Desktop Entry]
+Type=Application
+Name=${name}
+Comment=${comment}
+Comment[pl]=${pl}
+Exec=${exe}$([[ $exe == datoms ]] && printf ' --wx')$([[ $exe == dathena || $exe == dartemis ]] && printf ' %%f')
+Icon=${icon}
+Terminal=false
+Categories=Science;Physics;
+EOF
+    done
+    return 0
+}
+
 # Install the course applications that are missing (COURSES_INSTALL=yes): Debian packages
 # from COURSES_PACKAGES, VS Code from a code_*.deb in Horizon/ or HORIZON_EXTRA_DIRS.
 # Not on a sealed image (package changes are blocked there) - then only the folder is built.
@@ -77,6 +142,7 @@ courses_install() {
         logt WARN courses_sealed_no_install
         return 0
     fi
+    courses_apt_components
     local pkg deb
     local -a missing=() unknown=()
     for pkg in $COURSES_PACKAGES; do
@@ -128,17 +194,20 @@ mode_courses() {
     if [[ ${REVERT:-0} == 1 ]]; then
         logt STEP step_courses_revert
         files_restore courses
+        files_restore coursesapt
         menu_refresh
         logt OK courses_reverted
         return 0
     fi
     logt STEP step_courses
     courses_install
+    # Start from a clean slate: apps removed from COURSES_APPS must leave the folder.
+    # (menu_find_apps reads /usr/share/applications, the override copies live elsewhere)
+    files_restore courses >/dev/null 2>&1 || true
+    courses_demeter_desktop
     local -a ids=()
     local id
     while IFS= read -r id; do ids+=("$id"); done < <(menu_find_apps)
-    # Start from a clean slate: apps removed from COURSES_APPS must leave the folder.
-    files_restore courses >/dev/null 2>&1 || true
     if ((${#ids[@]} == 0)); then
         logt WARN courses_no_apps "$COURSES_APPS"
         menu_refresh

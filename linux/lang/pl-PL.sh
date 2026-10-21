@@ -365,6 +365,7 @@ MSG[menu_courses]='Folder „Zajęcia” dla aplikacji do zajęć (courses --rev
 MSG[courses_installing]='Instaluję aplikacje do zajęć: %s'
 MSG[courses_install_failed]='Instalacja %s nie powiodła się - zobacz log; folder powstaje z tym, co jest zainstalowane.'
 MSG[courses_pkg_unknown]='Niedostępne w skonfigurowanych źródłach apt: %s'
+MSG[courses_apt_components]='źródła apt: włączono komponent(y) %s w %s'
 MSG[courses_sealed_no_install]='Obraz jest zamknięty - brakujące aplikacje nie zostaną zainstalowane (najpierw unlock); powstaje tylko folder.'
 
 # --- 0.6.7: nfsmount ---
