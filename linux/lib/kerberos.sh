@@ -211,9 +211,9 @@ mode_diag() {
         echo "== certificate logon (True SSO / smart card)"
         sed -nE '/^\[|pam_cert|pam_p11|certificate_verification|local_auth_policy|matchrule|maprule/p' \
             /etc/sssd/sssd.conf /etc/sssd/conf.d/*.conf 2>/dev/null | grep -v '^\[domain\|^\[sssd\]\|^\[nss' || true
-        for dir in /etc/sssd/pki/sssd_auth_ca_db.pem; do
-            [[ -s $dir ]] && awk '/BEGIN CERT/{n++} END{print "CA certificates in bundle: " n+0}' "$dir"
-        done
+        if [[ -s $SSSD_CA_DB ]]; then
+            awk '/BEGIN CERT/{n++} END{print "CA certificates in bundle: " n+0}' "$SSSD_CA_DB"
+        fi
         if [[ -s $CERT_CRL_FILE ]]; then
             awk '/BEGIN X509 CRL/{n++} END{print "CRLs in " FILENAME ": " n+0}' "$CERT_CRL_FILE"
             systemctl status --no-pager -n 3 vdi-imagemaint-crl.service 2>&1 | tail -n 4 || true

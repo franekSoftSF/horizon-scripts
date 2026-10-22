@@ -12,6 +12,15 @@
 set -Eeuo pipefail
 shopt -s nullglob
 
+# realm, adcli, sss_cache, sshd ... live in /usr/sbin. "su" without "-" (and some sudo
+# setups) keep the user's PATH without the sbin directories: "realm: command not found"
+# right after realmd was installed (seen on the VM, 0.9.0).
+for _dir in /usr/local/sbin /usr/sbin /sbin; do
+    [[ :$PATH: == *:"$_dir":* ]] || PATH="$_dir:$PATH"
+done
+unset _dir
+export PATH
+
 VDI_ROOT=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
 
 # shellcheck source=lib/common.sh

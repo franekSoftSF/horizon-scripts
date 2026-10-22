@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-22",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "platform": {
     "os": "Debian 12 bookworm / Debian 13 trixie",
     "desktop": "MATE + LightDM",
@@ -210,6 +210,13 @@
         "adopted images could not get certificate logon (domain step skipped)"
       ],
       "fixedIn": "0.9.0 (conf.d certlogon snippet, issuer pin, userPrincipalName, local_auth_policy, CRL timer) - to be confirmed on a VM with True SSO"
+    },
+    {
+      "date": "2026-10-22",
+      "found": [
+        "domain on a new Debian 13 image: realm: command not found (PATH without /usr/sbin under su)"
+      ],
+      "fixedIn": "0.9.1"
     }
   ]
 }

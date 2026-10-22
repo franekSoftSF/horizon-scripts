@@ -209,6 +209,10 @@ else
     printf 'skip tracked files + state (jq not installed)\n'
 fi
 
+# --- regression: sbin in PATH ("su" without "-" -> "realm: command not found", 0.9.0 on the VM)
+sbin_path=$(env -i PATH=/usr/bin:/bin HOME=/tmp bash -c 'sed -n "/^for _dir in/,/^export PATH/p" "$1" > /tmp/vdi-path.$$; . /tmp/vdi-path.$$; rm -f /tmp/vdi-path.$$; echo "$PATH"' _ "$ROOT/vdi-imagemaint.sh")
+check "entry script puts /usr/sbin and /sbin in PATH (${sbin_path})" '[[ :$sbin_path: == *:/usr/sbin:* && :$sbin_path: == *:/sbin:* ]]'
+
 # --- certificate logon (True SSO / smart card): rule shape, issuer pin, revocation ------
 # Lessons measured in the sssd-smartcard project - see docs/linux.md "Certificate logon".
 cert_bad=$(grep -nE '^[^#]*(matchrule|maprule).*(&&|\(userPrincipal=)' "$ROOT/lib/domain.sh" || true)

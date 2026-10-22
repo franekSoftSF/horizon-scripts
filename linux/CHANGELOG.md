@@ -1,5 +1,10 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.9.1 – 2026-10-22
+- Fix (VM): `domain` on a new Debian 13 image stopped with "realm: command not found" right after realmd was installed.
+  `realm`, `adcli` and `sss_cache` are in /usr/sbin, which is not in PATH when root comes from `su` without `-`. The tool
+  now adds /usr/local/sbin, /usr/sbin and /sbin to its PATH itself. Regression test added.
+
 ## 0.9.0 – 2026-10-22
 - Certificate logon (True SSO / smart card) reworked in mode `domain`, with what the sssd-smartcard project measured on
   a real host (SSSD 2.9/2.10). Everything certificate-related now lives in `/etc/sssd/conf.d/50-vdi-imagemaint-certlogon.conf`
