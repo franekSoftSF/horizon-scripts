@@ -224,6 +224,9 @@ check "smb.conf written after the join (${order})" '[[ $order == "domain_join do
 sw=$(cd "$ROOT" && VDI_ROOT=$ROOT bash -c '. lib/common.sh; NFS_ENABLE=Yes USB_ENABLE=NIE SSSD_FQ_NAMES=TAK SEAL_HIDE_POWER=maybe; normalize_switches; echo "$NFS_ENABLE $USB_ENABLE $SSSD_FQ_NAMES $SEAL_HIDE_POWER"')
 check "yes/no switches normalised (${sw})" '[[ $sw == "yes no true maybe" ]]'
 
+# --- regression: apt waits for the dpkg lock (apt-daily right after boot, 0.9.3 on the VM)
+check "apt_get waits for the dpkg lock" 'grep -q "DPkg::Lock::Timeout" "$ROOT/lib/common.sh"'
+
 # --- certificate logon (True SSO / smart card): rule shape, issuer pin, revocation ------
 # Lessons measured in the sssd-smartcard project - see docs/linux.md "Certificate logon".
 cert_bad=$(grep -nE '^[^#]*(matchrule|maprule).*(&&|\(userPrincipal=)' "$ROOT/lib/domain.sh" || true)

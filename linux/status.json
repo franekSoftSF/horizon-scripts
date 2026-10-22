@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-23",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "platform": {
     "os": "Debian 12 bookworm / Debian 13 trixie",
     "desktop": "MATE + LightDM",
@@ -231,6 +231,13 @@
         "NFS_ENABLE=\"Yes\" treated as no (case-sensitive switches); adopt on a fresh image adopted prepare+nfs, so the time zone stayed US"
       ],
       "fixedIn": "0.9.3 (switches normalised, L09 time zone warning); on the VM: prepare/nfs with --force"
+    },
+    {
+      "date": "2026-10-23",
+      "found": [
+        "prepare: dpkg lock held by apt-get (apt-daily after boot)"
+      ],
+      "fixedIn": "0.9.4 (DPkg::Lock::Timeout=600)"
     }
   ]
 }

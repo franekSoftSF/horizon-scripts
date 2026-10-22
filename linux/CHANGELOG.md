@@ -1,5 +1,10 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.9.4 – 2026-10-23
+- Fix (VM): `prepare` stopped with "Could not get lock /var/lib/dpkg/lock-frontend" while apt-daily / unattended-upgrades ran
+  after boot. Every apt call now waits up to 10 minutes for the lock (`DPkg::Lock::Timeout=600`).
+- An error inside `run <command>` names the command again (0.9.2 showed `return "$rc"`).
+
 ## 0.9.3 – 2026-10-23
 - Fix (VM): `NFS_ENABLE="Yes"` counted as "no" - every switch was compared case-sensitively with `yes`/`true`. Settings whose
   default is yes/no or true/false are now normalised after loading (Yes, YES, y, tak, true, on, 1 / No, nie, false, off, 0).

@@ -2,7 +2,7 @@
 # VDI-ImageMaint for Linux - shared helpers: config, i18n, logging, state, tracked changes.
 # Sourced by vdi-imagemaint.sh; expects VDI_ROOT to be set.
 
-VDI_VERSION="0.9.3"
+VDI_VERSION="0.9.4"
 STATE_DIR="/var/lib/vdi-imagemaint"
 LOG_DIR="/var/log/vdi-imagemaint"
 LOG_FILE="${LOG_DIR}/vdi-imagemaint-$(date +%Y%m%d).log"
@@ -123,6 +123,7 @@ logt() {
 
 # run CMD... - log the command, mirror its output into the log, keep its exit code.
 run() {
+    RUN_LAST="$*"
     log INFO "\$ $*"
     if [[ -w $LOG_DIR ]]; then
         # pipefail: rc is the command's status; returning it makes an error point at the
@@ -137,7 +138,10 @@ run() {
 
 on_error() {
     local rc=$? line=$1
-    log ERR "$(t err_unexpected "$rc" "$line" "${BASH_COMMAND:-?}")"
+    local cmd=${BASH_COMMAND:-?}
+    # A failing "run <command>" ends in run's own return statement: name the command.
+    [[ $cmd == return* && -n ${RUN_LAST:-} ]] && cmd=$RUN_LAST
+    log ERR "$(t err_unexpected "$rc" "$line" "$cmd")"
     exit "$rc"
 }
 
@@ -160,7 +164,10 @@ confirm() {
 
 # ------------------------------------------------------------------- apt ---
 apt_get() {
+    # Lock::Timeout: wait (up to 10 min) for apt-daily / unattended-upgrades that start
+    # right after boot, instead of failing with "Could not get lock" (seen on the VM, 0.9.3).
     DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l run apt-get -y \
+        -o DPkg::Lock::Timeout=600 \
         -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold "$@"
 }
 
