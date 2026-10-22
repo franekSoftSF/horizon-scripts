@@ -1,6 +1,6 @@
 {
-  "updated": "2026-10-16",
-  "version": "0.8.1",
+  "updated": "2026-10-22",
+  "version": "0.9.0",
   "platform": {
     "os": "Debian 12 bookworm / Debian 13 trixie",
     "desktop": "MATE + LightDM",
@@ -202,6 +202,14 @@
         "pool: clone customization fails after seal + Push Image (recreate loop)"
       ],
       "fixedIn": "0.8.0 (no SSSD time-sync wait, per-clone script leaves SSSD/clock alone) - to be confirmed on the pool"
+    },
+    {
+      "date": "2026-10-22",
+      "found": [
+        "certificate logon: certmap mapped by userPrincipal (not an AD attribute), no issuer pin, no local_auth_policy for SSSD 2.10, OCSP only",
+        "adopted images could not get certificate logon (domain step skipped)"
+      ],
+      "fixedIn": "0.9.0 (conf.d certlogon snippet, issuer pin, userPrincipalName, local_auth_policy, CRL timer) - to be confirmed on a VM with True SSO"
     }
   ]
 }

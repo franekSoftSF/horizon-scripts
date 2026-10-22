@@ -5,6 +5,8 @@ Instant Clone**: SSSD on the golden image + Horizon offline domain join per clon
 True SSO / smart card logon, experimental FIDO2 redirection test, NFSv4 + Kerberos home directories. Same lifecycle as the Windows tool: **Build → Update → Optimize → Seal**,
 reversible with **Unlock**. Profiles: `university`, `business`. Messages in English and Polish.
 
+**New here?** Start with the step-by-step guide: [tutorial.md](tutorial.md) (polski: [pl/tutorial.md](pl/tutorial.md)).
+
 ## Layout
 
 The repository folder `linux/` is the complete `/opt/vdi-imagemaint` on the VM.
@@ -239,15 +241,79 @@ fstab that are not mounted.
   (SSSD `override_homedir`). This is the layout of the existing images (e.g. `/home/STUDENT`). `NFS_MODE="autofs"`
   mounts one export per user instead.
 
+## Certificate logon: True SSO and smart card
+
+Turn it on in `vdi-imagemaint.conf`, put the CA certificates (PEM) in `certs/`, run `domain`:
+
+```bash
+TRUESSO_ENABLE="yes"                 # Horizon True SSO (Enrollment Server certificates)
+SMARTCARD_ENABLE="no"                # smart card redirection from the client
+CERT_CA_FILES="root-ca.pem issuing-ca.pem"   # in /opt/vdi-imagemaint/certs/
+CERT_REVOCATION="crl"                # ocsp | soft_ocsp | crl | none
+CERT_CRL_URLS="http://pki.example.edu/CertEnroll/Root.crl http://pki.example.edu/CertEnroll/Issuing.crl"
+```
+
+```bash
+sudo ./vdi-imagemaint.sh domain
+sudo ./vdi-imagemaint.sh check       # L18, L28-L31
+```
+
+The agent is installed with `-T yes` (True SSO) / `-m yes` (smart card) by mode `agent`.
+
+**Where it goes.** Everything certificate-related is in its own SSSD file,
+`/etc/sssd/conf.d/50-vdi-imagemaint-certlogon.conf`. `sssd.conf` is not rewritten for it, so on an
+**adopted** image `domain` adds only this file (plus packages and the CA bundle) and leaves the rest of
+SSSD as it is. SSSD 2.8 (Debian 12) and 2.10 (Debian 13) both read `[pam]`, `[certmap]` and
+`local_auth_policy` from `conf.d` (verified in containers). After writing it the tool runs
+`sssctl config-check` and restarts SSSD; if either fails, the file is put back as it was.
+
+**What is in it, and why** (lessons measured on a real host in the sssd-smartcard project):
+
+| Setting | Why |
+|---|---|
+| `[pam] pam_cert_auth = True`, `pam_p11_allowed_services = +gdm-hzncred` | Horizon SSO and True SSO log in through the `gdm-hzncred` PAM service. |
+| `[certmap/<domain>/truesso]` `matchrule = <ISSUER>^<issuing CA>$<EKU>msScLogin` | Only certificates from **that** CA, issued for Smart Card logon. The issuing CA is found in `CERT_CA_FILES` automatically when there is exactly one; with several, set `TRUESSO_ISSUER_CA` / `SMARTCARD_ISSUER_CA` to the file (`none` = no pin). Components are concatenated: an infix `&&` makes SSSD skip the whole rule. |
+| `maprule = (\|(userPrincipalName={subject_principal})(sAMAccountName={subject_principal.short_name}))` | `userPrincipalName` is the AD attribute (older docs say `userPrincipal`, which matches nothing). No `domains =`, so alternative UPN suffixes (user@example.edu on ad.example.edu) work too. |
+| `local_auth_policy = enable:smartcard` (only SSSD >= 2.9.3, i.e. Debian 13) | Without it the AD provider reads and verifies the certificate and **then asks for a password**. Debian 12 does not know the option and does not need it. |
+| `certificate_verification` from `CERT_REVOCATION` | See below. |
+
+**Revocation (`CERT_REVOCATION`)** — choose deliberately; a wrong choice locks everyone out:
+
+| Value | What happens |
+|---|---|
+| `ocsp` (default) | SSSD's default: OCSP when the certificate names a responder. If the clones cannot reach it, certificate logons **fail**. |
+| `soft_ocsp` | OCSP, but an unreachable responder does not block the logon. |
+| `crl` | CRLs from `CERT_CRL_URLS`. **Every** CA in the bundle (root and issuing) needs a current CRL, or no certificate verifies. The set is fetched once (must succeed), then hourly by `vdi-imagemaint-crl.timer` — on the golden image **and on every clone**. A refresh that is incomplete, unsigned or expired never replaces the working file. |
+| `none` | No revocation check (`no_ocsp`). Fine for True SSO certificates, which live only minutes to hours. |
+
+`SSSD_CERT_VERIFICATION` still exists as an expert override and wins over `CERT_REVOCATION`.
+
+**Kerberos ticket after a certificate logon (NFS krb5 homes).** A certificate logon gives a TGT only
+through PKINIT: `krb5-pkinit` and `pkinit_anchors` in `krb5.conf` (mode `domain` writes them on a
+built image; on an adopted one `check` L31 says when they are missing). Without them the logon works,
+but the NFS sec=krb5 home stays closed. A KDC certificate from the old *Domain Controller* template
+also needs `pkinit_eku_checking = kpServerAuth` and `pkinit_kdc_hostname` (`KRB5_KDC`).
+
+**Smart cards on Debian 12 / 13.** Debian 13 has the `sss-smart-card-optional` PAM profile and the
+tool enables it (password still works). Debian 12 has none: the tool prints the line to add to
+`/etc/pam.d/common-auth` by hand.
+
+**Checks.** L18 base (CA bundle, `pam_cert_auth`, pcscd for smart cards), L28 rule pinned to the
+issuing CA, L29 `local_auth_policy` (Debian 13), L30 CRL valid and timer on, L31 PKINIT. `diag` has a
+section *certificate logon*. Switching both options off and running `domain` removes the file and the timer.
+
+**Test on a clone** (no clipboard needed): log in through the Connection Server with True SSO, then
+`klist` (a TGT means PKINIT worked) and `ls ~` (NFS home). If it asks for a password instead, run
+`sudo ./vdi-imagemaint.sh diag` on the clone.
+
 ## What each mode changes
 
 - **domain**: writes `krb5.conf`, `sssd.conf` and `smb.conf` and joins the golden image with `realm join`
   (adcli). Grants sudo to AD groups. With `OfflineJoinDomain=sssd`, the Horizon agent then creates a computer
   account and keytab for every clone. Ticket caches are `FILE:/tmp/krb5cc_%U` because rpc.gssd cannot read KCM.
-  - **True SSO / smart card** (`TRUESSO_ENABLE`, `SMARTCARD_ENABLE`): installs pcscd, OpenSC and krb5-pkinit
-    and writes the CA chain from `certs/` to `/etc/sssd/pki/sssd_auth_ca_db.pem`. Sets `pam_cert_auth` and
-    adds `pkinit_anchors` to krb5.conf, so a certificate logon also gets a TGT and NFS krb5p keeps working.
-    The agent is installed with `-T yes` / `-m yes`.
+  - **True SSO / smart card** (`TRUESSO_ENABLE`, `SMARTCARD_ENABLE`): CA chain from `certs/` to
+    `/etc/sssd/pki/sssd_auth_ca_db.pem`, `pkinit_anchors` in krb5.conf, and the SSSD file
+    `conf.d/50-vdi-imagemaint-certlogon.conf` - see *Certificate logon* above.
   - **FIDO2** (`FIDO_ENABLE`, experimental): `fido2-tools` is installed before seal. Run `fido` inside a Horizon
     session on a clone, with a key plugged into the client. It lists the FIDO2 devices that the desktop sees.
 - **optimize** (undo with `optimize --revert`):

@@ -209,5 +209,64 @@ else
     printf 'skip tracked files + state (jq not installed)\n'
 fi
 
+# --- certificate logon (True SSO / smart card): rule shape, issuer pin, revocation ------
+# Lessons measured in the sssd-smartcard project - see docs/linux.md "Certificate logon".
+cert_bad=$(grep -nE '^[^#]*(matchrule|maprule).*(&&|\(userPrincipal=)' "$ROOT/lib/domain.sh" || true)
+check "certmap rule: no infix &&, AD attribute userPrincipalName${cert_bad:+ ($cert_bad)}" '[[ -z $cert_bad ]]'
+cache_bad=$(grep -n 'sss_cache' "$ROOT/lib/domain.sh" | grep -v 'joined_now' | grep -vE ':[0-9]+:[[:space:]]*#' || true)
+check "sss_cache -E only right after a join${cache_bad:+ ($cache_bad)}" '[[ -z $cache_bad ]]'
+if command -v openssl >/dev/null 2>&1; then
+    (
+        set -e
+        CT=$(mktemp -d)
+        trap 'rm -rf "$CT"' EXIT
+        mkdir -p "$CT/certs"
+        mkca() { # mkca NAME SUBJECT [PARENT]
+            openssl req -x509 -newkey rsa:2048 -nodes -days 30 -subj "$2" -keyout "$CT/$1.key" -out "$CT/certs/$1.pem" 2>/dev/null
+            if [[ -n ${3:-} ]]; then
+                openssl req -new -newkey rsa:2048 -nodes -subj "$2" -keyout "$CT/$1.key" -out "$CT/$1.csr" 2>/dev/null
+                printf 'basicConstraints=critical,CA:TRUE\nkeyUsage=keyCertSign,cRLSign\n' >"$CT/ext"
+                openssl x509 -req -in "$CT/$1.csr" -CA "$CT/certs/$3.pem" -CAkey "$CT/$3.key" -CAcreateserial \
+                    -days 30 -extfile "$CT/ext" -out "$CT/certs/$1.pem" 2>/dev/null
+            fi
+        }
+        mkca root "/DC=edu/DC=example/CN=Example Root CA"
+        mkca issuing "/DC=edu/DC=example/CN=Example Issuing CA (2025)" root
+        mkca other "/CN=Other Issuing CA" root
+        # shellcheck source=/dev/null
+        . "$ROOT/lib/domain.sh"
+        VDI_ROOT=$CT AD_DOMAIN=ad.example.edu
+        CERT_CA_FILES="root.pem issuing.pem"
+        dn=$(cert_issuer_dn "")
+        [[ $dn == 'CN=Example Issuing CA (2025),DC=example,DC=edu' ]] || { echo "auto issuer: '$dn'"; exit 1; }
+        CERT_CA_FILES="root.pem issuing.pem other.pem"
+        [[ -z $(cert_issuer_dn "") ]] || { echo "two issuing CAs must not be guessed"; exit 1; }
+        [[ $(cert_issuer_dn other.pem) == 'CN=Other Issuing CA' ]] || { echo "explicit issuer"; exit 1; }
+        [[ -z $(cert_issuer_dn none) ]] || { echo "none = no pin"; exit 1; }
+        # one bundle file holding the whole chain (adopt sets CERT_CA_FILES to the SSSD CA db)
+        cat "$CT/certs/root.pem" "$CT/certs/issuing.pem" >"$CT/certs/bundle.pem"
+        CERT_CA_FILES="$CT/certs/bundle.pem"
+        [[ $(cert_issuer_dn "") == 'CN=Example Issuing CA (2025),DC=example,DC=edu' ]] || { echo "issuer from a bundle"; exit 1; }
+        # the regex matches exactly that DN and nothing longer
+        re=$(cert_ere 'CN=Example Issuing CA (2025),DC=example,DC=edu')
+        [[ $re == '^CN=Example Issuing CA \(2025\),DC=example,DC=edu$' ]] || { echo "ere: $re"; exit 1; }
+        grep -Eq "$re" <<<'CN=Example Issuing CA (2025),DC=example,DC=edu' || { echo "ere must match"; exit 1; }
+        ! grep -Eq "$re" <<<'CN=Example Issuing CA (2025),DC=example,DC=edu,DC=evil' || { echo "ere must be anchored"; exit 1; }
+        rule=$(cert_rule truesso 'CN=X,DC=y' 10)
+        grep -qx 'matchrule = <ISSUER>^CN=X,DC=y$<EKU>msScLogin' <<<"$rule" || { echo "rule: $rule"; exit 1; }
+        grep -q 'userPrincipalName={subject_principal}' <<<"$rule" || { echo "maprule"; exit 1; }
+        ! grep -q '^domains' <<<"$rule" || { echo "no domains= (alternative UPN suffixes)"; exit 1; }
+        [[ $(cert_rule smartcard '' 20 | grep matchrule) == 'matchrule = <EKU>msScLogin' ]] || { echo "unpinned rule"; exit 1; }
+        SSSD_CERT_VERIFICATION="" CERT_CRL_FILE=/etc/sssd/pki/sssd_auth_crl.pem
+        CERT_REVOCATION=ocsp; [[ -z $(cert_verification) ]] || { echo "ocsp = SSSD default"; exit 1; }
+        CERT_REVOCATION=crl; [[ $(cert_verification) == 'no_ocsp, crl_file=/etc/sssd/pki/sssd_auth_crl.pem' ]] || { echo "crl"; exit 1; }
+        CERT_REVOCATION=none; [[ $(cert_verification) == no_ocsp ]] || { echo "none"; exit 1; }
+        SSSD_CERT_VERIFICATION="partial_chain"; [[ $(cert_verification) == partial_chain ]] || { echo "override"; exit 1; }
+    ) 2>"${TMPDIR:-/tmp}/vdi-cert.err" && ok "certificate logon: issuer pin, rule, revocation" ||
+        fail "certificate logon: $(cat "${TMPDIR:-/tmp}/vdi-cert.err")"
+else
+    printf 'skip certificate logon (openssl not installed)\n'
+fi
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 ((FAIL == 0))

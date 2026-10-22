@@ -19,6 +19,9 @@ SSSD_ID_MAPPING="true"            # must give the same UIDs as the NFS server se
 TRUESSO_ENABLE="no"
 SMARTCARD_ENABLE="no"
 CERT_CA_FILES="enterprise-root-ca.pem enterprise-issuing-ca.pem"
+#TRUESSO_ISSUER_CA="enterprise-issuing-ca.pem"   # empty = auto
+#CERT_REVOCATION="crl"                           # ocsp | soft_ocsp | crl | none
+#CERT_CRL_URLS="http://pki.example.edu/CertEnroll/Root.crl http://pki.example.edu/CertEnroll/Issuing.crl"
 
 # USB redirection (USB 3.0, VHCI driver), FIDO2 via USB, audio-in
 USB_ENABLE="yes"

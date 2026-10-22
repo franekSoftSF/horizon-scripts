@@ -55,7 +55,7 @@ dispatch() {
     case $1 in
         adopt) mode_adopt ;;
         prepare) run_step prepare mode_prepare ;;
-        domain) run_step domain mode_domain ;;
+        domain) run_step domain mode_domain; domain_certlogon_adopted ;;
         kerberos) mode_kerberos ;;
         diag) mode_diag ;;
         nfs) run_step nfs mode_nfs ;;

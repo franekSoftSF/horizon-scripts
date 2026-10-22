@@ -6,6 +6,8 @@ logowanie przez True SSO lub kartę, jest też eksperymentalny test przekierowan
 są na NFSv4 z Kerberosem. Cykl jest ten sam co w wersji Windows: **budowa → Update → Optimize → Seal**,
 cofany przez **Unlock**. Profile: `university` i `business`. Komunikaty są po angielsku i po polsku.
 
+**Pierwszy raz?** Zacznij od instrukcji krok po kroku: [tutorial.md](tutorial.md) (English: [../tutorial.md](../tutorial.md)).
+
 ## Układ
 
 Katalog `linux/` w repozytorium to kompletny `/opt/vdi-imagemaint` na VM.
@@ -240,15 +242,79 @@ Nowy fstab jest sprawdzany przez `findmnt --verify`. Oryginał jest zachowany, a
   `HOME_ROOT/<login>` (SSSD `override_homedir`). Tak jest na obecnych obrazach (np. `/home/STUDENT`). `NFS_MODE="autofs"`
   montuje zamiast tego osobny eksport na użytkownika.
 
+## Logowanie certyfikatem: True SSO i karta
+
+Włącz w `vdi-imagemaint.conf`, wrzuć certyfikaty CA (PEM) do `certs/`, uruchom `domain`:
+
+```bash
+TRUESSO_ENABLE="yes"                 # Horizon True SSO (certyfikaty z Enrollment Server)
+SMARTCARD_ENABLE="no"                # przekierowanie karty z klienta
+CERT_CA_FILES="root-ca.pem issuing-ca.pem"   # w /opt/vdi-imagemaint/certs/
+CERT_REVOCATION="crl"                # ocsp | soft_ocsp | crl | none
+CERT_CRL_URLS="http://pki.example.edu/CertEnroll/Root.crl http://pki.example.edu/CertEnroll/Issuing.crl"
+```
+
+```bash
+sudo ./vdi-imagemaint.sh domain
+sudo ./vdi-imagemaint.sh check       # L18, L28-L31
+```
+
+Agent jest instalowany z `-T yes` (True SSO) / `-m yes` (karta) przez tryb `agent`.
+
+**Gdzie to trafia.** Wszystko, co dotyczy certyfikatów, jest w osobnym pliku SSSD:
+`/etc/sssd/conf.d/50-vdi-imagemaint-certlogon.conf`. `sssd.conf` nie jest do tego przepisywany, więc na
+obrazie **przejętym** (`adopt`) tryb `domain` dodaje tylko ten plik (oraz pakiety i pakiet CA), a resztę
+SSSD zostawia w spokoju. SSSD 2.8 (Debian 12) i 2.10 (Debian 13) czytają `[pam]`, `[certmap]` i
+`local_auth_policy` z `conf.d` (sprawdzone w kontenerach). Po zapisie narzędzie uruchamia
+`sssctl config-check` i restartuje SSSD; jeśli coś się nie uda, plik wraca do poprzedniej postaci.
+
+**Co jest w środku i dlaczego** (wnioski zmierzone na prawdziwym hoście w projekcie sssd-smartcard):
+
+| Ustawienie | Dlaczego |
+|---|---|
+| `[pam] pam_cert_auth = True`, `pam_p11_allowed_services = +gdm-hzncred` | Horizon SSO i True SSO logują przez usługę PAM `gdm-hzncred`. |
+| `[certmap/<domena>/truesso]` `matchrule = <ISSUER>^<CA wystawiające>$<EKU>msScLogin` | Tylko certyfikaty z **tego** CA, wystawione do logowania kartą. CA wystawiające jest wybierane z `CERT_CA_FILES` samo, jeśli jest jedno; przy kilku ustaw `TRUESSO_ISSUER_CA` / `SMARTCARD_ISSUER_CA` na plik (`none` = bez przypięcia). Części reguły są sklejone: `&&` w środku sprawia, że SSSD pomija całą regułę. |
+| `maprule = (\|(userPrincipalName={subject_principal})(sAMAccountName={subject_principal.short_name}))` | `userPrincipalName` to atrybut AD (starsze instrukcje podają `userPrincipal`, który niczego nie znajduje). Bez `domains =`, więc działają też inne sufiksy UPN (user@example.edu w ad.example.edu). |
+| `local_auth_policy = enable:smartcard` (tylko SSSD >= 2.9.3, czyli Debian 13) | Bez tego dostawca AD czyta i sprawdza certyfikat, **a potem pyta o hasło**. Debian 12 nie zna tej opcji i jej nie potrzebuje. |
+| `certificate_verification` z `CERT_REVOCATION` | Zobacz niżej. |
+
+**Unieważnienia (`CERT_REVOCATION`)** — wybierz świadomie; zły wybór blokuje wszystkich:
+
+| Wartość | Co się dzieje |
+|---|---|
+| `ocsp` (domyślnie) | Domyślnie w SSSD: OCSP, jeśli certyfikat wskazuje serwer. Jeśli klony go nie widzą, logowanie certyfikatem **nie działa**. |
+| `soft_ocsp` | OCSP, ale niedostępny serwer nie blokuje logowania. |
+| `crl` | Listy CRL z `CERT_CRL_URLS`. **Każde** CA w pakiecie (główne i wystawiające) potrzebuje aktualnej CRL, inaczej żaden certyfikat nie przejdzie. Komplet jest pobierany raz (musi się udać), potem co godzinę przez `vdi-imagemaint-crl.timer` — na obrazie wzorcowym **i na każdym klonie**. Niepełny, źle podpisany lub przeterminowany komplet nigdy nie zastępuje działającego pliku. |
+| `none` | Bez sprawdzania (`no_ocsp`). W porządku dla certyfikatów True SSO, które żyją minuty lub godziny. |
+
+`SSSD_CERT_VERIFICATION` dalej działa dla ekspertów i ma pierwszeństwo przed `CERT_REVOCATION`.
+
+**Bilet Kerberos po logowaniu certyfikatem (katalogi NFS krb5).** TGT po logowaniu certyfikatem daje
+tylko PKINIT: `krb5-pkinit` i `pkinit_anchors` w `krb5.conf` (tryb `domain` zapisuje je na budowanym
+obrazie; na przejętym `check` L31 powie, czego brakuje). Bez tego logowanie działa, ale katalog NFS
+sec=krb5 zostaje zamknięty. Certyfikat KDC ze starego szablonu *Domain Controller* wymaga jeszcze
+`pkinit_eku_checking = kpServerAuth` i `pkinit_kdc_hostname` (`KRB5_KDC`).
+
+**Karty na Debianie 12 / 13.** Debian 13 ma profil PAM `sss-smart-card-optional` i narzędzie go włącza
+(hasło nadal działa). Debian 12 go nie ma: narzędzie wypisuje linię do ręcznego dopisania w
+`/etc/pam.d/common-auth`.
+
+**Kontrole.** L18 podstawa (pakiet CA, `pam_cert_auth`, pcscd dla kart), L28 reguła przypięta do CA
+wystawiającego, L29 `local_auth_policy` (Debian 13), L30 CRL ważna i timer włączony, L31 PKINIT. `diag`
+ma sekcję *certificate logon*. Wyłączenie obu opcji i ponowne `domain` usuwa plik i timer.
+
+**Test na klonie** (bez schowka): zaloguj się przez Connection Server z True SSO, potem `klist` (bilet
+TGT = PKINIT działa) i `ls ~` (katalog NFS). Jeśli zamiast tego pyta o hasło, uruchom na klonie
+`sudo ./vdi-imagemaint.sh diag`.
+
 ## Co zmieniają tryby
 
 - **domain**: zapisuje `krb5.conf`, `sssd.conf` i `smb.conf` i dołącza obraz wzorcowy przez `realm join`
   (adcli). Nadaje sudo grupom AD. Przy `OfflineJoinDomain=sssd` agent Horizon tworzy potem konto
   komputera i keytab dla każdego klona. Bilety są w `FILE:/tmp/krb5cc_%U`, bo rpc.gssd nie czyta KCM.
-  - **True SSO / karta** (`TRUESSO_ENABLE`, `SMARTCARD_ENABLE`): instaluje pcscd, OpenSC i krb5-pkinit
-    i zapisuje łańcuch CA z `certs/` do `/etc/sssd/pki/sssd_auth_ca_db.pem`. Ustawia `pam_cert_auth`
-    i dodaje `pkinit_anchors` do krb5.conf, więc logowanie certyfikatem też daje bilet TGT i NFS krb5p
-    działa. Agent jest instalowany z `-T yes` / `-m yes`.
+  - **True SSO / karta** (`TRUESSO_ENABLE`, `SMARTCARD_ENABLE`): łańcuch CA z `certs/` do
+    `/etc/sssd/pki/sssd_auth_ca_db.pem`, `pkinit_anchors` w krb5.conf i plik SSSD
+    `conf.d/50-vdi-imagemaint-certlogon.conf` - zobacz *Logowanie certyfikatem* wyżej.
   - **FIDO2** (`FIDO_ENABLE`, eksperymentalnie): `fido2-tools` jest instalowane przed seal. Uruchom
     `fido` w sesji Horizon na klonie, z kluczem włożonym do klienta. Tryb pokaże urządzenia FIDO2
     widoczne w pulpicie.

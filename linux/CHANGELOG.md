@@ -1,5 +1,27 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.9.0 – 2026-10-22
+- Certificate logon (True SSO / smart card) reworked in mode `domain`, with what the sssd-smartcard project measured on
+  a real host (SSSD 2.9/2.10). Everything certificate-related now lives in `/etc/sssd/conf.d/50-vdi-imagemaint-certlogon.conf`
+  (sssctl config-check + restart, rolled back on failure), no longer inside `sssd.conf` - so `domain` adds certificate
+  logon to an **adopted** image without rewriting its SSSD configuration (before, the adopted step was simply skipped).
+  - certmap rule pinned to the issuing CA (`<ISSUER>` + `<EKU>msScLogin`), found automatically in `CERT_CA_FILES` or set with
+    `TRUESSO_ISSUER_CA` / `SMARTCARD_ISSUER_CA`; mapped by the AD attribute `userPrincipalName` (was `userPrincipal`, which matches
+    nothing - logons only worked when the UPN prefix equalled sAMAccountName); no `domains =`, so alternative UPN suffixes work.
+  - `local_auth_policy = enable:smartcard` on SSSD >= 2.9.3 (Debian 13): without it the AD provider verifies the certificate
+    and still asks for a password. Not written on Debian 12 (SSSD 2.8 rejects the option).
+  - `CERT_REVOCATION` = ocsp (default, unchanged) | soft_ocsp | crl | none. `crl` fetches one CRL per CA from `CERT_CRL_URLS`
+    (DER or PEM), checks signature, expiry and completeness, and keeps it fresh hourly with `vdi-imagemaint-crl.timer` on the
+    golden image and the clones; a failed refresh never replaces the working file.
+  - Smart card PAM profile only where it exists (Debian 13); Debian 12 gets the line to add by hand (before, pam-auth-update
+    was called with a profile Debian 12 does not have).
+  - `sss_cache -E` only right after a join (re-running `domain` on a joined image kept invalidating the cache).
+  - check: L18 (pcscd only for smart cards; reads conf.d), new L28 certmap pinned / `userPrincipal` warning, L29
+    local_auth_policy, L30 CRL validity + timer, L31 PKINIT; `diag` has a certificate logon section.
+- Docs: *Certificate logon: True SSO and smart card* (EN/PL); step-by-step tutorial `docs/tutorial.md` / `docs/pl/tutorial.md`.
+- Tested in debian:12 and debian:13 containers (real SSSD reading the snippet, generated PKI and CRLs over http); not yet on
+  a VM with True SSO.
+
 ## 0.8.1 – 2026-10-21
 - Course apps: **Demeter** (Athena, Artemis, Hephaestus, Atoms) from `libdemeter-perl` - Debian 13 has it (0.9.27, `contrib`; the
   0.7.1 note "not packaged in Debian" was wrong for trixie; Debian 12 has none). New `COURSES_APT_COMPONENTS="contrib non-free"`:

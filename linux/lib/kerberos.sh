@@ -208,6 +208,17 @@ mode_diag() {
         ls -l /etc/sssd/conf.d/ 2>&1 || true
         sed -nE '/^\[|domains|id_provider|access_provider|ad_gpo|fully_qualified|homedir|password_age|krb5_/p' \
             /etc/sssd/sssd.conf /etc/sssd/conf.d/*.conf 2>/dev/null || true
+        echo "== certificate logon (True SSO / smart card)"
+        sed -nE '/^\[|pam_cert|pam_p11|certificate_verification|local_auth_policy|matchrule|maprule/p' \
+            /etc/sssd/sssd.conf /etc/sssd/conf.d/*.conf 2>/dev/null | grep -v '^\[domain\|^\[sssd\]\|^\[nss' || true
+        for dir in /etc/sssd/pki/sssd_auth_ca_db.pem; do
+            [[ -s $dir ]] && awk '/BEGIN CERT/{n++} END{print "CA certificates in bundle: " n+0}' "$dir"
+        done
+        if [[ -s $CERT_CRL_FILE ]]; then
+            awk '/BEGIN X509 CRL/{n++} END{print "CRLs in " FILENAME ": " n+0}' "$CERT_CRL_FILE"
+            systemctl status --no-pager -n 3 vdi-imagemaint-crl.service 2>&1 | tail -n 4 || true
+        fi
+        grep -h pam_sss /etc/pam.d/common-auth /etc/pam.d/gdm-hzncred 2>/dev/null || true
         echo "== keytab (principal, kvno; no keys)"
         klist -k /etc/krb5.keytab 2>/dev/null | awk 'NR>3 {print $1, $2}' | sort -u | head -n 10 || true
         echo "== kinit -k (machine keytab against the KDC)"

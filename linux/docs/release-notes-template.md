@@ -3,6 +3,8 @@
      releases/latest/download/get-vdi-imagemaint.sh. -->
 VDI-ImageMaint for Linux **{{VERSION}}** – golden-image tool for **Debian 12 and 13** (MATE session, GDM, Horizon SSO) on **Omnissa Horizon 8 Instant Clone**.
 
+Step-by-step guide with where every file goes: [English](https://github.com/franekSoftSF/horizon-scripts/blob/main/linux/docs/tutorial.md) · [polski](https://github.com/franekSoftSF/horizon-scripts/blob/main/linux/docs/pl/tutorial.md)
+
 ## 0. Fresh Debian: curl and sudo
 
 A fresh Debian 12 has `wget` but no `curl`. If you set a root password during the installation, `sudo` is missing
@@ -49,7 +51,8 @@ sudo ./vdi-imagemaint.sh check          # 0 ERR expected
 sudo ./vdi-imagemaint.sh update         # (S) packages first (apt full-upgrade, agents), reboot if asked
 sudo ./vdi-imagemaint.sh nfsmount       # (S) NFS homes from fstab mounted on first access, then: sudo reboot + test
 sudo ./vdi-imagemaint.sh usb            # (S) USB 3.0 / FIDO2 driver (VHCI), then: sudo reboot
-sudo ./vdi-imagemaint.sh kerberos       # (S) machine password / time sync safety, then: sudo reboot + logon test
+sudo ./vdi-imagemaint.sh kerberos       # (S) machine password safety, then: sudo reboot + logon test
+sudo ./vdi-imagemaint.sh domain         # (S) only for True SSO / smart card (TRUESSO_ENABLE ..., CA files in certs/): adds the SSSD certificate file
 sudo ./vdi-imagemaint.sh courses        # installs course apps, "Courses" folder in the MATE menu
 sudo ./vdi-imagemaint.sh optimize       # VDI tuning (undo: optimize --revert)
 sudo ./vdi-imagemaint.sh collab         # Session Collaboration, asks for the UAG link
@@ -115,6 +118,7 @@ Wtedy jako root (`su -`): `apt-get update && apt-get install -y curl ca-certific
 3a. `nfsmount` – katalogi domowe NFS z fstab montowane przy pierwszym dostępie; potem restart i test.
 4. `usb`, potem restart.
 5. `kerberos`, potem restart i test logowania.
+5a. `domain` – tylko dla True SSO / karty (ustaw `TRUESSO_ENABLE` itd., certyfikaty CA w `certs/`): dodaje plik certyfikatów SSSD. Snapshot przed, test logowania po.
 6. `courses` – aplikacje do zajęć i folder Zajęcia.
 7. `optimize`
 8. `collab` – pyta o link UAG.

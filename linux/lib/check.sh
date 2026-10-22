@@ -110,12 +110,7 @@ mode_check() {
     fi
 
     if cert_logon_enabled; then
-        if [[ -s $SSSD_CA_DB ]] && grep -q '^pam_cert_auth = True' /etc/sssd/sssd.conf 2>/dev/null &&
-            [[ $(unit_enabled_state pcscd.socket) == enabled ]]; then
-            check_result OK L18 chk_cert_ok
-        else
-            check_result ERR L18 chk_cert_bad
-        fi
+        check_certlogon
     fi
     if [[ $FIDO_ENABLE == yes ]]; then
         if command -v fido2-token >/dev/null 2>&1; then
@@ -284,4 +279,92 @@ mode_status() {
             "$(state_file build)")
     fi
     if is_sealed; then logt WARN status_sealed; else logt INFO status_unsealed; fi
+}
+
+# Certificate logon (True SSO / smart card): L18 base, L28 certmap rule, L29
+# local_auth_policy, L30 revocation, L31 PKINIT. Effective SSSD values come from
+# sssd.conf AND /etc/sssd/conf.d (the snippet overrides the main file).
+sssd_effective() {
+    local sec=$1 key=$2 f v out=""
+    for f in /etc/sssd/sssd.conf /etc/sssd/conf.d/*.conf; do
+        [[ -r $f ]] || continue
+        v=$(awk -v sec="[$sec]" -v key="$key" '
+            /^[[:space:]]*\[/ {cur = $0; gsub(/[[:space:]]/, "", cur); next}
+            cur == sec {
+                line = $0; sub(/^[[:space:]]*/, "", line)
+                k = line; sub(/[[:space:]]*=.*/, "", k)
+                if (k == key) { sub(/^[^=]*=[[:space:]]*/, "", line); print line; exit }
+            }' "$f")
+        [[ -n $v ]] && out=$v
+    done
+    printf '%s' "$out"
+}
+
+check_certlogon() {
+    local ok=1
+    [[ -s $SSSD_CA_DB ]] || ok=0
+    [[ $(sssd_effective pam pam_cert_auth) == [Tt]rue ]] || ok=0
+    if [[ $SMARTCARD_ENABLE == yes && $(unit_enabled_state pcscd.socket) != enabled ]]; then ok=0; fi
+    if ((ok)); then
+        check_result OK L18 chk_cert_ok
+    else
+        check_result ERR L18 chk_cert_bad
+    fi
+
+    local rules
+    rules=$(cat /etc/sssd/sssd.conf /etc/sssd/conf.d/*.conf 2>/dev/null | grep -E '^[[:space:]]*matchrule[[:space:]]*=' || true)
+    if [[ -z $rules ]]; then
+        check_result ERR L28 chk_certmap_none
+    elif grep -q '<ISSUER>' <<<"$rules"; then
+        check_result OK L28 chk_certmap_pinned
+    else
+        check_result WARN L28 chk_certmap_unpinned
+    fi
+    if grep -qF '(userPrincipal=' /etc/sssd/sssd.conf /etc/sssd/conf.d/*.conf 2>/dev/null; then
+        check_result WARN L28 chk_certmap_userprincipal
+    fi
+
+    local lap
+    if sssd_version_ge 2.9.3; then
+        lap=$(sssd_effective "domain/${AD_DOMAIN}" local_auth_policy)
+        if [[ $lap == *enable:smartcard* || $lap == *only* ]]; then
+            check_result OK L29 chk_lap_ok "$lap"
+        else
+            check_result ERR L29 chk_lap_bad "${lap:-match}"
+        fi
+    fi
+
+    local verif crl next left
+    verif=$(sssd_effective sssd certificate_verification)
+    crl=$(sed -nE 's/.*crl_file=([^,[:space:]]+).*/\1/p' <<<"$verif")
+    if [[ -n $crl ]]; then
+        if [[ ! -s $crl ]]; then
+            check_result ERR L30 chk_crl_missing "$crl"
+        else
+            # The soonest nextUpdate of all CRLs in the file (openssl crl reads only the first).
+            local tmpd
+            tmpd=$(mktemp -d)
+            awk -v d="$tmpd" '/-----BEGIN X509 CRL-----/{n++} n{print > (d "/" n ".pem")}' "$crl"
+            next=$(for f in "$tmpd"/*.pem; do openssl crl -in "$f" -noout -nextupdate 2>/dev/null | cut -d= -f2-; done |
+                while read -r l; do date -d "$l" +%s; done | sort -n | sed -n 1p)
+            rm -rf "$tmpd"
+            left=$(( (${next:-0} - $(date +%s)) / 3600 ))
+            if ((left <= 0)); then
+                check_result ERR L30 chk_crl_expired "$crl"
+            elif ((left < 24)); then
+                check_result WARN L30 chk_crl_soon "$crl" "$left"
+            else
+                check_result OK L30 chk_crl_ok "$crl" "$left"
+            fi
+            [[ $(unit_enabled_state vdi-imagemaint-crl.timer) == enabled ]] || check_result WARN L30 chk_crl_timer
+        fi
+    else
+        check_result INFO L30 chk_revocation "${verif:-OCSP}"
+    fi
+
+    if pkg_installed krb5-pkinit && grep -q pkinit_anchors /etc/krb5.conf 2>/dev/null; then
+        check_result OK L31 chk_pkinit_ok
+    else
+        check_result WARN L31 chk_pkinit_bad
+    fi
 }

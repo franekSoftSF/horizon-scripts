@@ -1,6 +1,6 @@
 # Status – VDI-ImageMaint dla Linuksa
 
-_Aktualizacja: 2026-10-16_ · wersja **0.8.0** · Debian 12/13 + MATE · Horizon 2506 Instant Clone
+_Aktualizacja: 2026-10-22_ · wersja **0.9.0** · Debian 12/13 + MATE · Horizon 2506 Instant Clone
 
 ## Zrobione
 - [x] Szkielet: `vdi-imagemaint.sh` (menu + tryby), `lib/common.sh` (konfiguracja, i18n EN/PL, log, śledzenie zmian w JSON)
@@ -74,6 +74,11 @@ _Aktualizacja: 2026-10-16_ · wersja **0.8.0** · Debian 12/13 + MATE · Horizon
 - [x] 0.7.1: Larch/Larix + Ifeffit + Feff (XAS, prośba wykładowców o Demeter – Demeter nie ma w Debianie) w Zajęcia > Edukacja
 
 - [x] 0.8.1: Demeter (Athena/Artemis/Hephaestus/Atoms) z `libdemeter-perl` (Debian 13, contrib + non-free włączane przez courses), wpisy menu w Zajęcia > Edukacja – **do sprawdzenia na VDI**
+
+- [x] 0.9.0: logowanie certyfikatem (True SSO / karta) przebudowane z wiedzą z projektu SSSD CertAuth: osobny plik
+      `conf.d/50-vdi-imagemaint-certlogon.conf` (także na obrazie po `adopt`, bez przepisywania sssd.conf), reguła przypięta do CA
+      wystawiającego, `userPrincipalName` zamiast `userPrincipal`, `local_auth_policy` na Debianie 13, CRL z timerem (także na klonach),
+      L28–L31, diag; samouczek krok po kroku EN/PL (`docs/tutorial.md`). Testy w kontenerach debian:12/13 – **do sprawdzenia na VM z True SSO**
 
 - [x] 0.8.0: Pula – po customizacji brak logowania domenowego na klonach (obraz wzorcowy działał) → usunięte czekanie SSSD na zegar i restart SSSD/zegara w skrypcie klona (wchodziły w paradę ClonePrep); kerberos/seal sprzątają pozostałości; L25 ERR; testy regresji
 
