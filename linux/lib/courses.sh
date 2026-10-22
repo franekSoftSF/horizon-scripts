@@ -290,6 +290,7 @@ folder-children=${children}
 name='vdi-courses.directory'
 translate=true
 apps=[${apps}]
+$(if [[ -n ${COURSES_ALIVE_TIMEOUT_MS:-} ]]; then printf '\n[org/gnome/mutter]\ncheck-alive-timeout=uint32 %s\n' "$COURSES_ALIVE_TIMEOUT_MS"; fi)
 EOF
     if [[ $COURSES_LOCK == yes ]]; then
         write_file courses "$MENU_DCONF_LOCKS" 0644 <<EOF

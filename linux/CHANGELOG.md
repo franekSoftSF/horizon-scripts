@@ -1,5 +1,13 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.10.2 – 2026-10-23
+- Fix (VM): the "Wx::Perl::SplashFast::App is not responding" dialog stayed after 0.10.1. `dathena` / `dartemis` show their
+  splash screen in a BEGIN block and then compile the whole UI (Wx, PDL, Demeter) without answering window pings; GNOME
+  reports "not responding" after 5 s - on the VM that load takes longer, whatever the backend. New
+  `COURSES_ALIVE_TIMEOUT_MS="30000"`: courses sets `org.gnome.mutter check-alive-timeout` in the system dconf database
+  (same managed file as the Courses folder, removed by `courses --revert`; "" = GNOME default 5000). Verified in debian:13
+  (GNOME 48): a user reads uint32 30000. Existing images: run `courses` again, then log off and on.
+
 ## 0.10.1 – 2026-10-23
 - Fix (VM): Athena / Artemis started from the menu showed "Wx::Perl::SplashFast::App is not responding" before opening. Demeter
   tries the Larch backend first: it finds `larch_server` from python3-xraylarch, starts it (fails with Debian's Larch:

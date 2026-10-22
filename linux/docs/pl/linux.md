@@ -222,6 +222,9 @@ portu 9443 na serwerze. Narzędzie:
   źródła). Pakiet nie ma wpisów w menu: `courses` tworzy `vdi-demeter-*.desktop` (Zajęcia > Edukacja). Ustawienia
   użytkownika trafiają do `~/.horae` w katalogu domowym. Wpisy uruchamiają Demeter z `DEMETER_FORCE_IFEFFIT=1`: bez tego
   najpierw próbuje backendu Larch, czeka na niego kilka sekund, a ekran powitalny pokazuje „nie odpowiada”.
+  Także z Ifeffit interfejs ładuje się ponad 5 s za ekranem powitalnym, który nie odpowiada, więc `courses` wydłuża
+  wszystkim limit GNOME dla „nie odpowiada” (`COURSES_ALIVE_TIMEOUT_MS="30000"`, dconf `org.gnome.mutter
+  check-alive-timeout`; `""` zostawia domyślne 5000).
 - `get-vdi-imagemaint.sh` zakłada katalogi `Horizon/` i `certs/` i pobiera źródła USB VHCI. Instalatory Omnissa
   wymagają logowania w Customer Connect i kopiuje się je ręcznie.
 - `courses --revert` usuwa folder.

@@ -1,6 +1,6 @@
 # Status – VDI-ImageMaint dla Linuksa
 
-_Aktualizacja: 2026-10-22_ · wersja **0.10.1** · Debian 12/13 + MATE · Horizon 2506 Instant Clone
+_Aktualizacja: 2026-10-22_ · wersja **0.10.2** · Debian 12/13 + MATE · Horizon 2506 Instant Clone
 
 ## Zrobione
 - [x] Szkielet: `vdi-imagemaint.sh` (menu + tryby), `lib/common.sh` (konfiguracja, i18n EN/PL, log, śledzenie zmian w JSON)
@@ -84,6 +84,7 @@ _Aktualizacja: 2026-10-22_ · wersja **0.10.1** · Debian 12/13 + MATE · Horizo
 - [x] 0.9.3: VM – `NFS_ENABLE="Yes"` liczone jako „nie” → przełączniki bez względu na wielkość liter (także tak/nie); check L09 ostrzega o złej strefie czasowej
 - [x] 0.9.4: VM – `prepare`: blokada dpkg (apt-daily po starcie) → apt czeka do 10 min; błąd wskazuje polecenie, nie `return`
 - [x] VM: nowy obraz Debian 13 zbudowany (domena, NFS fstab /home/STUDENT) – agent 2606 po aktualizacji Connection Servera w weekend
+- [x] 0.10.2: GNOME „nie odpowiada” dopiero po 30 s (`COURSES_ALIVE_TIMEOUT_MS`) – ekran powitalny Demetera nie odpowiada podczas ładowania UI
 - [x] 0.10.1: Demeter z menu startuje od razu z Ifeffit (`DEMETER_FORCE_IFEFFIT=1`) – wcześniej „not responding” przy ekranie powitalnym (próba backendu Larch)
 - [x] 0.10.0: tryb `setup` – kreator nowego obrazu (pytania o ustawienia, potem kroki po kolei, wznawianie po restarcie); `adopt` na świeżym systemie proponuje kreatora zamiast przejmować kroki
 

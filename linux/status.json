@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-23",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "platform": {
     "os": "Debian 12 bookworm / Debian 13 trixie",
     "desktop": "MATE + LightDM",
