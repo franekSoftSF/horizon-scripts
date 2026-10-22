@@ -2,7 +2,7 @@
 # VDI-ImageMaint for Linux - shared helpers: config, i18n, logging, state, tracked changes.
 # Sourced by vdi-imagemaint.sh; expects VDI_ROOT to be set.
 
-VDI_VERSION="0.9.2"
+VDI_VERSION="0.9.3"
 STATE_DIR="/var/lib/vdi-imagemaint"
 LOG_DIR="/var/log/vdi-imagemaint"
 LOG_FILE="${LOG_DIR}/vdi-imagemaint-$(date +%Y%m%d).log"
@@ -23,6 +23,34 @@ load_config() {
     fi
     [[ -f $local_conf ]] && . "$local_conf"
     CONF_FILE=$local_conf
+    normalize_switches
+}
+
+# Switches are compared with == yes / == true everywhere. A hand-written "Yes", "TAK" or
+# "True" silently counted as "no" (NFS_ENABLE="Yes" on the VM, 0.9.2). Every setting whose
+# default is yes/no or true/false is normalised to that vocabulary, case-insensitively;
+# anything else is left alone.
+normalize_switches() {
+    local name def val
+    while IFS='=' read -r name def; do
+        def=${def%%\"*}
+        val=${!name-}
+        val=${val,,}
+        case $def in
+            yes | no)
+                case $val in
+                    yes | y | tak | t | true | on | 1) printf -v "$name" yes ;;
+                    no | n | nie | false | off | 0) printf -v "$name" no ;;
+                esac
+                ;;
+            true | false)
+                case $val in
+                    true | yes | y | tak | t | on | 1) printf -v "$name" true ;;
+                    false | no | n | nie | off | 0) printf -v "$name" false ;;
+                esac
+                ;;
+        esac
+    done < <(sed -nE 's/^([A-Z][A-Z0-9_]*)="(yes|no|true|false)".*/\1=\2/p' "${VDI_ROOT}/conf/defaults.conf")
 }
 
 # Fail when a required setting is empty or still holds the example value.

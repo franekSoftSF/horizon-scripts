@@ -125,6 +125,13 @@ mode_check() {
     else
         check_result WARN L09 chk_time_bad
     fi
+    # The Debian installer in English picks a US time zone; prepare sets TIMEZONE, but an
+    # adopted prepare step never runs it.
+    local tz
+    tz=$(timedatectl show -p Timezone --value 2>/dev/null || true)
+    if [[ -n $tz && -n ${TIMEZONE:-} && $tz != "$TIMEZONE" ]]; then
+        check_result WARN L09 chk_tz_bad "$tz" "$TIMEZONE"
+    fi
 
     if [[ -n $(dig +short -t SRV "_ldap._tcp.${AD_DOMAIN}" 2>/dev/null) ]]; then
         check_result OK L10 chk_dns_ok "$AD_DOMAIN"

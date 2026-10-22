@@ -220,6 +220,10 @@ check "domain_is_joined requires the machine keytab" 'grep -q domain_has_keytab 
 order=$(grep -nE '^[[:space:]]+(domain_write_smb|domain_join)$' "$ROOT/lib/domain.sh" | cut -d: -f2 | tr -d ' ' | tr '\n' ' ')
 check "smb.conf written after the join (${order})" '[[ $order == "domain_join domain_write_smb " ]]'
 
+# --- regression: switches are case-insensitive (NFS_ENABLE="Yes" counted as "no" on the VM, 0.9.2)
+sw=$(cd "$ROOT" && VDI_ROOT=$ROOT bash -c '. lib/common.sh; NFS_ENABLE=Yes USB_ENABLE=NIE SSSD_FQ_NAMES=TAK SEAL_HIDE_POWER=maybe; normalize_switches; echo "$NFS_ENABLE $USB_ENABLE $SSSD_FQ_NAMES $SEAL_HIDE_POWER"')
+check "yes/no switches normalised (${sw})" '[[ $sw == "yes no true maybe" ]]'
+
 # --- certificate logon (True SSO / smart card): rule shape, issuer pin, revocation ------
 # Lessons measured in the sssd-smartcard project - see docs/linux.md "Certificate logon".
 cert_bad=$(grep -nE '^[^#]*(matchrule|maprule).*(&&|\(userPrincipal=)' "$ROOT/lib/domain.sh" || true)
