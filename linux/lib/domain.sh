@@ -32,8 +32,33 @@ domain_defaults() {
     fi
 }
 
+# Joined = realmd lists the domain AND the machine keytab holds a principal of its realm.
+# realmd alone is not enough: it reports a domain as configured as soon as smb.conf says
+# "security = ads" (or sssd.conf names it) - written by an earlier run that never joined
+# (0.9.1 on the VM: "Already joined", no password prompt, then SSSD would not start).
 domain_is_joined() {
+    domain_realm_listed && domain_has_keytab
+}
+
+domain_realm_listed() {
     command -v realm >/dev/null 2>&1 && realm list --name-only 2>/dev/null | grep -qix "$AD_DOMAIN"
+}
+
+domain_has_keytab() {
+    klist -k /etc/krb5.keytab 2>/dev/null | grep -qi "@${AD_REALM:-${AD_DOMAIN^^}}\$"
+}
+
+# realmd claims the domain but there is no keytab: move the configuration that makes it
+# think so out of the way (originals are kept by file_track), so realm join runs.
+domain_clear_stale_join() {
+    local f
+    domain_realm_listed || return 0
+    logt WARN domain_stale_join "$AD_DOMAIN"
+    for f in /etc/samba/smb.conf /etc/sssd/sssd.conf; do
+        [[ -f $f ]] || continue
+        file_track build "$f"
+        run mv -f "$f" "${f}.vdi-prejoin"
+    done
 }
 
 cert_logon_enabled() {
@@ -54,17 +79,19 @@ mode_domain() {
     fi
 
     domain_write_krb5
-    domain_write_smb
     domain_check_dns
 
     local joined_now=0
     if domain_is_joined; then
         logt OK domain_already_joined "$AD_DOMAIN"
     else
+        domain_clear_stale_join
         run realm discover "$AD_DOMAIN" || logt WARN domain_discover_failed "$AD_DOMAIN"
         domain_join
         joined_now=1
     fi
+    # After the join: written before it, smb.conf alone made realmd report "joined".
+    domain_write_smb
 
     domain_write_sssd
     domain_write_sudoers

@@ -410,3 +410,4 @@ MSG[chk_crl_timer]='vdi-imagemaint-crl.timer is not enabled - the CRL will expir
 MSG[chk_revocation]='Certificate revocation: %s.'
 MSG[chk_pkinit_ok]='PKINIT ready (krb5-pkinit, pkinit_anchors): certificate logons get a Kerberos ticket.'
 MSG[chk_pkinit_bad]='PKINIT not ready (krb5-pkinit or pkinit_anchors missing): certificate logons get no Kerberos ticket.'
+MSG[domain_stale_join]='realmd lists %s, but the machine keytab holds no principal of it (left over from a run that did not join) - joining now; smb.conf and sssd.conf are moved to *.vdi-prejoin.'

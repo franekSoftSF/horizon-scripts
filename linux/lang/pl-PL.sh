@@ -410,3 +410,4 @@ MSG[chk_crl_timer]='vdi-imagemaint-crl.timer nie jest włączony - lista CRL wyg
 MSG[chk_revocation]='Sprawdzanie unieważnień certyfikatów: %s.'
 MSG[chk_pkinit_ok]='PKINIT gotowy (krb5-pkinit, pkinit_anchors): logowanie certyfikatem daje bilet Kerberos.'
 MSG[chk_pkinit_bad]='PKINIT niegotowy (brak krb5-pkinit lub pkinit_anchors): logowanie certyfikatem nie da biletu Kerberos.'
+MSG[domain_stale_join]='realmd pokazuje %s, ale keytab komputera nie ma jego konta (pozostałość po uruchomieniu, które nie dołączyło) - dołączam teraz; smb.conf i sssd.conf przeniesione do *.vdi-prejoin.'

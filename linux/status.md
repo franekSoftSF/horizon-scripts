@@ -1,6 +1,6 @@
 # Status – VDI-ImageMaint dla Linuksa
 
-_Aktualizacja: 2026-10-22_ · wersja **0.9.1** · Debian 12/13 + MATE · Horizon 2506 Instant Clone
+_Aktualizacja: 2026-10-22_ · wersja **0.9.2** · Debian 12/13 + MATE · Horizon 2506 Instant Clone
 
 ## Zrobione
 - [x] Szkielet: `vdi-imagemaint.sh` (menu + tryby), `lib/common.sh` (konfiguracja, i18n EN/PL, log, śledzenie zmian w JSON)
@@ -80,6 +80,7 @@ _Aktualizacja: 2026-10-22_ · wersja **0.9.1** · Debian 12/13 + MATE · Horizon
       wystawiającego, `userPrincipalName` zamiast `userPrincipal`, `local_auth_policy` na Debianie 13, CRL z timerem (także na klonach),
       L28–L31, diag; samouczek krok po kroku EN/PL (`docs/tutorial.md`). Testy w kontenerach debian:12/13 – **do sprawdzenia na VM z True SSO**
 - [x] 0.9.1: VM – `domain` na nowym Debianie 13: „realm: command not found” (PATH bez /usr/sbin przy `su` bez `-`) → narzędzie samo dopisuje sbin do PATH
+- [x] 0.9.2: VM – ponowne `domain`: „Already joined” przez smb.conf z nieudanego uruchomienia, brak pytania o hasło, SSSD nie wstał → „dołączony” wymaga keytabu, smb.conf po dołączeniu
 
 - [x] 0.8.0: Pula – po customizacji brak logowania domenowego na klonach (obraz wzorcowy działał) → usunięte czekanie SSSD na zegar i restart SSSD/zegara w skrypcie klona (wchodziły w paradę ClonePrep); kerberos/seal sprzątają pozostałości; L25 ERR; testy regresji
 

@@ -2,7 +2,7 @@
 # VDI-ImageMaint for Linux - shared helpers: config, i18n, logging, state, tracked changes.
 # Sourced by vdi-imagemaint.sh; expects VDI_ROOT to be set.
 
-VDI_VERSION="0.9.1"
+VDI_VERSION="0.9.2"
 STATE_DIR="/var/lib/vdi-imagemaint"
 LOG_DIR="/var/log/vdi-imagemaint"
 LOG_FILE="${LOG_DIR}/vdi-imagemaint-$(date +%Y%m%d).log"
@@ -97,7 +97,11 @@ logt() {
 run() {
     log INFO "\$ $*"
     if [[ -w $LOG_DIR ]]; then
-        "$@" 2>&1 | tee -a "$LOG_FILE"
+        # pipefail: rc is the command's status; returning it makes an error point at the
+        # caller's "run <command>" line instead of at tee.
+        local rc=0
+        { "$@" 2>&1 | tee -a "$LOG_FILE"; } || rc=$?
+        return "$rc"
     else
         "$@"
     fi

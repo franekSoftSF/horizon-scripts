@@ -1,5 +1,13 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.9.2 – 2026-10-22
+- Fix (VM): the second `domain` run on a new image said "Already joined", never asked for the join password, and SSSD did
+  not start. The first (failed) run had written `smb.conf` with `security = ads` before the join, and realmd reports a domain
+  as configured from that file alone. Now "joined" also needs a principal of the realm in `/etc/krb5.keytab`; when realmd
+  claims the domain without one, `smb.conf`/`sssd.conf` are moved to `*.vdi-prejoin` (originals tracked) and `realm join`
+  runs. `smb.conf` is written only after the join. Regression tests.
+- Errors from `run <command>` now name the command instead of `tee -a "$LOG_FILE"`.
+
 ## 0.9.1 – 2026-10-22
 - Fix (VM): `domain` on a new Debian 13 image stopped with "realm: command not found" right after realmd was installed.
   `realm`, `adcli` and `sss_cache` are in /usr/sbin, which is not in PATH when root comes from `su` without `-`. The tool

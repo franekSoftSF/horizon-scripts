@@ -213,6 +213,13 @@ fi
 sbin_path=$(env -i PATH=/usr/bin:/bin HOME=/tmp bash -c 'sed -n "/^for _dir in/,/^export PATH/p" "$1" > /tmp/vdi-path.$$; . /tmp/vdi-path.$$; rm -f /tmp/vdi-path.$$; echo "$PATH"' _ "$ROOT/vdi-imagemaint.sh")
 check "entry script puts /usr/sbin and /sbin in PATH (${sbin_path})" '[[ :$sbin_path: == *:/usr/sbin:* && :$sbin_path: == *:/sbin:* ]]'
 
+# --- regression: "joined" needs the keytab, and smb.conf is written only after the join
+# (0.9.1 on the VM: smb.conf from a failed run -> realm list "joined" -> no realm join, SSSD down)
+join_fn=$(sed -n '/^domain_is_joined()/,/^}/p' "$ROOT/lib/domain.sh")
+check "domain_is_joined requires the machine keytab" 'grep -q domain_has_keytab <<<"$join_fn"'
+order=$(grep -nE '^[[:space:]]+(domain_write_smb|domain_join)$' "$ROOT/lib/domain.sh" | cut -d: -f2 | tr -d ' ' | tr '\n' ' ')
+check "smb.conf written after the join (${order})" '[[ $order == "domain_join domain_write_smb " ]]'
+
 # --- certificate logon (True SSO / smart card): rule shape, issuer pin, revocation ------
 # Lessons measured in the sssd-smartcard project - see docs/linux.md "Certificate logon".
 cert_bad=$(grep -nE '^[^#]*(matchrule|maprule).*(&&|\(userPrincipal=)' "$ROOT/lib/domain.sh" || true)
