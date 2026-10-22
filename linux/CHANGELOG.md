@@ -1,5 +1,15 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.10.0 – 2026-10-23
+- New mode `setup`: guided build of a new golden image. Asks for the settings (domain, join account, OU, access and sudo
+  groups, time zone, keyboard, locale, NFS, True SSO / smart card with CA files and revocation, USB, microphone; the current
+  value is the default), writes `vdi-imagemaint.conf`, then offers every build step in order, each as its own process.
+  Finished steps are remembered: after the reboot that follows the agent (or after a failure) `setup` continues with the next
+  step. Without an agent archive it stops and says where to put it. First entry in the menu.
+- `adopt` on a fresh Debian (no domain join, no agent, no NFS homes) no longer marks prepare / nfs as done - it says there is
+  nothing to adopt and offers `setup` (on the VM this had kept the US time zone and skipped NFS).
+- Tutorials: path B uses `setup`.
+
 ## 0.9.4 – 2026-10-23
 - Fix (VM): `prepare` stopped with "Could not get lock /var/lib/dpkg/lock-frontend" while apt-daily / unattended-upgrades ran
   after boot. Every apt call now waits up to 10 minutes for the lock (`DPkg::Lock::Timeout=600`).

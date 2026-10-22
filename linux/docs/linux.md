@@ -29,6 +29,8 @@ On the VM, logs are in `/var/log/vdi-imagemaint/` and state is in `/var/lib/vdi-
 
 ## Build (once per golden image)
 
+Easiest: `sudo ./vdi-imagemaint.sh setup` asks for the settings and runs the steps below one by one (after the agent: reboot, run `setup` again). By hand:
+
 ```bash
 sudo cp -r linux /opt/vdi-imagemaint && cd /opt/vdi-imagemaint
 sudo cp vdi-imagemaint.conf.example vdi-imagemaint.conf && sudo nano vdi-imagemaint.conf

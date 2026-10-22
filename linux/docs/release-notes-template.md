@@ -67,6 +67,9 @@ the existing images, set in `vdi-imagemaint.conf`: `NFS_MODE="fstab"`, `NFS_SERV
 `NFS_MOUNTPOINT="/home/STUDENT"`, `HOME_ROOT="/home/STUDENT"`, `NFS_SEC="krb5"`.
 
 ```bash
+sudo ./vdi-imagemaint.sh setup          # guided: asks for the settings, then runs the steps below one by one
+                                        # (after the agent: reboot, then run setup again - it continues)
+# or by hand:
 sudo cp vdi-imagemaint.conf.example vdi-imagemaint.conf
 sudo nano vdi-imagemaint.conf           # AD domain, join account, NFS (NFS_MODE="fstab" ...), ...
 sudo ./vdi-imagemaint.sh prepare        # packages, MATE + GDM, locale, time
@@ -125,7 +128,7 @@ Wtedy jako root (`su -`): `apt-get update && apt-get install -y curl ca-certific
 9. `check`
 10. `seal`, potem snapshot i Push Image.
 
-**2b. Nowy obraz (Debian 12 lub 13).** Debian 13 wymaga agenta Horizon **2606 lub nowszego**. Skopiuj `vdi-imagemaint.conf.example` do `vdi-imagemaint.conf` i uzupełnij; dla jednego udziału NFS jak na obecnych obrazach: `NFS_MODE="fstab"`, `NFS_SERVER`, `NFS_EXPORT`, `NFS_MOUNTPOINT="/home/STUDENT"`, `HOME_ROOT="/home/STUDENT"`, `NFS_SEC="krb5"`. Kolejność:
+**2b. Nowy obraz (Debian 12 lub 13).** Najprościej: `sudo ./vdi-imagemaint.sh setup` – kreator pyta o ustawienia i po kolei wykonuje kroki (po agencie restart i ponownie `setup`). Nie uruchamiaj `adopt` na świeżym systemie. Debian 13 wymaga agenta Horizon **2606 lub nowszego**. Skopiuj `vdi-imagemaint.conf.example` do `vdi-imagemaint.conf` i uzupełnij; dla jednego udziału NFS jak na obecnych obrazach: `NFS_MODE="fstab"`, `NFS_SERVER`, `NFS_EXPORT`, `NFS_MOUNTPOINT="/home/STUDENT"`, `HOME_ROOT="/home/STUDENT"`, `NFS_SEC="krb5"`. Kolejność:
 1. `prepare`
 2. `domain`
 3. `nfs`

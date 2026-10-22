@@ -10,7 +10,7 @@ gdy domena nie działa.
 Dwie drogi:
 
 * **Droga A — obraz, który już masz** (w domenie, z agentem): kroki 1–3, potem A1–A9.
-* **Droga B — nowy obraz** ze świeżego Debiana 12 lub 13: kroki 1–3, potem B1–B10.
+* **Droga B — nowy obraz** ze świeżego Debiana 12 lub 13: kroki 1–3, potem B1 (kreator).
 
 Potem dla obu: krok 4 (zaplombowanie i publikacja) i krok 5 (co miesiąc).
 
@@ -158,72 +158,47 @@ Przejdź do **kroku 4**.
 
 ## Droga B — nowy obraz
 
-**B1. Ustawienia.**
+**Nie uruchamiaj tu `adopt`.** Służy do obrazów zbudowanych bez tego narzędzia. Na świeżym
+Debianie sam to teraz wykryje i zaproponuje kreatora.
+
+**B1. Kreator.** Pyta o ustawienia, zapisuje je, potem po kolei proponuje każdy krok
+(prepare → domain → nfs → agent → restart → recording → apps → courses → optimize → collab →
+check):
 
 ```bash
-sudo cp vdi-imagemaint.conf.example vdi-imagemaint.conf
-sudo nano vdi-imagemaint.conf
+sudo ./vdi-imagemaint.sh setup
 ```
 
-Uzupełnij co najmniej: `AD_DOMAIN`, `AD_JOIN_USER` (konto, które może dodawać komputery do domeny),
-`AD_COMPUTER_OU`, `AD_ACCESS_GROUPS`, `AD_SUDO_GROUPS`, `NFS_SERVER`, `NFS_EXPORT`. Dla jednego udziału
-NFS jak na obecnych obrazach: `NFS_MODE="fstab"`, `NFS_MOUNTPOINT="/home/STUDENT"`,
-`HOME_ROOT="/home/STUDENT"`, `NFS_SEC="krb5"`. Dla True SSO / karty także linie z A7.
+* Każde pytanie pokazuje obecną wartość w `[nawiasie]`; **Enter** ją zostawia, `-` czyści
+  wartość opcjonalną. Przygotuj: domenę AD, konto do dodawania komputerów, serwer i eksport
+  NFS, a przy True SSO pliki CA w `certs/`.
+* Przed każdym krokiem pyta **„Wykonać teraz krok …?”**. `n` pomija ten krok (zostanie
+  zaproponowany następnym razem); `Ctrl+C` przerywa.
+* `domain` pyta o hasło konta do dołączania.
+* Po kroku `agent` proponuje **restart**. Po restarcie uruchom `setup` jeszcze raz: wykonane
+  kroki są pomijane, kreator idzie dalej.
+* Jeśli w `Horizon/` nie ma jeszcze archiwum agenta, kreator zatrzyma się i powie, gdzie je wrzucić.
 
-**B2. System bazowy** (pakiety, pulpit MATE, język, czas).
+Gdy pojawi się *Wszystkie kroki wykonane*, sprawdź logowanie domenowe i przejdź do **kroku 4**.
+
+**Ręcznie** (te same kroki pojedynczo):
 
 ```bash
 sudo ./vdi-imagemaint.sh prepare
-```
-
-**B3. Domena** (SSSD, dołączenie — pyta o hasło konta `AD_JOIN_USER`; logowanie certyfikatem, jeśli włączone).
-
-```bash
 sudo ./vdi-imagemaint.sh domain
-```
-
-**B4. Katalogi domowe NFS.**
-
-```bash
 sudo ./vdi-imagemaint.sh nfs
-```
-
-**B5. Agent Horizon** i sterownik USB. Potem `sudo reboot`.
-
-```bash
-sudo ./vdi-imagemaint.sh agent
-```
-
-**B6. Nagrywanie** (opcjonalnie, pyta o hasło).
-
-```bash
-sudo ./vdi-imagemaint.sh recording
-```
-
-**B7. Aplikacje** (Eclipse, aplikacje do zajęć, folder „Zajęcia”).
-
-```bash
+sudo ./vdi-imagemaint.sh agent      # potem: sudo reboot
+sudo ./vdi-imagemaint.sh recording  # opcjonalnie
 sudo ./vdi-imagemaint.sh apps
 sudo ./vdi-imagemaint.sh courses
-```
-
-**B8. Przyspieszenie.**
-
-```bash
 sudo ./vdi-imagemaint.sh optimize
-```
-
-**B9. Współdzielenie sesji** (pyta o link UAG).
-
-```bash
 sudo ./vdi-imagemaint.sh collab
-```
-
-**B10. Sprawdzenie.** Oczekiwane 0 ERR.
-
-```bash
 sudo ./vdi-imagemaint.sh check
 ```
+
+Ustawienia do pracy ręcznej są w `vdi-imagemaint.conf`; skopiuj do niego
+`vdi-imagemaint.conf.example` i uzupełnij co najmniej `AD_DOMAIN`, `AD_JOIN_USER`, linie `NFS_*`,
+a przy True SSO linie z A7.
 
 ---
 

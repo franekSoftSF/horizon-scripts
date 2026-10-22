@@ -1,6 +1,6 @@
 # Status – VDI-ImageMaint dla Linuksa
 
-_Aktualizacja: 2026-10-22_ · wersja **0.9.4** · Debian 12/13 + MATE · Horizon 2506 Instant Clone
+_Aktualizacja: 2026-10-22_ · wersja **0.10.0** · Debian 12/13 + MATE · Horizon 2506 Instant Clone
 
 ## Zrobione
 - [x] Szkielet: `vdi-imagemaint.sh` (menu + tryby), `lib/common.sh` (konfiguracja, i18n EN/PL, log, śledzenie zmian w JSON)
@@ -83,6 +83,8 @@ _Aktualizacja: 2026-10-22_ · wersja **0.9.4** · Debian 12/13 + MATE · Horizon
 - [x] 0.9.2: VM – ponowne `domain`: „Already joined” przez smb.conf z nieudanego uruchomienia, brak pytania o hasło, SSSD nie wstał → „dołączony” wymaga keytabu, smb.conf po dołączeniu
 - [x] 0.9.3: VM – `NFS_ENABLE="Yes"` liczone jako „nie” → przełączniki bez względu na wielkość liter (także tak/nie); check L09 ostrzega o złej strefie czasowej
 - [x] 0.9.4: VM – `prepare`: blokada dpkg (apt-daily po starcie) → apt czeka do 10 min; błąd wskazuje polecenie, nie `return`
+- [x] VM: nowy obraz Debian 13 zbudowany (domena, NFS fstab /home/STUDENT) – agent 2606 po aktualizacji Connection Servera w weekend
+- [x] 0.10.0: tryb `setup` – kreator nowego obrazu (pytania o ustawienia, potem kroki po kolei, wznawianie po restarcie); `adopt` na świeżym systemie proponuje kreatora zamiast przejmować kroki
 
 - [x] 0.8.0: Pula – po customizacji brak logowania domenowego na klonach (obraz wzorcowy działał) → usunięte czekanie SSSD na zegar i restart SSSD/zegara w skrypcie klona (wchodziły w paradę ClonePrep); kerberos/seal sprzątają pozostałości; L25 ERR; testy regresji
 

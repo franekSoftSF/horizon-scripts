@@ -10,7 +10,7 @@ the domain does not.
 Two ways:
 
 * **Path A — an image you already have** (joined to the domain, agent installed): steps 1–3, then A1–A9.
-* **Path B — a new image** from a fresh Debian 12 or 13: steps 1–3, then B1–B10.
+* **Path B — a new image** from a fresh Debian 12 or 13: steps 1–3, then B1 (guided setup).
 
 Then for both: step 4 (seal and publish) and step 5 (every month).
 
@@ -158,72 +158,47 @@ Go to **step 4**.
 
 ## Path B — a new image
 
-**B1. Settings.**
+**Do not run `adopt` here.** It is for images built without this tool. On a fresh
+Debian it now notices that and offers the guided setup instead.
+
+**B1. Guided setup.** It asks for the settings, saves them, then offers every step in
+order (prepare → domain → nfs → agent → reboot → recording → apps → courses → optimize →
+collab → check):
 
 ```bash
-sudo cp vdi-imagemaint.conf.example vdi-imagemaint.conf
-sudo nano vdi-imagemaint.conf
+sudo ./vdi-imagemaint.sh setup
 ```
 
-Fill in at least: `AD_DOMAIN`, `AD_JOIN_USER` (an account that may join computers), `AD_COMPUTER_OU`,
-`AD_ACCESS_GROUPS`, `AD_SUDO_GROUPS`, `NFS_SERVER`, `NFS_EXPORT`. For one NFS share like on the
-current images: `NFS_MODE="fstab"`, `NFS_MOUNTPOINT="/home/STUDENT"`, `HOME_ROOT="/home/STUDENT"`,
-`NFS_SEC="krb5"`. For True SSO / smart card also the lines from A7.
+* Every question shows the current value in `[brackets]`; **Enter** keeps it, `-` clears
+  an optional one. Have ready: AD domain, the account that may join computers, the NFS server
+  and export, and, for True SSO, the CA files in `certs/`.
+* Before each step it asks **"Run step … now?"**. Answer `n` to skip that step (it is offered
+  again next time); `Ctrl+C` stops.
+* `domain` asks for the password of the join account.
+* After `agent` it asks to **reboot**. After the reboot run `setup` again: finished steps are
+  skipped, it continues with the next one.
+* If the agent archive is not in `Horizon/` yet, setup stops there and says where to put it.
 
-**B2. Base system** (packages, MATE desktop, language, time).
+When it says *All steps done*, test a domain logon and go to **step 4**.
+
+**Manual alternative** (the same steps one by one):
 
 ```bash
 sudo ./vdi-imagemaint.sh prepare
-```
-
-**B3. Domain** (SSSD, join — asks for the password of `AD_JOIN_USER`; certificate logon if switched on).
-
-```bash
 sudo ./vdi-imagemaint.sh domain
-```
-
-**B4. NFS home directories.**
-
-```bash
 sudo ./vdi-imagemaint.sh nfs
-```
-
-**B5. Horizon agent** and the USB driver. Then `sudo reboot`.
-
-```bash
-sudo ./vdi-imagemaint.sh agent
-```
-
-**B6. Recording** (optional, asks for the password).
-
-```bash
-sudo ./vdi-imagemaint.sh recording
-```
-
-**B7. Applications** (Eclipse, course apps, "Courses" folder).
-
-```bash
+sudo ./vdi-imagemaint.sh agent      # then: sudo reboot
+sudo ./vdi-imagemaint.sh recording  # optional
 sudo ./vdi-imagemaint.sh apps
 sudo ./vdi-imagemaint.sh courses
-```
-
-**B8. Tuning.**
-
-```bash
 sudo ./vdi-imagemaint.sh optimize
-```
-
-**B9. Session Collaboration** (asks for the UAG link).
-
-```bash
 sudo ./vdi-imagemaint.sh collab
-```
-
-**B10. Check.** Expect 0 ERR.
-
-```bash
 sudo ./vdi-imagemaint.sh check
 ```
+
+The settings for the manual way are in `vdi-imagemaint.conf`; copy `vdi-imagemaint.conf.example`
+to it and fill in at least `AD_DOMAIN`, `AD_JOIN_USER`, the `NFS_*` lines and, for True SSO, the
+lines from A7.
 
 ---
 

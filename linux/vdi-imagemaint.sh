@@ -3,6 +3,7 @@
 # on Omnissa Horizon Instant Clone (Horizon Linux Agent, SSSD offline domain join,
 # True SSO / smart card, NFSv4 + Kerberos home directories).
 #
+# New image:     setup (asks for the settings, then runs the steps below one by one)
 # Build (once):  prepare -> domain -> nfs -> agent -> (reboot) -> recording -> apps -> optimize -> collab -> check -> seal
 # Existing image: adopt (detect, preview, keep) -> agent/recording/apps -> optimize -> check -> seal
 # Day-2 (monthly): update --then-seal          Reverse a seal: unlock
@@ -25,7 +26,7 @@ VDI_ROOT=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
 
 # shellcheck source=lib/common.sh
 . "${VDI_ROOT}/lib/common.sh"
-for _lib in base domain kerberos nfs nfsmount vhci agent recording adoptconf adopt selfupdate courses collab optimize update seal check; do
+for _lib in base domain kerberos nfs nfsmount vhci agent recording adoptconf adopt setup selfupdate courses collab optimize update seal check; do
     # shellcheck disable=SC1090
     . "${VDI_ROOT}/lib/${_lib}.sh"
 done
@@ -37,7 +38,7 @@ usage() {
 
 menu() {
     local choice
-    local -a modes=(adopt prepare domain kerberos nfs nfsmount agent usb recording apps courses optimize collab check seal update unlock fido status diag self-update)
+    local -a modes=(setup adopt prepare domain kerberos nfs nfsmount agent usb recording apps courses optimize collab check seal update unlock fido status diag self-update)
     while true; do
         printf '\n%s\n' "$(t menu_title "$VDI_VERSION" "$PROFILE")"
         local i=1 m
@@ -62,6 +63,7 @@ menu() {
 
 dispatch() {
     case $1 in
+        setup) mode_setup ;;
         adopt) mode_adopt ;;
         prepare) run_step prepare mode_prepare ;;
         domain) run_step domain mode_domain; domain_certlogon_adopted ;;

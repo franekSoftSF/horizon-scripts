@@ -30,6 +30,8 @@ zapisywany jeden raz.
 
 ## Budowa (raz na obraz)
 
+Najprościej: `sudo ./vdi-imagemaint.sh setup` pyta o ustawienia i po kolei wykonuje kroki poniżej (po agencie restart i ponownie `setup`). Ręcznie:
+
 ```bash
 sudo cp -r linux /opt/vdi-imagemaint && cd /opt/vdi-imagemaint
 sudo cp vdi-imagemaint.conf.example vdi-imagemaint.conf && sudo nano vdi-imagemaint.conf

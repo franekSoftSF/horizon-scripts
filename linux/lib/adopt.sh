@@ -147,6 +147,15 @@ mode_adopt() {
     adopt_detect_domain
     adopt_detect_homes
     adopt_detect_agent
+    # A fresh Debian has nothing to take over: adopting would mark prepare / nfs as done
+    # although they never ran (seen on the VM: US time zone kept, NFS skipped).
+    if adopt_is_fresh_image; then
+        logt WARN adopt_fresh
+        if ask_yes "$(t adopt_q_setup)" yes; then
+            mode_setup
+        fi
+        return 0
+    fi
     adopt_config
     adopt_preview
 

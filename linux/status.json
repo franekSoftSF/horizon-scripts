@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-23",
-  "version": "0.9.4",
+  "version": "0.10.0",
   "platform": {
     "os": "Debian 12 bookworm / Debian 13 trixie",
     "desktop": "MATE + LightDM",
@@ -20,6 +20,7 @@
     "business"
   ],
   "modes": [
+    "setup",
     "adopt",
     "prepare",
     "domain",
@@ -238,6 +239,13 @@
         "prepare: dpkg lock held by apt-get (apt-daily after boot)"
       ],
       "fixedIn": "0.9.4 (DPkg::Lock::Timeout=600)"
+    },
+    {
+      "date": "2026-10-23",
+      "found": [
+        "new Debian 13 image built end to end (domain, NFS fstab /home/STUDENT) after 0.9.1-0.9.4; user asked for a guided setup on a fresh image"
+      ],
+      "fixedIn": "0.10.0 (mode setup; adopt offers it on a fresh image)"
     }
   ]
 }

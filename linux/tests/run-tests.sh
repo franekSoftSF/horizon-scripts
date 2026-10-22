@@ -227,6 +227,25 @@ check "yes/no switches normalised (${sw})" '[[ $sw == "yes no true maybe" ]]'
 # --- regression: apt waits for the dpkg lock (apt-daily right after boot, 0.9.3 on the VM)
 check "apt_get waits for the dpkg lock" 'grep -q "DPkg::Lock::Timeout" "$ROOT/lib/common.sh"'
 
+# --- setup: conf_set replaces or appends, values stay safe to source
+cs_test() {
+    local f A B
+    # shellcheck source=/dev/null
+    . "$ROOT/lib/adoptconf.sh"
+    # shellcheck source=/dev/null
+    . "$ROOT/lib/setup.sh"
+    f=$(mktemp)
+    printf '%s\n' 'A="1"' '# c' 'A="2"' >"$f"
+    conf_set "$f" A 'x y'
+    conf_set "$f" B 'a"b$c'
+    # shellcheck source=/dev/null
+    . "$f"
+    printf '%s|%s|%s' "$A" "$B" "$(grep -c '^A=' "$f")"
+    rm -f "$f"
+}
+cs=$(cs_test)
+check "conf_set replaces every occurrence, appends, quotes (${cs})" '[[ $cs == '"'"'x y|a"b$c|2'"'"' ]]'
+
 # --- certificate logon (True SSO / smart card): rule shape, issuer pin, revocation ------
 # Lessons measured in the sssd-smartcard project - see docs/linux.md "Certificate logon".
 cert_bad=$(grep -nE '^[^#]*(matchrule|maprule).*(&&|\(userPrincipal=)' "$ROOT/lib/domain.sh" || true)
