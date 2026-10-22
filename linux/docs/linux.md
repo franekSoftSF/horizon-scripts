@@ -219,7 +219,8 @@ on the server. The tool:
   there as unavailable). It is in `contrib` and needs two Perl modules from `non-free`, so `courses` adds the components in
   `COURSES_APT_COMPONENTS="contrib non-free"` to the Debian apt sources (tracked, `courses --revert` restores the sources).
   The package has no menu entries: `courses` writes `vdi-demeter-*.desktop` (Courses > Education). Per-user settings
-  go to `~/.horae` in the home directory.
+  go to `~/.horae` in the home directory. The entries start Demeter with `DEMETER_FORCE_IFEFFIT=1`: otherwise it first
+  tries the Larch backend, waits for it for seconds and the splash screen shows "not responding".
 - `get-vdi-imagemaint.sh` creates `Horizon/` and `certs/` and downloads the USB VHCI source. Omnissa installers need
   a Customer Connect login and are copied by hand.
 - `courses --revert` removes the folder.

@@ -105,6 +105,9 @@ courses_apt_components() {
 
 # Demeter (libdemeter-perl) ships the programs but no menu entries: write them, so that
 # COURSES_APPS (vdi-demeter) finds them. Only for programs that are installed.
+# DEMETER_FORCE_IFEFFIT=1: Demeter tries the Larch backend first (larch_server from python3-xraylarch, polled for
+# seconds, fails with Debian's Larch) - the splash screen hangs and GNOME shows "not responding". Ifeffit is the
+# backend Debian builds Demeter for.
 courses_demeter_desktop() {
     local share=/usr/share/perl5/Demeter/UI name exe icon comment id
     local -a entries=(
@@ -124,7 +127,7 @@ Type=Application
 Name=${name}
 Comment=${comment}
 Comment[pl]=${pl}
-Exec=${exe}$([[ $exe == datoms ]] && printf ' --wx')$([[ $exe == dathena || $exe == dartemis ]] && printf ' %%f')
+Exec=env DEMETER_FORCE_IFEFFIT=1 ${exe}$([[ $exe == datoms ]] && printf ' --wx')$([[ $exe == dathena || $exe == dartemis ]] && printf ' %%f')
 Icon=${icon}
 Terminal=false
 Categories=Science;Physics;

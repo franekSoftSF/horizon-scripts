@@ -220,7 +220,8 @@ portu 9443 na serwerze. Narzędzie:
   zgłaszany jako niedostępny). Jest w `contrib` i potrzebuje dwóch modułów Perla z `non-free`, więc `courses` dopisuje
   komponenty z `COURSES_APT_COMPONENTS="contrib non-free"` do źródeł apt Debiana (śledzone, `courses --revert` przywraca
   źródła). Pakiet nie ma wpisów w menu: `courses` tworzy `vdi-demeter-*.desktop` (Zajęcia > Edukacja). Ustawienia
-  użytkownika trafiają do `~/.horae` w katalogu domowym.
+  użytkownika trafiają do `~/.horae` w katalogu domowym. Wpisy uruchamiają Demeter z `DEMETER_FORCE_IFEFFIT=1`: bez tego
+  najpierw próbuje backendu Larch, czeka na niego kilka sekund, a ekran powitalny pokazuje „nie odpowiada”.
 - `get-vdi-imagemaint.sh` zakłada katalogi `Horizon/` i `certs/` i pobiera źródła USB VHCI. Instalatory Omnissa
   wymagają logowania w Customer Connect i kopiuje się je ręcznie.
 - `courses --revert` usuwa folder.

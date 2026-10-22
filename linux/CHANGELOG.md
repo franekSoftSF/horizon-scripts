@@ -1,5 +1,12 @@
 # Changelog – VDI-ImageMaint for Linux
 
+## 0.10.1 – 2026-10-23
+- Fix (VM): Athena / Artemis started from the menu showed "Wx::Perl::SplashFast::App is not responding" before opening. Demeter
+  tries the Larch backend first: it finds `larch_server` from python3-xraylarch, starts it (fails with Debian's Larch:
+  "can't open file '/usr/bin/larch'") and polls it for seconds, then falls back to Ifeffit. The `vdi-demeter-*.desktop`
+  entries now start the programs with `DEMETER_FORCE_IFEFFIT=1` (Ifeffit at once, the backend Debian builds Demeter for).
+  Existing images: run `courses` again.
+
 ## 0.10.0 – 2026-10-23
 - New mode `setup`: guided build of a new golden image. Asks for the settings (domain, join account, OU, access and sudo
   groups, time zone, keyboard, locale, NFS, True SSO / smart card with CA files and revocation, USB, microphone; the current
